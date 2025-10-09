@@ -1,0 +1,1922 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.iocoder.yudao.module.prospective.dal.mysql.basicinfo.ProspectiveBasicInfoMapper">
+
+    <!--
+        一般情况下，尽可能使用 Mapper 进行 CRUD 增删改查即可。
+        无法满足的场景，例如说多表关联查询，才使用 XML 编写 SQL。
+        代码生成器暂时只生成 Mapper XML 文件本身，更多推荐 MybatisX 快速开发插件来生成查询。
+        文档可见：https://www.iocoder.cn/MyBatis/x-plugins/
+     -->
+    <resultMap id="BasicInfoRespVOResultMap"
+               type="cn.iocoder.yudao.module.prospective.controller.admin.basicinfo.vo.BasicInfoRespVO">
+        <!-- 主表字段 -->
+        <id column="id" property="id"/>
+        <result column="code" property="code"/>
+        <result column="name" property="name"/>
+        <result column="gender" property="gender"/>
+        <result column="position" property="position"/>
+        <result column="birth_date" property="birthDate"/>
+        <result column="type" property="type"/>
+        <result column="group_type" property="groupType"/>
+        <result column="age" property="age"/>
+        <result column="actual_age" property="actualAge"/>
+        <result column="id_number" property="idNumber"/>
+        <result column="is_vip" property="isVip"/>
+
+        <!--        基础其他信息表-->
+        <association property="basicOtherInfoRespVO"
+                     javaType="cn.iocoder.yudao.module.prospective.controller.admin.basicotherinfo.vo.BasicOtherInfoRespVO">
+            <id column="person_id" property="personId"/>
+            <result column="marital_status" property="maritalStatus"/>
+            <result column="fertility_status" property="fertilityStatus"/>
+            <result column="ethnicity" property="ethnicity"/>
+            <result column="education_level" property="educationLevel"/>
+            <result column="height" property="height"/>
+            <result column="weight" property="weight"/>
+            <result column="time_point" property="timePoint"/>
+        </association>
+        <!--        高原急性高山病记录表-->
+        <association property="experimentSurveyAcuteMountainSicknessRecordsRespVO"
+                     javaType="cn.iocoder.yudao.module.prospective.controller.admin.experimentsurveyacutemountainsicknessrecords.vo.ExperimentSurveyAcuteMountainSicknessRecordsRespVO">
+            <id column="person_id" property="personId"/>
+            <result column="acute_mountain_reaction" property="acuteMountainReaction"/>
+            <result column="pulmonary_edema" property="pulmonaryEdema"/>
+            <result column="cerebral_edema" property="cerebralEdema"/>
+            <result column="high_altitude_heart_disease" property="highAltitudeHeartDisease"/>
+            <result column="polycythemia" property="polycythemia"/>
+            <result column="other_diseases" property="otherDiseases"/>
+            <result column="other_diseases_desc" property="otherDiseasesDesc"/>
+            <result column="time_point" property="timePoint"/>
+        </association>
+        <!--        基本检测信息表-->
+        <association property="experimentSurveyBasicCheckInfoRespVO"
+                     javaType="cn.iocoder.yudao.module.prospective.controller.admin.experimentsurveybasiccheckinfo.vo.ExperimentSurveyBasicCheckInfoRespVO">
+            <id column="person_id" property="personId"/>
+            <result column="systolic_blood_pressure" property="systolicBloodPressure"/>
+            <result column="diastolic_blood_pressure" property="diastolicBloodPressure"/>
+            <result column="oxygen_saturation" property="oxygenSaturation"/>
+            <result column="heart_rate" property="heartRate"/>
+            <result column="basic_height" property="basicHeight"/>
+            <result column="basic_weight" property="basicWeight"/>
+            <result column="survey_height" property="surveyHeight"/>
+            <result column="survey_weight" property="surveyWeight"/>
+            <result column="time_point" property="timePoint"/>
+        </association>
+        <!--        推进情况调查表-->
+        <association property="experimentSurveyMissionProgressSurveyRespVO"
+                     javaType="cn.iocoder.yudao.module.prospective.controller.admin.experimentsurveymissionprogresssurvey.vo.ExperimentSurveyMissionProgressSurveyRespVO">
+            <id column="pesmps_person_id" property="personId"/>
+            <result column="pesmps_transportation_mode" property="transportationMode"/>
+            <result column="pesmps_mission_point_altitude" property="missionPointAltitude"/>
+            <result column="pesmps_location" property="location"/>
+            <result column="pesmps_arrival_date" property="arrivalDate"/>
+            <result column="pesmps_plateau_mission_duration" property="plateauMissionDuration"/>
+            <result column="pesmps_travel_duration" property="travelDuration"/>
+            <result column="pesmps_has_stopover" property="hasStopover"/>
+            <result column="pesmps_stopover_location" property="stopoverLocation"/>
+            <result column="pesmps_stopover_duration" property="stopoverDuration"/>
+            <result column="pesmps_has_discomfort_after_arrival" property="hasDiscomfortAfterArrival"/>
+            <result column="pesmps_discomfort_occurrence_time" property="discomfortOccurrenceTime"/>
+            <result column="pesmps_return_purpose" property="returnPurpose"/>
+            <result column="pesmps_time_point" property="timePoint"/>
+        </association>
+        <!--        抵达高原后症状记录表-->
+        <association property="experimentSurveyPlateauArrivalSymptomsRespVO"
+                     javaType="cn.iocoder.yudao.module.prospective.controller.admin.experimentsurveyplateauarrivalsymptoms.vo.ExperimentSurveyPlateauArrivalSymptomsRespVO">
+            <id column="pespas_person_id" property="personId"/>
+            <result column="pespas_headache" property="headache"/>
+            <result column="pespas_headache_duration" property="headacheDuration"/>
+            <result column="pespas_digestive_symptoms" property="digestiveSymptoms"/>
+            <result column="pespas_digestive_symptoms_duration" property="digestiveSymptomsDuration"/>
+            <result column="pespas_fatigue" property="fatigue"/>
+            <result column="pespas_fatigue_duration" property="fatigueDuration"/>
+            <result column="pespas_dizziness" property="dizziness"/>
+            <result column="pespas_dizziness_duration" property="dizzinessDuration"/>
+            <result column="pespas_impact_on_daily_life" property="impactOnDailyLife"/>
+            <result column="pespas_time_point" property="timePoint"/>
+        </association>
+        <!--        高原体能信息表-->
+        <association property="experimentSurveyPlateauFitnessInfoRespVO"
+                     javaType="cn.iocoder.yudao.module.prospective.controller.admin.experimentsurveyplateaufitnessinfo.vo.ExperimentSurveyPlateauFitnessInfoRespVO">
+            <id column="person_id" property="personId"/>
+            <result column="has_regular_training" property="hasRegularTraining"/>
+            <result column="training_frequency" property="trainingFrequency"/>
+            <result column="training_duration" property="trainingDuration"/>
+            <result column="training_type" property="trainingType"/>
+            <result column="has_chest_discomfort" property="hasChestDiscomfort"/>
+            <result column="symptom_relief_after_adaptation" property="symptomReliefAfterAdaptation"/>
+            <result column="has_insomnia" property="hasInsomnia"/>
+            <result column="daily_sleep_hours" property="dailySleepHours"/>
+            <result column="insomnia_improvement" property="insomniaImprovement"/>
+            <result column="diet_habits" property="dietHabits"/>
+            <result column="time_point" property="timePoint"/>
+        </association>
+        <!--        评分总数统计表-->
+        <association property="experimentSurveyScoreSummaryRespVO"
+                     javaType="cn.iocoder.yudao.module.prospective.controller.admin.experimentsurveyscoresummary.vo.ExperimentSurveyScoreSummaryRespVO">
+            <id column="person_id" property="personId"/>
+            <result column="total_score" property="totalScore"/>
+            <result column="total_score2" property="totalScore2"/>
+            <result column="time_point" property="timePoint"/>
+        </association>
+        <!--        自我评价表-->
+        <association property="experimentSurveySelfAssessmentRespVO"
+                     javaType="cn.iocoder.yudao.module.prospective.controller.admin.experimentsurveyselfassessment.vo.ExperimentSurveySelfAssessmentRespVO">
+            <id column="person_id" property="personId"/>
+            <result column="health_comparison_with_peers" property="healthComparisonWithPeers"/>
+            <result column="health_score" property="healthScore"/>
+            <result column="time_point" property="timePoint"/>
+        </association>
+        <!--        吸烟信息表-->
+        <association property="experimentSurveySmokingInfoRespVO"
+                     javaType="cn.iocoder.yudao.module.prospective.controller.admin.experimentsurveysmokinginfo.vo.ExperimentSurveySmokingInfoRespVO">
+            <id column="person_id" property="personId"/>
+            <result column="smoking_status" property="smokingStatus"/>
+            <result column="daily_cigarettes" property="dailyCigarettes"/>
+            <result column="smoking_start_age" property="smokingStartAge"/>
+            <result column="smoking_years" property="smokingYears"/>
+            <result column="quit_attempted" property="quitAttempted"/>
+            <result column="smoking_region" property="smokingRegion"/>
+            <result column="quit_smoking_years" property="quitSmokingYears"/>
+            <result column="quit_smoking_duration" property="quitSmokingDuration"/>
+            <result column="quit_smoking_region" property="quitSmokingRegion"/>
+            <result column="time_point" property="timePoint"/>
+        </association>
+        <!--        驻训信息表-->
+        <association property="experimentSurveyStationTrainingInfoRespVO"
+                     javaType="cn.iocoder.yudao.module.prospective.controller.admin.experimentsurveystationtraininginfo.vo.ExperimentSurveyStationTrainingInfoRespVO">
+            <id column="person_id" property="personId"/>
+            <result column="mission_point_altitude" property="missionPointAltitude"/>
+            <result column="location" property="location"/>
+            <result column="plateau_training_count" property="plateauTrainingCount"/>
+            <result column="plateau_training_duration" property="plateauTrainingDuration"/>
+            <result column="mission_type" property="missionType"/>
+            <result column="daily_work_hours" property="dailyWorkHours"/>
+            <result column="service_position" property="servicePosition"/>
+            <result column="time_point" property="timePoint"/>
+        </association>
+        <!--        抵达高原后有无新下疾病表-->
+        <association property="experimentSurveyHighlandDiseasesDuringServiceRespVO"
+                     javaType="cn.iocoder.yudao.module.prospective.controller.admin.experimentsurveyhighlanddiseasesduringservice.vo.ExperimentSurveyHighlandDiseasesDuringServiceRespVO">
+            <id column="peshdds_id" property="id"/>
+            <result column="peshdds_person_id" property="personId"/>
+            <result column="peshdds_hypertension" property="hypertension"/>
+            <result column="peshdds_myocardial_infarction" property="myocardialInfarction"/>
+            <result column="peshdds_coronary_heart_disease" property="coronaryHeartDisease"/>
+            <result column="peshdds_pulmonary_heart_disease" property="pulmonaryHeartDisease"/>
+            <result column="peshdds_lower_extremity_venous_thrombosis" property="lowerExtremityVenousThrombosis"/>
+            <result column="peshdds_bradycardia" property="bradycardia"/>
+            <result column="peshdds_tachycardia" property="tachycardia"/>
+            <result column="peshdds_arrhythmia" property="arrhythmia"/>
+            <result column="peshdds_atrial_fibrillation" property="atrialFibrillation"/>
+            <result column="peshdds_paroxysmal_auricular_tachycardia" property="paroxysmalAuricularTachycardia"/>
+            <result column="peshdds_frequent_premature_atrial_contractions" property="frequentPrematureAtrialContractions"/>
+            <result column="peshdds_frequent_premature_ventricular_contractions" property="frequentPrematureVentricularContractions"/>
+            <result column="peshdds_av_block" property="avBlock"/>
+            <result column="peshdds_ventricular_tachycardia" property="ventricularTachycardia"/>
+            <result column="peshdds_other_diseases11" property="otherDiseases11"/>
+            <result column="peshdds_dizziness" property="dizziness"/>
+            <result column="peshdds_transient_ischemic_attack" property="transientIschemicAttack"/>
+            <result column="peshdds_cerebral_infarction" property="cerebralInfarction"/>
+            <result column="peshdds_cerebral_hemorrhage" property="cerebralHemorrhage"/>
+            <result column="peshdds_other_diseases12" property="otherDiseases12"/>
+            <result column="peshdds_hyperlipidemia" property="hyperlipidemia"/>
+            <result column="peshdds_diabetes" property="diabetes"/>
+            <result column="peshdds_gout" property="gout"/>
+            <result column="peshdds_thyroid_disease" property="thyroidDisease"/>
+            <result column="peshdds_other_diseases13" property="otherDiseases13"/>
+            <result column="peshdds_insomnia" property="insomnia"/>
+            <result column="peshdds_tumor" property="tumor"/>
+            <result column="peshdds_other_diseases14" property="otherDiseases14"/>
+            <result column="peshdds_time_point" property="timePoint"/>
+            <result column="peshdds_diseases" property="diseases"/>
+        </association>
+        <!--        既往疾病史表-->
+        <association property="experimentSurveyMedicalHistoryRespVO"
+                     javaType="cn.iocoder.yudao.module.prospective.controller.admin.experimentsurveymedicalhistory.vo.ExperimentSurveyMedicalHistoryRespVO">
+            <id column="person_id" property="personId"/>
+            <result column="hypertension" property="hypertension"/>
+            <result column="hyperlipidemia" property="hyperlipidemia"/>
+            <result column="congenital_heart_disease" property="congenitalHeartDisease"/>
+            <result column="pulmonary_heart_disease" property="pulmonaryHeartDisease"/>
+            <result column="stroke" property="stroke"/>
+            <result column="sinus_tachycardia" property="sinusTachycardia"/>
+            <result column="frequent_atrial_premature" property="frequentAtrialPremature"/>
+            <result column="coronary_heart_disease" property="coronaryHeartDisease"/>
+            <result column="sinus_arrhythmia" property="sinusArrhythmia"/>
+            <result column="frequent_ventricular_premature" property="frequentVentricularPremature"/>
+            <result column="myocardial_infarction" property="myocardialInfarction"/>
+            <result column="atrial_fibrillation" property="atrialFibrillation"/>
+            <result column="atrioventricular_block" property="atrioventricularBlock"/>
+            <result column="sinus_bradycardia" property="sinusBradycardia"/>
+            <result column="paroxysmal_supraventricular_tachycardia" property="paroxysmalSupraventricularTachycardia"/>
+            <result column="ventricular_tachycardia" property="ventricularTachycardia"/>
+            <result column="chronic_bronchitis" property="chronicBronchitis"/>
+            <result column="asthma" property="asthma"/>
+            <result column="tuberculosis" property="tuberculosis"/>
+            <result column="emphysema" property="emphysema"/>
+            <result column="pneumonia" property="pneumonia"/>
+            <result column="copd" property="copd"/>
+            <result column="thyroid_disease" property="thyroidDisease"/>
+            <result column="diabetes" property="diabetes"/>
+            <result column="gout" property="gout"/>
+            <result column="chronic_gastroenteritis" property="chronicGastroenteritis"/>
+            <result column="duodenal_ulcer" property="duodenalUlcer"/>
+            <result column="gastric_ulcer" property="gastricUlcer"/>
+            <result column="gallstones" property="gallstones"/>
+            <result column="colon_polyps" property="colonPolyps"/>
+            <result column="hepatitis_b" property="hepatitisB"/>
+            <result column="cholecystitis" property="cholecystitis"/>
+            <result column="epilepsy" property="epilepsy"/>
+            <result column="time_point" property="timePoint"/>
+            <result column="description" property="description"/>
+        </association>
+
+        <!--        退役后返回平原症状-->
+        <association property="experimentSurveyPostReturnSymptomsRespVO"
+                     javaType="cn.iocoder.yudao.module.prospective.controller.admin.experimentsurveypostreturnsymptoms.vo.ExperimentSurveyPostReturnSymptomsRespVO">
+            <id column="person_id" property="personId"/>
+            <result column="fatigue" property="fatigue"/>
+            <result column="fatigue_duration" property="fatigueDuration"/>
+            <result column="weakness" property="weakness"/>
+            <result column="weakness_duration" property="weaknessDuration"/>
+            <result column="drowsiness" property="drowsiness"/>
+            <result column="drowsiness_duration" property="drowsinessDuration"/>
+            <result column="dizziness" property="dizziness"/>
+            <result column="dizziness_duration" property="dizzinessDuration"/>
+            <result column="vertigo" property="vertigo"/>
+            <result column="vertigo_duration" property="vertigoDuration"/>
+            <result column="poor_concentration" property="poorConcentration"/>
+            <result column="poor_concentration_duration" property="poorConcentrationDuration"/>
+            <result column="slow_reaction" property="slowReaction"/>
+            <result column="slow_reaction_duration" property="slowReactionDuration"/>
+            <result column="memory_loss" property="memoryLoss"/>
+            <result column="memory_loss_duration" property="memoryLossDuration"/>
+            <result column="insomnia" property="insomnia"/>
+            <result column="insomnia_duration" property="insomniaDuration"/>
+            <result column="nightmares" property="nightmares"/>
+            <result column="nightmares_duration" property="nightmaresDuration"/>
+            <result column="sore_throat" property="soreThroat"/>
+            <result column="sore_throat_duration" property="soreThroatDuration"/>
+            <result column="cough" property="cough"/>
+            <result column="cough_duration" property="coughDuration"/>
+            <result column="phlegm" property="phlegm"/>
+            <result column="phlegm_duration" property="phlegmDuration"/>
+            <result column="wheezing" property="wheezing"/>
+            <result column="wheezing_duration" property="wheezingDuration"/>
+            <result column="chest_tightness" property="chestTightness"/>
+            <result column="chest_tightness_duration" property="chestTightnessDuration"/>
+            <result column="chest_pain" property="chestPain"/>
+            <result column="chest_pain_duration" property="chestPainDuration"/>
+            <result column="palpitations" property="palpitations"/>
+            <result column="palpitations_duration" property="palpitationsDuration"/>
+            <result column="bradycardia" property="bradycardia"/>
+            <result column="bradycardia_duration" property="bradycardiaDuration"/>
+            <result column="cyanosis" property="cyanosis"/>
+            <result column="cyanosis_duration" property="cyanosisDuration"/>
+            <result column="blood_pressure_fluctuation" property="bloodPressureFluctuation"/>
+            <result column="blood_pressure_fluctuation_duration" property="bloodPressureFluctuationDuration"/>
+            <result column="skin_bleeding" property="skinBleeding"/>
+            <result column="skin_bleeding_duration" property="skinBleedingDuration"/>
+            <result column="skin_bruising" property="skinBruising"/>
+            <result column="skin_bruising_duration" property="skinBruisingDuration"/>
+            <result column="anemia" property="anemia"/>
+            <result column="anemia_duration" property="anemiaDuration"/>
+            <result column="weight_loss" property="weightLoss"/>
+            <result column="weight_loss_duration" property="weightLossDuration"/>
+            <result column="increased_appetite" property="increasedAppetite"/>
+            <result column="increased_appetite_duration" property="increasedAppetiteDuration"/>
+            <result column="anorexia" property="anorexia"/>
+            <result column="anorexia_duration" property="anorexiaDuration"/>
+            <result column="constipation" property="constipation"/>
+            <result column="constipation_duration" property="constipationDuration"/>
+            <result column="diarrhea" property="diarrhea"/>
+            <result column="diarrhea_duration" property="diarrheaDuration"/>
+            <result column="abdominal_pain" property="abdominalPain"/>
+            <result column="abdominal_pain_duration" property="abdominalPainDuration"/>
+            <result column="abdominal_distension" property="abdominalDistension"/>
+            <result column="abdominal_distension_duration" property="abdominalDistensionDuration"/>
+            <result column="jaundice" property="jaundice"/>
+            <result column="jaundice_duration" property="jaundiceDuration"/>
+            <result column="numbness" property="numbness"/>
+            <result column="numbness_duration" property="numbnessDuration"/>
+            <result column="limb_edema" property="limbEdema"/>
+            <result column="limb_edema_duration" property="limbEdemaDuration"/>
+            <result column="facial_edema" property="facialEdema"/>
+            <result column="facial_edema_duration" property="facialEdemaDuration"/>
+            <result column="hair_loss" property="hairLoss"/>
+            <result column="hair_loss_duration" property="hairLossDuration"/>
+            <result column="increased_urination" property="increasedUrination"/>
+            <result column="increased_urination_duration" property="increasedUrinationDuration"/>
+            <result column="other_symptoms" property="otherSymptoms"/>
+            <result column="time_point" property="timePoint"/>
+        </association>
+        <!--生化-->
+        <association property="experimentExamBiochemicalTestsV2RespVO"
+                     javaType="cn.iocoder.yudao.module.prospective.controller.admin.experimentexambiochemicaltestsv2.vo.ExperimentExamBiochemicalTestsV2RespVO">
+            <id column="id" property="id"/>
+            <id column="person_id" property="personId"/>
+            <result column="alt" property="alt"/>
+            <result column="ast" property="ast"/>
+            <result column="ast_alt_ratio" property="astAltRatio"/>
+            <result column="total_protein" property="totalProtein"/>
+            <result column="albumin" property="albumin"/>
+            <result column="globulin" property="globulin"/>
+            <result column="alb_glob_ratio" property="albGlobRatio"/>
+            <result column="total_bilirubin" property="totalBilirubin"/>
+            <result column="direct_bilirubin" property="directBilirubin"/>
+            <result column="indirect_bilirubin" property="indirectBilirubin"/>
+            <result column="alkaline_phosphatase" property="alkalinePhosphatase"/>
+            <result column="ggt" property="ggt"/>
+            <result column="total_bile_acid" property="totalBileAcid"/>
+            <result column="cholinesterase" property="cholinesterase"/>
+            <result column="prealbumin" property="prealbumin"/>
+            <result column="urea" property="urea"/>
+            <result column="creatinine" property="creatinine"/>
+            <result column="uric_acid" property="uricAcid"/>
+            <result column="triglycerides" property="triglycerides"/>
+            <result column="cholesterol" property="cholesterol"/>
+            <result column="hdl_c" property="hdlC"/>
+            <result column="ldl_c" property="ldlC"/>
+            <result column="apoa" property="apoa"/>
+            <result column="apob" property="apob"/>
+            <result column="lpa" property="lpa"/>
+            <result column="glucose" property="glucose"/>
+            <result column="ck" property="ck"/>
+            <result column="ck_mb" property="ckMb"/>
+            <result column="alpha_hbdh" property="alphaHbdh"/>
+            <result column="ldh" property="ldh"/>
+            <result column="crp" property="crp"/>
+            <result column="igg" property="igg"/>
+            <result column="iga" property="iga"/>
+            <result column="igm" property="igm"/>
+            <result column="complement3" property="complement3"/>
+            <result column="complement4" property="complement4"/>
+            <result column="myoglobin" property="myoglobin"/>
+            <result column="small_dense_ldl" property="smallDenseLdl"/>
+            <result column="homocysteine" property="homocysteine"/>
+            <result column="nucleotidase" property="nucleotidase"/>
+            <result column="ada" property="ada"/>
+            <result column="amylase" property="amylase"/>
+            <result column="anion_gap" property="anionGap"/>
+            <result column="buffer_base" property="bufferBase"/>
+            <result column="bicarbonate" property="bicarbonate"/>
+            <result column="base_excess" property="baseExcess"/>
+            <result column="extracellular_be" property="extracellularBe"/>
+            <result column="blood_urea" property="bloodUrea"/>
+            <result column="bun" property="bun"/>
+            <result column="calcium" property="calcium"/>
+            <result column="chloride" property="chloride"/>
+            <result column="cystatin_c" property="cystatinC"/>
+            <result column="iron" property="iron"/>
+            <result column="actual_bicarbonate" property="actualBicarbonate"/>
+            <result column="standard_bicarbonate" property="standardBicarbonate"/>
+            <result column="potassium" property="potassium"/>
+            <result column="magnesium" property="magnesium"/>
+            <result column="sodium" property="sodium"/>
+            <result column="phosphorus" property="phosphorus"/>
+            <result column="pco2" property="pco2"/>
+            <result column="ph" property="ph"/>
+            <result column="po2" property="po2"/>
+            <result column="rbp" property="rbp"/>
+            <result column="renin_activity" property="reninActivity"/>
+            <result column="hydrogen_ion_concentration" property="hydrogenIonConcentration"/>
+            <result column="tco2" property="tco2"/>
+            <result column="lactic_acid" property="lacticAcid"/>
+            <result column="microalbumin" property="microalbumin"/>
+            <result column="plasma_osmotic_pressure" property="plasmaOsmoticPressure"/>
+            <result column="a_a_gradient" property="aAGradient"/>
+            <result column="a_a_ratio" property="aARatio"/>
+            <result column="oxygenation_index" property="oxygenationIndex"/>
+            <result column="estimated_spo2" property="estimatedSpo2"/>
+            <result column="estimated_hb" property="estimatedHb"/>
+            <result column="beta2_microglobulin" property="beta2Microglobulin"/>
+            <result column="hs_crp" property="hsCrp"/>
+            <result column="hbsag" property="hbsag"/>
+            <result column="anti_hbs" property="antiHbs"/>
+            <result column="hbeag" property="hbeag"/>
+            <result column="anti_hbe" property="antiHbe"/>
+            <result column="anti_hbc" property="antiHbc"/>
+            <result column="total_cholesterol" property="totalCholesterol"/>
+            <result column="ima" property="ima"/>
+            <result column="afucosidase" property="afucosidase"/>
+            <result column="create_time" property="createTime"/>
+            <result column="time_point" property="timePoint"/>
+        </association>
+        <!--血常规-->
+        <association property="experimentExamBloodRoutineRespVO"
+                     javaType="cn.iocoder.yudao.module.prospective.controller.admin.experimentexambloodroutine.vo.ExperimentExamBloodRoutineRespVO">
+            <id column="id" property="id"/>
+            <id column="person_id" property="personId"/>
+            <result column="wbc_count" property="wbcCount"/>
+            <result column="lymphocyte_percent" property="lymphocytePercent"/>
+            <result column="mid_cell_percent" property="midCellPercent"/>
+            <result column="granulocyte_percent" property="granulocytePercent"/>
+            <result column="lymphocyte_count" property="lymphocyteCount"/>
+            <result column="mid_cell_count" property="midCellCount"/>
+            <result column="granulocyte_count" property="granulocyteCount"/>
+            <result column="rbc_count" property="rbcCount"/>
+            <result column="hemoglobin" property="hemoglobin"/>
+            <result column="hematocrit" property="hematocrit"/>
+            <result column="mcv" property="mcv"/>
+            <result column="mch" property="mch"/>
+            <result column="mchc" property="mchc"/>
+            <result column="rdw_cv" property="rdwCv"/>
+            <result column="rdw_sd" property="rdwSd"/>
+            <result column="platelet_count" property="plateletCount"/>
+            <result column="mpv" property="mpv"/>
+            <result column="pdw" property="pdw"/>
+            <result column="pct" property="pct"/>
+            <result column="large_platelet_ratio" property="largePlateletRatio"/>
+            <result column="large_platelet_count" property="largePlateletCount"/>
+            <result column="basophil_count" property="basophilCount"/>
+            <result column="basophil_percent" property="basophilPercent"/>
+            <result column="eosinophil_count" property="eosinophilCount"/>
+            <result column="eosinophil_percent" property="eosinophilPercent"/>
+            <result column="immature_granulocyte_count" property="immatureGranulocyteCount"/>
+            <result column="immature_granulocyte_percent" property="immatureGranulocytePercent"/>
+            <result column="monocyte_count" property="monocyteCount"/>
+            <result column="monocyte_percent" property="monocytePercent"/>
+            <result column="nucleated_rbc_count" property="nucleatedRbcCount"/>
+            <result column="nucleated_rbc_percent" property="nucleatedRbcPercent"/>
+            <result column="neutrophil_count" property="neutrophilCount"/>
+            <result column="neutrophil_percent" property="neutrophilPercent"/>
+            <result column="create_time" property="createTime"/>
+            <result column="time_point" property="timePoint"/>
+        </association>
+        <!--        凝血功能-->
+        <association property="experimentExamCoagulationTestsRespVO"
+                     javaType="cn.iocoder.yudao.module.prospective.controller.admin.experimentexamcoagulationtests.vo.ExperimentExamCoagulationTestsRespVO">
+            <id column="id" property="id"/>
+            <id column="person_id" property="personId"/>
+            <result column="aptt" property="aptt"/>
+            <result column="antithrombin_iii_activity_percent" property="antithrombinIiiActivityPercent"/>
+            <result column="antithrombin_iii_activity_rate" property="antithrombinIiiActivityRate"/>
+            <result column="d_dimer_opt_density" property="dDimerOptDensity"/>
+            <result column="d_dimer_concentration" property="dDimerConcentration"/>
+            <result column="fibrin_degradation_products_density" property="fibrinDegradationProductsDensity"/>
+            <result column="fibrin_degradation_products_concentration" property="fibrinDegradationProductsConcentration"/>
+            <result column="fibrinogen_concentration" property="fibrinogenConcentration"/>
+            <result column="fibrinogen_clotting_time" property="fibrinogenClottingTime"/>
+            <result column="prothrombin_time_percent" property="prothrombinTimePercent"/>
+            <result column="pt_inr" property="ptInr"/>
+            <result column="prothrombin_time_ratio" property="prothrombinTimeRatio"/>
+            <result column="prothrombin_time" property="prothrombinTime"/>
+            <result column="thrombin_time" property="thrombinTime"/>
+            <result column="thrombin_time1" property="thrombinTime1"/>
+            <result column="aptt1" property="aptt1"/>
+            <result column="aptt2" property="aptt2"/>
+            <result column="prothrombin_activity" property="prothrombinActivity"/>
+            <result column="inr" property="inr"/>
+            <result column="create_time" property="createTime"/>
+            <result column="time_point" property="timePoint"/>
+        </association>
+        <association property="experimentExamOtherDataRespVO"
+                     javaType="cn.iocoder.yudao.module.prospective.controller.admin.experimentexamotherdata.vo.ExperimentExamOtherDataRespVO">
+            <id column="id" property="id"/>
+            <id column="person_id" property="personId"/>
+            <result column="cardiac_troponin_i" property="cardiacTroponinI"/>
+            <result column="vascular_ultrasound_result" property="vascularUltrasoundResult"/>
+            <result column="ecg_analysis_result" property="ecgAnalysisResult"/>
+            <result column="create_time" property="createTime"/>
+            <result column="time_point" property="timePoint"/>
+        </association>
+        <!--        <association property="experimentSurveyStationTrainingInfoRespVO"-->
+        <!--                     javaType="cn.iocoder.yudao.module.prospective.controller.admin.experimentsurveystationtraininginfo.vo.ExperimentSurveyStationTrainingInfoRespVO">-->
+        <!--            <id column="person_id" property="personId"/>-->
+        <!--            <result column="mission_point_altitude" property="missionPointAltitude"/>-->
+        <!--            <result column="time_point" property="timePoint"/>-->
+        <!--        </association>-->
+
+        <!--        <association property="experimentSurveyMissionProgressSurveyRespVO"-->
+        <!--                     javaType="cn.iocoder.yudao.module.prospective.controller.admin.experimentsurveymissionprogresssurvey.vo.ExperimentSurveyMissionProgressSurveyRespVO">-->
+        <!--            <id column="pesmps_person_id" property="personId"/>-->
+        <!--            <result column="pesmps_plateau_mission_duration" property="plateauMissionDuration"/>-->
+        <!--            <result column="pesmps_mission_point_altitude" property="missionPointAltitude"/>-->
+        <!--            <result column="pesmps_time_point" property="timePoint"/>-->
+        <!--        </association>-->
+
+        <!--        <association property="experimentSurveyScoreSummaryRespVO"-->
+        <!--                     javaType="cn.iocoder.yudao.module.prospective.controller.admin.experimentsurveyscoresummary.vo.ExperimentSurveyScoreSummaryRespVO">-->
+        <!--            <id column="person_id" property="personId"/>-->
+        <!--            <result column="total_score" property="totalScore"/>-->
+        <!--            <result column="total_score2" property="totalScore2"/>-->
+        <!--            <result column="time_point" property="timePoint"/>-->
+        <!--        </association>-->
+    </resultMap>
+
+    <select id="selectDataByParamPage"
+            parameterType="cn.iocoder.yudao.module.prospective.controller.admin.basicinfo.vo.BasicInfoPageReqVO"
+            resultMap="BasicInfoRespVOResultMap">
+        SELECT
+        pbi.*,
+        pboi.*,
+        pessti.*,
+        pesmps.person_id AS pesmps_person_id,
+        pesmps.transportation_mode AS pesmps_transportation_mode,
+        pesmps.mission_point_altitude AS pesmps_mission_point_altitude,
+        pesmps.location AS pesmps_location,
+        pesmps.arrival_date AS pesmps_arrival_date,
+        pesmps.plateau_mission_duration AS pesmps_plateau_mission_duration,
+        pesmps.travel_duration AS pesmps_travel_duration,
+        pesmps.has_stopover AS pesmps_has_stopover,
+        pesmps.stopover_location AS pesmps_stopover_location,
+        pesmps.stopover_duration AS pesmps_stopover_duration,
+        pesmps.has_discomfort_after_arrival AS pesmps_has_discomfort_after_arrival,
+        pesmps.discomfort_occurrence_time AS pesmps_discomfort_occurrence_time,
+        pesmps.return_purpose AS pesmps_return_purpose,
+        pesmps.time_point AS pesmps_time_point,
+        pesss.*,
+        pesss2.total_score AS total_score2,
+        pessamsr.*,
+        pesbci.*,
+        peshdds.person_id as peshdds_person_id,
+        peshdds.hypertension as peshdds_hypertension,
+        peshdds.myocardial_infarction as peshdds_myocardial_infarction,
+        peshdds.coronary_heart_disease as peshdds_coronary_heart_disease,
+        peshdds.pulmonary_heart_disease as peshdds_pulmonary_heart_disease,
+        peshdds.lower_extremity_venous_thrombosis as peshdds_lower_extremity_venous_thrombosis,
+        peshdds.bradycardia as peshdds_bradycardia,
+        peshdds.tachycardia as peshdds_tachycardia,
+        peshdds.arrhythmia as peshdds_arrhythmia,
+        peshdds.atrial_fibrillation as peshdds_atrial_fibrillation,
+        peshdds.paroxysmal_auricular_tachycardia as peshdds_paroxysmal_auricular_tachycardia,
+        peshdds.frequent_premature_atrial_contractions as peshdds_frequent_premature_atrial_contractions,
+        peshdds.frequent_premature_ventricular_contractions as peshdds_frequent_premature_ventricular_contractions,
+        peshdds.av_block as peshdds_av_block,
+        peshdds.ventricular_tachycardia as peshdds_ventricular_tachycardia,
+        peshdds.other_diseases11 as peshdds_other_diseases11,
+        peshdds.dizziness as peshdds_dizziness,
+        peshdds.transient_ischemic_attack as peshdds_transient_ischemic_attack,
+        peshdds.cerebral_infarction as peshdds_cerebral_infarction,
+        peshdds.cerebral_hemorrhage as peshdds_cerebral_hemorrhage,
+        peshdds.other_diseases12 as peshdds_other_diseases12,
+        peshdds.hyperlipidemia as peshdds_hyperlipidemia,
+        peshdds.diabetes as peshdds_diabetes,
+        peshdds.gout as peshdds_gout,
+        peshdds.thyroid_disease as peshdds_thyroid_disease,
+        peshdds.other_diseases13 as peshdds_other_diseases13,
+        peshdds.insomnia as peshdds_insomnia,
+        peshdds.tumor as peshdds_tumor,
+        peshdds.other_diseases14 as peshdds_other_diseases14,
+        peshdds.time_point as peshdds_time_point,
+        peshdds.diseases as peshdds_diseases,
+        pesmh.*,
+        pespas.headache as pespas_headache,
+        pespas.headache_duration as pespas_headache_duration,
+        pespas.digestive_symptoms as pespas_digestive_symptoms,
+        pespas.digestive_symptoms_duration as pespas_digestive_symptoms_duration,
+        pespas.fatigue as pespas_fatigue,
+        pespas.fatigue_duration as pespas_fatigue_duration,
+        pespas.dizziness as pespas_dizziness,
+        pespas.dizziness_duration as pespas_dizziness_duration,
+        pespas.impact_on_daily_life as pespas_impact_on_daily_life,
+        pespas.time_point as pespas_time_point,
+        pespfi.*,
+        pesprs.*,
+        pessa.*,
+        pessi.*,
+        peebt.*,
+        peebr.*,
+        peect.*,
+        peeod.*
+        FROM (
+        SELECT * FROM prospective_basic_info
+        WHERE 1=1
+        <if test="req.isVip != 'vip'">
+            AND time_point = #{req.timePoint}
+            <if test="req.surveyOrExam != null and req.surveyOrExam != ''">
+                AND survey_or_exam = #{req.surveyOrExam}
+            </if>
+        </if>
+        <if test="req.isVip != null and req.isVip != ''">
+            AND is_vip = #{req.isVip}
+        </if>
+        <if test="req.type != 0 and req.year != 0 and req.group == 1">
+            AND type = CONCAT(#{req.type}, '-', #{req.year})
+        </if>
+        <if test="(req.type != 0) and (req.year == 0) and req.group == 1">
+            AND type in (CONCAT(#{req.type}, '-23'), CONCAT(#{req.type}, '-24'))
+        </if>
+        <if test="(req.type == 0) and (req.year != 0) and req.group == 1">
+            AND type in (CONCAT('181-', #{req.year}), CONCAT('363-', #{req.year}))
+        </if>
+        ) pbi
+        <choose>
+            <when test="req.group == 1">
+                LEFT JOIN prospective_basic_other_info pboi
+                ON pboi.person_id = pbi.id
+                <if test="req.isVip != 'vip'">
+                    AND pboi.time_point = #{req.timePoint}
+                </if>
+                LEFT JOIN prospective_experiment_survey_acute_mountain_sickness_records pessamsr
+                ON pessamsr.person_id = pbi.id AND pessamsr.time_point = #{req.timePoint}
+                LEFT JOIN prospective_experiment_survey_basic_check_info pesbci
+                ON pesbci.person_id = pbi.id AND pesbci.time_point = #{req.timePoint}
+                LEFT JOIN prospective_experiment_survey_highland_diseases_during_service peshdds
+                ON peshdds.person_id = pbi.id AND peshdds.time_point = #{req.timePoint}
+                LEFT JOIN prospective_experiment_survey_station_training_info pessti
+                ON pessti.person_id = pbi.id AND pessti.time_point = #{req.timePoint}
+                LEFT JOIN prospective_experiment_survey_mission_progress_survey pesmps
+                ON pesmps.person_id = pbi.id AND pesmps.time_point = #{req.timePoint}
+                LEFT JOIN prospective_experiment_survey_score_summary pesss
+                ON pesss.person_id = pbi.id AND pesss.time_point = #{req.timePoint}
+                LEFT JOIN prospective_experiment_survey_score_summary pesss2
+                ON pesss2.person_id = pbi.id AND pesss2.time_point = 2
+                LEFT JOIN prospective_experiment_survey_medical_history pesmh
+                ON pesmh.person_id = pbi.id AND pesmh.time_point = #{req.timePoint}
+                LEFT JOIN prospective_experiment_survey_plateau_arrival_symptoms pespas
+                ON pespas.person_id = pbi.id AND pespas.time_point = #{req.timePoint}
+                LEFT JOIN prospective_experiment_survey_plateau_fitness_info pespfi
+                ON pespfi.person_id = pbi.id AND pespfi.time_point = #{req.timePoint}
+                LEFT JOIN prospective_experiment_survey_post_return_symptoms pesprs
+                ON pesprs.person_id = pbi.id AND pesprs.time_point = #{req.timePoint}
+                LEFT JOIN prospective_experiment_survey_self_assessment pessa
+                ON pessa.person_id = pbi.id AND pessa.time_point = #{req.timePoint}
+                LEFT JOIN prospective_experiment_survey_smoking_info pessi
+                ON pessi.person_id = pbi.id AND pessi.time_point = #{req.timePoint}
+                LEFT JOIN prospective_experiment_exam_biochemical_tests_v2 peebt
+                ON peebt.person_id = pbi.id AND peebt.time_point = #{req.timePoint}
+                LEFT JOIN prospective_experiment_exam_blood_routine peebr
+                ON peebr.person_id = pbi.id AND peebr.time_point = #{req.timePoint}
+                LEFT JOIN prospective_experiment_exam_coagulation_tests peect
+                ON peect.person_id = pbi.id AND peect.time_point = #{req.timePoint}
+                LEFT JOIN prospective_experiment_exam_other_data peeod
+                ON peeod.person_id = pbi.id AND peeod.time_point = #{req.timePoint}
+                LEFT JOIN prospective_control_exam_biochemical_tests_v2 pcebt
+                ON pcebt.person_id = pbi.id AND pcebt.time_point = #{req.timePoint}
+                LEFT JOIN prospective_control_exam_blood_routine pcebr
+                ON pcebr.person_id = pbi.id AND pcebr.time_point = #{req.timePoint}
+                LEFT JOIN prospective_control_exam_coagulation_tests pcect
+                ON pcect.person_id = pbi.id AND pcect.time_point = #{req.timePoint}
+                LEFT JOIN prospective_control_exam_other_data pceod
+                ON pceod.person_id = pbi.id AND pceod.time_point = #{req.timePoint}
+                LEFT JOIN prospective_control_survey_basic_check_info pcsbci
+                ON pcsbci.person_id = pbi.id AND pcsbci.time_point = #{req.timePoint}
+                LEFT JOIN prospective_control_survey_mission_progress_survey pcsmps
+                ON pcsmps.person_id = pbi.id AND pcsmps.time_point = #{req.timePoint}
+                LEFT JOIN prospective_control_survey_post_return_symptoms pcsprs
+                ON pcsprs.person_id = pbi.id AND pcsprs.time_point = #{req.timePoint}
+                LEFT JOIN prospective_control_survey_score_summary pcscs
+                ON pcscs.person_id = pbi.id AND pcscs.time_point = #{req.timePoint}
+                LEFT JOIN prospective_control_survey_station_training_info pcssti
+                ON pcssti.person_id = pbi.id AND pcssti.time_point = #{req.timePoint}
+            </when>
+            <otherwise>
+                LEFT JOIN prospective_basic_other_info pboi
+                ON pboi.person_id = pbi.id
+                LEFT JOIN prospective_experiment_survey_acute_mountain_sickness_records pessamsr
+                ON pessamsr.person_id = pbi.id
+                LEFT JOIN prospective_experiment_survey_basic_check_info pesbci
+                ON pesbci.person_id = pbi.id
+                LEFT JOIN prospective_experiment_survey_highland_diseases_during_service peshdds
+                ON peshdds.person_id = pbi.id
+                LEFT JOIN prospective_experiment_survey_station_training_info pessti
+                ON pessti.person_id = pbi.id
+                LEFT JOIN prospective_experiment_survey_mission_progress_survey pesmps
+                ON pesmps.person_id = pbi.id
+                LEFT JOIN prospective_experiment_survey_score_summary pesss
+                ON pesss.person_id = pbi.id
+                LEFT JOIN prospective_experiment_survey_score_summary pesss2
+                ON pesss2.person_id = pbi.id AND pesss2.time_point = 2
+                LEFT JOIN prospective_experiment_survey_medical_history pesmh
+                ON pesmh.person_id = pbi.id
+                LEFT JOIN prospective_experiment_survey_plateau_arrival_symptoms pespas
+                ON pespas.person_id = pbi.id
+                LEFT JOIN prospective_experiment_survey_plateau_fitness_info pespfi
+                ON pespfi.person_id = pbi.id
+                LEFT JOIN prospective_experiment_survey_post_return_symptoms pesprs
+                ON pesprs.person_id = pbi.id
+                LEFT JOIN prospective_experiment_survey_self_assessment pessa
+                ON pessa.person_id = pbi.id
+                LEFT JOIN prospective_experiment_survey_smoking_info pessi
+                ON pessi.person_id = pbi.id
+                LEFT JOIN prospective_experiment_exam_biochemical_tests_v2 peebt
+                ON peebt.person_id = pbi.id
+                LEFT JOIN prospective_experiment_exam_blood_routine peebr
+                ON peebr.person_id = pbi.id
+                LEFT JOIN prospective_experiment_exam_coagulation_tests peect
+                ON peect.person_id = pbi.id
+                LEFT JOIN prospective_experiment_exam_other_data peeod
+                ON peeod.person_id = pbi.id
+                LEFT JOIN prospective_control_exam_biochemical_tests_v2 pcebt
+                ON pcebt.person_id = pbi.id
+                LEFT JOIN prospective_control_exam_blood_routine pcebr
+                ON pcebr.person_id = pbi.id
+                LEFT JOIN prospective_control_exam_coagulation_tests pcect
+                ON pcect.person_id = pbi.id
+                LEFT JOIN prospective_control_exam_other_data pceod
+                ON pceod.person_id = pbi.id
+                LEFT JOIN prospective_control_survey_basic_check_info pcsbci
+                ON pcsbci.person_id = pbi.id
+                LEFT JOIN prospective_control_survey_mission_progress_survey pcsmps
+                ON pcsmps.person_id = pbi.id
+                LEFT JOIN prospective_control_survey_post_return_symptoms pcsprs
+                ON pcsprs.person_id = pbi.id
+                LEFT JOIN prospective_control_survey_score_summary pcscs
+                ON pcscs.person_id = pbi.id
+                LEFT JOIN prospective_control_survey_station_training_info pcssti
+                ON pcssti.person_id = pbi.id
+            </otherwise>
+        </choose>
+        <where>
+            <if test="req.advancedConditions != null and req.advancedConditions.size() > 0">
+                <trim prefix="AND (" suffix=")" suffixOverrides="AND OR">
+                    <foreach collection="req.advancedConditions" item="cond" separator=" ">
+                        <choose>
+                            <when test="cond.logic != null and cond.logic.toUpperCase() == 'NOT'">
+                                NOT (${cond.field} ${cond.operator}
+                                <if test="cond.operator.toLowerCase() == 'like'">
+                                    CONCAT('%', #{cond.value}, '%'))
+                                </if>
+                                <if test="cond.operator.toLowerCase() != 'like'">
+                                    #{cond.value})
+                                </if>
+                            </when>
+                            <otherwise>
+                                ${cond.logic} ${cond.field} ${cond.operator}
+                                <if test="cond.operator.toLowerCase() == 'like'">
+                                    CONCAT('%', #{cond.value}, '%')
+                                </if>
+                                <if test="cond.operator.toLowerCase() != 'like'">
+                                    #{cond.value}
+                                </if>
+                            </otherwise>
+                        </choose>
+                    </foreach>
+                </trim>
+            </if>
+        </where>
+    </select>
+
+    <select id="getAverageByParam"
+            parameterType="cn.iocoder.yudao.module.prospective.controller.admin.basicinfo.vo.BasicInfoPageReqVO"
+            resultType="cn.iocoder.yudao.module.prospective.controller.admin.basicinfo.vo.BasicInfoAverageVO">
+        SELECT
+        (COUNT(*) * 1.0 / (SELECT COUNT(*) FROM prospective_basic_info where
+        1=1
+        <if test="req.isVip != 'vip'">
+            AND time_point = #{req.timePoint}
+            <if test="req.surveyOrExam != null and req.surveyOrExam != ''">
+                AND survey_or_exam = #{req.surveyOrExam}
+            </if>
+        </if>
+        <if test="req.isVip != null and req.isVip != ''">
+            AND is_vip = #{req.isVip}
+        </if>
+        <if test="req.type != 0 and req.year != 0 and req.group == 1">
+            AND type = CONCAT(#{req.type}, '-', #{req.year})
+        </if>
+        <if test="(req.type != 0) and (req.year == 0) and req.group == 1">
+            AND type in (CONCAT(#{req.type}, '-23'), CONCAT(#{req.type}, '-24'))
+        </if>
+        <if test="(req.type == 0) and (req.year != 0) and req.group == 1">
+            AND type in (CONCAT('181-', #{req.year}), CONCAT('363-', #{req.year}))
+        </if>
+        )) AS data_ratio,
+        COUNT(CASE WHEN pbi.gender = '男' THEN 1 END) AS male_count,
+        COUNT(CASE WHEN pbi.gender = '女' THEN 1 END) AS female_count,
+        -- 年龄相关统计
+        AVG(pbi.actual_age) AS average_age,
+        MIN(pbi.actual_age) AS min_age,
+        MAX(pbi.actual_age) AS max_age,
+
+        -- plateau_mission_duration 统计
+        AVG(pesmps.plateau_mission_duration) AS average_plateau_mission_duration,
+        MIN(pesmps.plateau_mission_duration) AS min_plateau_mission_duration,
+        MAX(pesmps.plateau_mission_duration) AS max_plateau_mission_duration,
+        COUNT(CASE WHEN pesss.total_score &lt; 6 THEN 1 END) AS score_lt_6,
+        COUNT(CASE WHEN pesss.total_score &gt;= 6 AND pesss.total_score &lt;= 15 THEN 1 END) AS score_6_to_15,
+        COUNT(CASE WHEN pesss.total_score &gt; 15 AND pesss.total_score &lt;= 25 THEN 1 END) AS score_16_to_25,
+        COUNT(CASE WHEN pesss.total_score &gt; 25 THEN 1 END) AS score_gt_25,
+        COUNT(CASE WHEN pesss.total_score &gt;= 6 THEN 1 END) AS score_gte_6,
+        -- 在 time_point=2 得分>=6，time_point=3 得分小于6 的人数
+        (
+        SELECT COUNT(*)
+        FROM prospective_experiment_survey_score_summary t2
+        JOIN prospective_experiment_survey_score_summary t3
+        ON t2.person_id = t3.person_id
+        WHERE t2.time_point = 2
+        AND t2.total_score &gt;= 6
+        AND t3.time_point = 3
+        AND t3.total_score &lt; 6
+        AND t2.person_id IN (
+        SELECT id FROM prospective_basic_info
+        WHERE
+        1=1
+        <if test="req.isVip != 'vip'">
+            AND time_point = #{req.timePoint}
+            <if test="req.surveyOrExam != null and req.surveyOrExam != ''">
+                AND survey_or_exam = #{req.surveyOrExam}
+            </if>
+        </if>
+        <if test="req.isVip != null and req.isVip != ''">
+            AND is_vip = #{req.isVip}
+        </if>
+        <if test="req.type != 0 and req.year != 0 and req.group == 1">
+            AND type = CONCAT(#{req.type}, '-', #{req.year})
+        </if>
+        <if test="(req.type != 0) and (req.year == 0) and req.group == 1">
+            AND type in (CONCAT(#{req.type}, '-23'), CONCAT(#{req.type}, '-24'))
+        </if>
+        <if test="(req.type == 0) and (req.year != 0) and req.group == 1">
+            AND type in (CONCAT('181-', #{req.year}), CONCAT('363-', #{req.year}))
+        </if>
+        )
+        ) AS score_downgrade_count1,
+        -- 在 time_point=2 得分>=6，time_point=3 得分小于6 的人数
+        (
+        SELECT COUNT(*)
+        FROM prospective_experiment_survey_score_summary t2
+        JOIN prospective_experiment_survey_score_summary t3
+        ON t2.person_id = t3.person_id
+        WHERE t2.time_point = 2
+        AND t2.total_score &gt;= 6
+        AND t3.time_point = 3
+        AND t3.total_score &gt;= 6
+        AND t2.person_id IN (
+        SELECT id FROM prospective_basic_info
+        WHERE
+        1=1
+        <if test="req.isVip != 'vip'">
+            AND time_point = #{req.timePoint}
+            <if test="req.surveyOrExam != null and req.surveyOrExam != ''">
+                AND survey_or_exam = #{req.surveyOrExam}
+            </if>
+        </if>
+        <if test="req.isVip != null and req.isVip != ''">
+            AND is_vip = #{req.isVip}
+        </if>
+        <if test="req.type != 0 and req.year != 0 and req.group == 1">
+            AND type = CONCAT(#{req.type}, '-', #{req.year})
+        </if>
+        <if test="(req.type != 0) and (req.year == 0) and req.group == 1">
+            AND type in (CONCAT(#{req.type}, '-23'), CONCAT(#{req.type}, '-24'))
+        </if>
+        <if test="(req.type == 0) and (req.year != 0) and req.group == 1">
+            AND type in (CONCAT('181-', #{req.year}), CONCAT('363-', #{req.year}))
+        </if>
+        )
+        ) AS score_downgrade_count2,
+        -- 在 time_point=2 得分>=6，time_point=3 得分小于6 的人数
+        (
+        SELECT COUNT(*)
+        FROM prospective_experiment_survey_score_summary t2
+        JOIN prospective_experiment_survey_score_summary t3
+        ON t2.person_id = t3.person_id
+        WHERE t2.time_point = 2
+        AND t2.total_score &lt; 6
+        AND t3.time_point = 3
+        AND t3.total_score &gt;= 6
+        AND t2.person_id IN (
+        SELECT id FROM prospective_basic_info
+        WHERE
+        1=1
+        <if test="req.isVip != 'vip'">
+            AND time_point = #{req.timePoint}
+            <if test="req.surveyOrExam != null and req.surveyOrExam != ''">
+                AND survey_or_exam = #{req.surveyOrExam}
+            </if>
+        </if>
+        <if test="req.isVip != null and req.isVip != ''">
+            AND is_vip = #{req.isVip}
+        </if>
+        <if test="req.type != 0 and req.year != 0 and req.group == 1">
+            AND type = CONCAT(#{req.type}, '-', #{req.year})
+        </if>
+        <if test="(req.type != 0) and (req.year == 0) and req.group == 1">
+            AND type in (CONCAT(#{req.type}, '-23'), CONCAT(#{req.type}, '-24'))
+        </if>
+        <if test="(req.type == 0) and (req.year != 0) and req.group == 1">
+            AND type in (CONCAT('181-', #{req.year}), CONCAT('363-', #{req.year}))
+        </if>
+        )
+        ) AS score_downgrade_count3,
+        -- 在 time_point=2 得分>=6，time_point=3 得分小于6 的人数
+        (
+        SELECT COUNT(*)
+        FROM prospective_experiment_survey_score_summary t2
+        JOIN prospective_experiment_survey_score_summary t3
+        ON t2.person_id = t3.person_id
+        WHERE t2.time_point = 2
+        AND t2.total_score &lt; 6
+        AND t3.time_point = 3
+        AND t3.total_score &lt; 6
+        AND t2.person_id IN (
+        SELECT id FROM prospective_basic_info
+        WHERE
+        1=1
+        <if test="req.isVip != 'vip'">
+            AND time_point = #{req.timePoint}
+            <if test="req.surveyOrExam != null and req.surveyOrExam != ''">
+                AND survey_or_exam = #{req.surveyOrExam}
+            </if>
+        </if>
+        <if test="req.isVip != null and req.isVip != ''">
+            AND is_vip = #{req.isVip}
+        </if>
+        <if test="req.type != 0 and req.year != 0 and req.group == 1">
+            AND type = CONCAT(#{req.type}, '-', #{req.year})
+        </if>
+        <if test="(req.type != 0) and (req.year == 0) and req.group == 1">
+            AND type in (CONCAT(#{req.type}, '-23'), CONCAT(#{req.type}, '-24'))
+        </if>
+        <if test="(req.type == 0) and (req.year != 0) and req.group == 1">
+            AND type in (CONCAT('181-', #{req.year}), CONCAT('363-', #{req.year}))
+        </if>
+        )
+        ) AS score_downgrade_count4,
+        -- 在 time_point=2 得分>=6，time_point=3 得分小于6 的人数
+        (
+        SELECT COUNT(*)
+        FROM prospective_experiment_survey_score_summary t2
+        JOIN prospective_experiment_survey_score_summary t3
+        ON t2.person_id = t3.person_id
+        WHERE t2.time_point = 2
+        AND t2.total_score &gt; 25
+        AND t3.time_point = 3
+        AND t3.total_score &gt; 25
+        AND t2.person_id IN (
+        SELECT id FROM prospective_basic_info
+        WHERE
+        1=1
+        <if test="req.isVip != 'vip'">
+            AND time_point = #{req.timePoint}
+            <if test="req.surveyOrExam != null and req.surveyOrExam != ''">
+                AND survey_or_exam = #{req.surveyOrExam}
+            </if>
+        </if>
+        <if test="req.isVip != null and req.isVip != ''">
+            AND is_vip = #{req.isVip}
+        </if>
+        <if test="req.type != 0 and req.year != 0 and req.group == 1">
+            AND type = CONCAT(#{req.type}, '-', #{req.year})
+        </if>
+        <if test="(req.type != 0) and (req.year == 0) and req.group == 1">
+            AND type in (CONCAT(#{req.type}, '-23'), CONCAT(#{req.type}, '-24'))
+        </if>
+        <if test="(req.type == 0) and (req.year != 0) and req.group == 1">
+            AND type in (CONCAT('181-', #{req.year}), CONCAT('363-', #{req.year}))
+        </if>
+        )
+        ) AS score_downgrade_count5,
+        -- 在 time_point=2 得分>=6，time_point=3 得分小于6 的人数
+        (
+        SELECT COUNT(*)
+        FROM prospective_experiment_survey_score_summary t2
+        JOIN prospective_experiment_survey_score_summary t3
+        ON t2.person_id = t3.person_id
+        WHERE t2.time_point = 2
+        AND t2.total_score &lt;= 25
+        AND t3.time_point = 3
+        AND t3.total_score &gt; 25
+        AND t2.person_id IN (
+        SELECT id FROM prospective_basic_info
+        WHERE
+        1=1
+        <if test="req.isVip != 'vip'">
+            AND time_point = #{req.timePoint}
+            <if test="req.surveyOrExam != null and req.surveyOrExam != ''">
+                AND survey_or_exam = #{req.surveyOrExam}
+            </if>
+        </if>
+        <if test="req.isVip != null and req.isVip != ''">
+            AND is_vip = #{req.isVip}
+        </if>
+        <if test="req.type != 0 and req.year != 0 and req.group == 1">
+            AND type = CONCAT(#{req.type}, '-', #{req.year})
+        </if>
+        <if test="(req.type != 0) and (req.year == 0) and req.group == 1">
+            AND type in (CONCAT(#{req.type}, '-23'), CONCAT(#{req.type}, '-24'))
+        </if>
+        <if test="(req.type == 0) and (req.year != 0) and req.group == 1">
+            AND type in (CONCAT('181-', #{req.year}), CONCAT('363-', #{req.year}))
+        </if>
+        )
+        ) AS score_downgrade_count6,
+        SUM(pesprs.fatigue) AS fatigue_sum,
+        SUM(pesprs.weakness) AS weakness_sum,
+        SUM(pesprs.drowsiness) AS drowsiness_sum,
+        SUM(pesprs.dizziness) AS dizziness_sum,
+        SUM(pesprs.vertigo) AS vertigo_sum,
+        SUM(pesprs.poor_concentration) AS poor_concentration_sum,
+        SUM(pesprs.slow_reaction) AS slow_reaction_sum,
+        SUM(pesprs.memory_loss) AS memory_loss_sum,
+        SUM(pesprs.insomnia) AS insomnia_sum,
+        SUM(pesprs.nightmares) AS nightmares_sum,
+        SUM(pesprs.sore_throat) AS sore_throat_sum,
+        SUM(pesprs.cough) AS cough_sum,
+        SUM(pesprs.phlegm) AS phlegm_sum,
+        SUM(pesprs.wheezing) AS wheezing_sum,
+        SUM(pesprs.chest_tightness) AS chest_tightness_sum,
+        SUM(pesprs.chest_pain) AS chest_pain_sum,
+        SUM(pesprs.palpitations) AS palpitations_sum,
+        SUM(pesprs.bradycardia) AS bradycardia_sum,
+        SUM(pesprs.cyanosis) AS cyanosis_sum,
+        SUM(pesprs.blood_pressure_fluctuation) AS blood_pressure_fluctuation_sum,
+        SUM(pesprs.skin_bleeding) AS skin_bleeding_sum,
+        SUM(pesprs.skin_bruising) AS skin_bruising_sum,
+        SUM(pesprs.anemia) AS anemia_sum,
+        SUM(pesprs.weight_loss) AS weight_loss_sum,
+        SUM(pesprs.increased_appetite) AS increased_appetite_sum,
+        SUM(pesprs.anorexia) AS anorexia_sum,
+        SUM(pesprs.constipation) AS constipation_sum,
+        SUM(pesprs.diarrhea) AS diarrhea_sum,
+        SUM(pesprs.abdominal_pain) AS abdominal_pain_sum,
+        SUM(pesprs.abdominal_distension) AS abdominal_distension_sum,
+        SUM(pesprs.jaundice) AS jaundice_sum,
+        SUM(pesprs.numbness) AS numbness_sum,
+        SUM(pesprs.limb_edema) AS limb_edema_sum,
+        SUM(pesprs.facial_edema) AS facial_edema_sum,
+        SUM(pesprs.hair_loss) AS hair_loss_sum,
+        SUM(pesprs.increased_urination) AS increased_urination_sum
+        FROM (
+        SELECT * FROM prospective_basic_info
+        WHERE 1=1
+        <if test="req.isVip != 'vip'">
+            AND time_point = #{req.timePoint}
+            <if test="req.surveyOrExam != null and req.surveyOrExam != ''">
+                AND survey_or_exam = #{req.surveyOrExam}
+            </if>
+        </if>
+        <if test="req.isVip != null and req.isVip != ''">
+            AND is_vip = #{req.isVip}
+        </if>
+        <if test="req.type != 0 and req.year != 0 and req.group == 1">
+            AND type = CONCAT(#{req.type}, '-', #{req.year})
+        </if>
+        <if test="(req.type != 0) and (req.year == 0) and req.group == 1">
+            AND type in (CONCAT(#{req.type}, '-23'), CONCAT(#{req.type}, '-24'))
+        </if>
+        <if test="(req.type == 0) and (req.year != 0) and req.group == 1">
+            AND type in (CONCAT('181-', #{req.year}), CONCAT('363-', #{req.year}))
+        </if>
+        ) pbi
+        <choose>
+            <when test="req.group == 1">
+                LEFT JOIN prospective_basic_other_info pboi
+                ON pboi.person_id = pbi.id
+                <if test="req.isVip != 'vip'">
+                    AND pboi.time_point = #{req.timePoint}
+                </if>
+                LEFT JOIN prospective_experiment_survey_acute_mountain_sickness_records pessamsr
+                ON pessamsr.person_id = pbi.id AND pessamsr.time_point = #{req.timePoint}
+                LEFT JOIN prospective_experiment_survey_basic_check_info pesbci
+                ON pesbci.person_id = pbi.id AND pesbci.time_point = #{req.timePoint}
+                LEFT JOIN prospective_experiment_survey_highland_diseases_during_service peshdds
+                ON peshdds.person_id = pbi.id AND peshdds.time_point = #{req.timePoint}
+                LEFT JOIN prospective_experiment_survey_station_training_info pessti
+                ON pessti.person_id = pbi.id AND pessti.time_point = #{req.timePoint}
+                LEFT JOIN prospective_experiment_survey_mission_progress_survey pesmps
+                ON pesmps.person_id = pbi.id AND pesmps.time_point = #{req.timePoint}
+                LEFT JOIN prospective_experiment_survey_score_summary pesss
+                ON pesss.person_id = pbi.id AND pesss.time_point = #{req.timePoint}
+                LEFT JOIN prospective_experiment_survey_score_summary pesss2
+                ON pesss2.person_id = pbi.id AND pesss2.time_point = 2
+                LEFT JOIN prospective_experiment_survey_medical_history pesmh
+                ON pesmh.person_id = pbi.id AND pesmh.time_point = #{req.timePoint}
+                LEFT JOIN prospective_experiment_survey_plateau_arrival_symptoms pespas
+                ON pespas.person_id = pbi.id AND pespas.time_point = #{req.timePoint}
+                LEFT JOIN prospective_experiment_survey_plateau_fitness_info pespfi
+                ON pespfi.person_id = pbi.id AND pespfi.time_point = #{req.timePoint}
+                LEFT JOIN prospective_experiment_survey_post_return_symptoms pesprs
+                ON pesprs.person_id = pbi.id AND pesprs.time_point = #{req.timePoint}
+                LEFT JOIN prospective_experiment_survey_self_assessment pessa
+                ON pessa.person_id = pbi.id AND pessa.time_point = #{req.timePoint}
+                LEFT JOIN prospective_experiment_survey_smoking_info pessi
+                ON pessi.person_id = pbi.id AND pessi.time_point = #{req.timePoint}
+                LEFT JOIN prospective_experiment_exam_biochemical_tests_v2 peebt
+                ON peebt.person_id = pbi.id AND peebt.time_point = #{req.timePoint}
+                LEFT JOIN prospective_experiment_exam_blood_routine peebr
+                ON peebr.person_id = pbi.id AND peebr.time_point = #{req.timePoint}
+                LEFT JOIN prospective_experiment_exam_coagulation_tests peect
+                ON peect.person_id = pbi.id AND peect.time_point = #{req.timePoint}
+                LEFT JOIN prospective_experiment_exam_other_data peeod
+                ON peeod.person_id = pbi.id AND peeod.time_point = #{req.timePoint}
+                LEFT JOIN prospective_control_exam_biochemical_tests_v2 pcebt
+                ON pcebt.person_id = pbi.id AND pcebt.time_point = #{req.timePoint}
+                LEFT JOIN prospective_control_exam_blood_routine pcebr
+                ON pcebr.person_id = pbi.id AND pcebr.time_point = #{req.timePoint}
+                LEFT JOIN prospective_control_exam_coagulation_tests pcect
+                ON pcect.person_id = pbi.id AND pcect.time_point = #{req.timePoint}
+                LEFT JOIN prospective_control_exam_other_data pceod
+                ON pceod.person_id = pbi.id AND pceod.time_point = #{req.timePoint}
+                LEFT JOIN prospective_control_survey_basic_check_info pcsbci
+                ON pcsbci.person_id = pbi.id AND pcsbci.time_point = #{req.timePoint}
+                LEFT JOIN prospective_control_survey_mission_progress_survey pcsmps
+                ON pcsmps.person_id = pbi.id AND pcsmps.time_point = #{req.timePoint}
+                LEFT JOIN prospective_control_survey_post_return_symptoms pcsprs
+                ON pcsprs.person_id = pbi.id AND pcsprs.time_point = #{req.timePoint}
+                LEFT JOIN prospective_control_survey_score_summary pcscs
+                ON pcscs.person_id = pbi.id AND pcscs.time_point = #{req.timePoint}
+                LEFT JOIN prospective_control_survey_station_training_info pcssti
+                ON pcssti.person_id = pbi.id AND pcssti.time_point = #{req.timePoint}
+            </when>
+            <otherwise>
+                LEFT JOIN prospective_basic_other_info pboi
+                ON pboi.person_id = pbi.id
+                LEFT JOIN prospective_experiment_survey_acute_mountain_sickness_records pessamsr
+                ON pessamsr.person_id = pbi.id
+                LEFT JOIN prospective_experiment_survey_basic_check_info pesbci
+                ON pesbci.person_id = pbi.id
+                LEFT JOIN prospective_experiment_survey_highland_diseases_during_service peshdds
+                ON peshdds.person_id = pbi.id
+                LEFT JOIN prospective_experiment_survey_station_training_info pessti
+                ON pessti.person_id = pbi.id
+                LEFT JOIN prospective_experiment_survey_mission_progress_survey pesmps
+                ON pesmps.person_id = pbi.id
+                LEFT JOIN prospective_experiment_survey_score_summary pesss
+                ON pesss.person_id = pbi.id
+                LEFT JOIN prospective_experiment_survey_score_summary pesss2
+                ON pesss2.person_id = pbi.id AND pesss2.time_point = 2
+                LEFT JOIN prospective_experiment_survey_medical_history pesmh
+                ON pesmh.person_id = pbi.id
+                LEFT JOIN prospective_experiment_survey_plateau_arrival_symptoms pespas
+                ON pespas.person_id = pbi.id
+                LEFT JOIN prospective_experiment_survey_plateau_fitness_info pespfi
+                ON pespfi.person_id = pbi.id
+                LEFT JOIN prospective_experiment_survey_post_return_symptoms pesprs
+                ON pesprs.person_id = pbi.id
+                LEFT JOIN prospective_experiment_survey_self_assessment pessa
+                ON pessa.person_id = pbi.id
+                LEFT JOIN prospective_experiment_survey_smoking_info pessi
+                ON pessi.person_id = pbi.id
+                LEFT JOIN prospective_experiment_exam_biochemical_tests_v2 peebt
+                ON peebt.person_id = pbi.id
+                LEFT JOIN prospective_experiment_exam_blood_routine peebr
+                ON peebr.person_id = pbi.id
+                LEFT JOIN prospective_experiment_exam_coagulation_tests peect
+                ON peect.person_id = pbi.id
+                LEFT JOIN prospective_experiment_exam_other_data peeod
+                ON peeod.person_id = pbi.id
+                LEFT JOIN prospective_control_exam_biochemical_tests_v2 pcebt
+                ON pcebt.person_id = pbi.id
+                LEFT JOIN prospective_control_exam_blood_routine pcebr
+                ON pcebr.person_id = pbi.id
+                LEFT JOIN prospective_control_exam_coagulation_tests pcect
+                ON pcect.person_id = pbi.id
+                LEFT JOIN prospective_control_exam_other_data pceod
+                ON pceod.person_id = pbi.id
+                LEFT JOIN prospective_control_survey_basic_check_info pcsbci
+                ON pcsbci.person_id = pbi.id
+                LEFT JOIN prospective_control_survey_mission_progress_survey pcsmps
+                ON pcsmps.person_id = pbi.id
+                LEFT JOIN prospective_control_survey_post_return_symptoms pcsprs
+                ON pcsprs.person_id = pbi.id
+                LEFT JOIN prospective_control_survey_score_summary pcscs
+                ON pcscs.person_id = pbi.id
+                LEFT JOIN prospective_control_survey_station_training_info pcssti
+                ON pcssti.person_id = pbi.id
+            </otherwise>
+        </choose>
+        <where>
+            <if test="req.advancedConditions != null and req.advancedConditions.size() > 0">
+                <trim prefix="AND (" suffix=")" suffixOverrides="AND OR">
+                    <foreach collection="req.advancedConditions" item="cond" separator=" ">
+                        <choose>
+                            <when test="cond.logic != null and cond.logic.toUpperCase() == 'NOT'">
+                                NOT (${cond.field} ${cond.operator}
+                                <if test="cond.operator.toLowerCase() == 'like'">
+                                    CONCAT('%', #{cond.value}, '%'))
+                                </if>
+                                <if test="cond.operator.toLowerCase() != 'like'">
+                                    #{cond.value})
+                                </if>
+                            </when>
+                            <otherwise>
+                                ${cond.logic} ${cond.field} ${cond.operator}
+                                <if test="cond.operator.toLowerCase() == 'like'">
+                                    CONCAT('%', #{cond.value}, '%')
+                                </if>
+                                <if test="cond.operator.toLowerCase() != 'like'">
+                                    #{cond.value}
+                                </if>
+                            </otherwise>
+                        </choose>
+                    </foreach>
+                </trim>
+            </if>
+        </where>
+    </select>
+
+
+    <select id="getVipNumber1" resultType="java.lang.Integer">
+        SELECT COUNT(DISTINCT pbi.id)
+        FROM prospective_basic_info pbi
+                 LEFT JOIN prospective_experiment_survey_station_training_info pessti
+                           ON pessti.person_id = pbi.id
+        WHERE pbi.is_vip = 'vip'
+          and 12 > pessti.plateau_training_duration
+    </select>
+
+    <select id="getVipNumber2" resultType="java.lang.Integer">
+        SELECT COUNT(DISTINCT pbi.id)
+        FROM prospective_basic_info pbi
+                 LEFT JOIN prospective_experiment_survey_station_training_info pessti
+                           ON pessti.person_id = pbi.id
+        WHERE pbi.is_vip = 'vip'
+          and pessti.plateau_training_duration >= 12
+    </select>
+
+    <select id="getVipNumber3" resultType="java.lang.Integer">
+        SELECT COUNT(DISTINCT pbi.id)
+        FROM prospective_basic_info pbi
+        WHERE pbi.survey_or_exam='survey' and type = '对照组'
+    </select>
+
+    <select id="getQueue1" resultType="cn.iocoder.yudao.module.prospective.controller.admin.basicinfo.vo.BasicInfoAverageVO">
+        SELECT
+            COUNT(CASE WHEN gender = '男' AND is_vip = 'vip' THEN 1 END) AS male_count,
+            COUNT(CASE WHEN gender = '女' AND is_vip = 'vip' THEN 1 END) AS female_count,
+            AVG(actual_age) AS average_age,
+            MIN(actual_age) AS min_age,
+            MAX(actual_age) AS max_age,
+            AVG(mission_point_altitude) AS average_mission_point_altitude,
+            MIN(mission_point_altitude) AS min_mission_point_altitude,
+            MAX(mission_point_altitude) AS max_mission_point_altitude,
+            AVG(plateau_training_duration) AS average_plateau_mission_duration,
+            MIN(plateau_training_duration) AS min_plateau_mission_duration,
+            MAX(plateau_training_duration) AS max_plateau_mission_duration
+        FROM (
+                 SELECT DISTINCT pbi.id, pbi.gender, pbi.actual_age, pbi.is_vip,pessti.plateau_training_duration, pessti.mission_point_altitude
+                 FROM prospective_basic_info pbi
+                          LEFT JOIN prospective_experiment_survey_station_training_info pessti
+                                    ON pessti.person_id = pbi.id
+                 WHERE pbi.is_vip = 'vip'
+                   AND 12 > pessti.plateau_training_duration
+             ) t
+    </select>
+
+    <select id="getQueue2" resultType="cn.iocoder.yudao.module.prospective.controller.admin.basicinfo.vo.BasicInfoAverageVO">
+        SELECT
+            COUNT(CASE WHEN gender = '男' AND is_vip = 'vip' THEN 1 END) AS male_count,
+            COUNT(CASE WHEN gender = '女' AND is_vip = 'vip' THEN 1 END) AS female_count,
+            AVG(actual_age) AS average_age,
+            MIN(actual_age) AS min_age,
+            MAX(actual_age) AS max_age,
+            AVG(mission_point_altitude) AS average_mission_point_altitude,
+            MIN(mission_point_altitude) AS min_mission_point_altitude,
+            MAX(mission_point_altitude) AS max_mission_point_altitude,
+            AVG(plateau_training_duration) AS average_plateau_mission_duration,
+            MIN(plateau_training_duration) AS min_plateau_mission_duration,
+            MAX(plateau_training_duration) AS max_plateau_mission_duration
+        FROM (
+                 SELECT DISTINCT pbi.id, pbi.gender, pbi.actual_age, pbi.is_vip,pessti.plateau_training_duration, pessti.mission_point_altitude
+                 FROM prospective_basic_info pbi
+                          LEFT JOIN prospective_experiment_survey_station_training_info pessti
+                                    ON pessti.person_id = pbi.id
+                 WHERE pbi.is_vip = 'vip'
+                   AND pessti.plateau_training_duration >= 12
+             ) t
+    </select>
+
+    <select id="getQueue3" resultType="cn.iocoder.yudao.module.prospective.controller.admin.basicinfo.vo.BasicInfoAverageVO">
+        SELECT
+            COUNT(CASE WHEN gender = '男' THEN 1 END) AS male_count,
+            COUNT(CASE WHEN gender = '女' THEN 1 END) AS female_count,
+            AVG(actual_age) AS average_age,
+            MIN(actual_age) AS min_age,
+            MAX(actual_age) AS max_age,
+            AVG(mission_point_altitude) AS average_mission_point_altitude,
+            MIN(mission_point_altitude) AS min_mission_point_altitude,
+            MAX(mission_point_altitude) AS max_mission_point_altitude,
+            AVG(plateau_training_duration) AS average_plateau_mission_duration,
+            MIN(plateau_training_duration) AS min_plateau_mission_duration,
+            MAX(plateau_training_duration) AS max_plateau_mission_duration
+        FROM (
+                 SELECT DISTINCT pbi.id, pbi.gender, pbi.actual_age, pbi.is_vip,pessti.plateau_training_duration, pessti.mission_point_altitude
+                 FROM prospective_basic_info pbi
+                          LEFT JOIN prospective_experiment_survey_station_training_info pessti
+                                    ON pessti.person_id = pbi.id
+                 WHERE pbi.survey_or_exam='survey' AND type = '对照组'
+             ) t
+    </select>
+
+    <select id="getQueue1EthnicityCount" resultType="map">
+        SELECT
+            CASE
+                WHEN ethnicity IS NULL OR ethnicity = '' THEN '其他'
+                ELSE ethnicity
+                END AS ethnicity,
+            COUNT(*) AS count
+        FROM (
+            SELECT DISTINCT pbi.id, pboi.ethnicity
+            FROM prospective_basic_info pbi
+            LEFT JOIN prospective_basic_other_info pboi
+            ON pboi.person_id = pbi.id
+            LEFT JOIN prospective_experiment_survey_station_training_info pessti
+            ON pessti.person_id = pbi.id
+            WHERE pbi.is_vip = 'vip'
+            AND 12 > pessti.plateau_training_duration
+            ) t
+        GROUP BY
+            CASE
+            WHEN ethnicity IS NULL OR ethnicity = '' THEN '其他'
+            ELSE ethnicity
+        END
+        ORDER BY count DESC;
+    </select>
+
+    <select id="getQueue2EthnicityCount" resultType="map">
+        SELECT
+            CASE
+                WHEN ethnicity IS NULL OR ethnicity = '' THEN '其他'
+                ELSE ethnicity
+                END AS ethnicity,
+            COUNT(*) AS count
+        FROM (
+            SELECT DISTINCT pbi.id, pboi.ethnicity
+            FROM prospective_basic_info pbi
+            LEFT JOIN prospective_basic_other_info pboi
+            ON pboi.person_id = pbi.id
+            LEFT JOIN prospective_experiment_survey_station_training_info pessti
+            ON pessti.person_id = pbi.id
+            WHERE pbi.is_vip = 'vip'
+            AND pessti.plateau_training_duration >= 12
+            ) t
+        GROUP BY
+            CASE
+            WHEN ethnicity IS NULL OR ethnicity = '' THEN '其他'
+            ELSE ethnicity
+        END
+        ORDER BY count DESC;
+    </select>
+
+    <select id="getTimePoint"
+            parameterType="cn.iocoder.yudao.module.prospective.controller.admin.basicinfo.vo.BasicInfoPageReqVO"
+            resultType="cn.iocoder.yudao.module.prospective.controller.admin.basicinfo.vo.BasicInfoAverageVO">
+        select
+        COUNT(CASE WHEN total_score &lt; 6 AND time_point = 2 THEN 1 END) AS score_lt_6,
+        COUNT(CASE WHEN total_score &gt;= 6 AND total_score &lt;= 15 AND time_point = 2 THEN 1 END) AS score_6_to_15,
+        COUNT(CASE WHEN total_score &gt; 15 AND total_score &lt;= 25 AND time_point = 2 THEN 1 END) AS score_16_to_25,
+        COUNT(CASE WHEN total_score &gt; 25 AND time_point = 2 THEN 1 END) AS score_gt_25,
+        COUNT(CASE WHEN total_score &gt;= 6 AND time_point = 2 THEN 1 END) AS score_gte_6,
+        COUNT(CASE WHEN total_score &lt; 6 AND time_point = 3 THEN 1 END) AS score_lt_6_tp3,
+        COUNT(CASE WHEN total_score &gt;= 6 AND total_score &lt;= 15 AND time_point = 3 THEN 1 END) AS score_6_to_15_tp3,
+        COUNT(CASE WHEN total_score &gt; 15 AND total_score &lt;= 25 AND time_point = 3 THEN 1 END) AS score_16_to_25_tp3,
+        COUNT(CASE WHEN total_score &gt; 25 AND time_point = 3 THEN 1 END) AS score_gt_25_tp3,
+        COUNT(CASE WHEN total_score &gt;= 6 AND time_point = 3 THEN 1 END) AS score_gte_6_tp3,
+        -- 在 time_point=2 得分>=6，time_point=3 得分小于6 的人数 阳性转阴性
+        (
+        SELECT COUNT(*)
+        FROM prospective_experiment_survey_score_summary t2
+        JOIN prospective_experiment_survey_score_summary t3
+        ON t2.person_id = t3.person_id
+        WHERE t2.time_point = 2
+        AND t2.total_score &gt;= 6
+        AND t3.time_point = 3
+        AND t3.total_score &lt; 6
+        AND t2.person_id IN (
+        SELECT pbi.id FROM prospective_basic_info pbi
+        LEFT JOIN prospective_experiment_survey_station_training_info pessti ON pessti.person_id = pbi.id
+        WHERE is_vip = 'vip'
+        <if test="req.queueOption == 1">
+            AND 12 > pessti.plateau_training_duration
+        </if>
+        <if test="req.queueOption == 2">
+            AND pessti.plateau_training_duration >= 12
+        </if>
+        <if test="req.altitudeOption == 1">
+            AND mission_point_altitude >= 3000 AND 4000 > mission_point_altitude
+        </if>
+        <if test="req.altitudeOption == 2">
+            AND mission_point_altitude >= 4000 AND 5000 > mission_point_altitude
+        </if>
+        <if test="req.altitudeOption == 3">
+            AND mission_point_altitude >= 5000
+        </if>
+        )
+        ) AS score_downgrade_count1,
+        -- 在 time_point=2 得分>=6，time_point=3 得分>=6 的人数 持续阳性
+        (
+        SELECT COUNT(*)
+        FROM prospective_experiment_survey_score_summary t2
+        JOIN prospective_experiment_survey_score_summary t3
+        ON t2.person_id = t3.person_id
+        WHERE t2.time_point = 2
+        AND t2.total_score &gt;= 6
+        AND t3.time_point = 3
+        AND t3.total_score &gt;= 6
+        AND t2.person_id IN (
+        SELECT pbi.id FROM prospective_basic_info pbi
+        LEFT JOIN prospective_experiment_survey_station_training_info pessti ON pessti.person_id = pbi.id
+        WHERE is_vip = 'vip'
+        <if test="req.queueOption == 1">
+            AND 12 > pessti.plateau_training_duration
+        </if>
+        <if test="req.queueOption == 2">
+            AND pessti.plateau_training_duration >= 12
+        </if>
+        <if test="req.altitudeOption == 1">
+            AND mission_point_altitude >= 3000 AND 4000 > mission_point_altitude
+        </if>
+        <if test="req.altitudeOption == 2">
+            AND mission_point_altitude >= 4000 AND 5000 > mission_point_altitude
+        </if>
+        <if test="req.altitudeOption == 3">
+            AND mission_point_altitude >= 5000
+        </if>
+        )
+        ) AS score_downgrade_count2,
+        -- 在 time_point=2 得分小于6，time_point=3 得分>=6 的人数 阴性转阳性
+        (
+        SELECT COUNT(*)
+        FROM prospective_experiment_survey_score_summary t2
+        JOIN prospective_experiment_survey_score_summary t3
+        ON t2.person_id = t3.person_id
+        WHERE t2.time_point = 2
+        AND t2.total_score &lt; 6
+        AND t3.time_point = 3
+        AND t3.total_score &gt;= 6
+        AND t2.person_id IN (
+        SELECT pbi.id FROM prospective_basic_info pbi
+        LEFT JOIN prospective_experiment_survey_station_training_info pessti ON pessti.person_id = pbi.id
+        WHERE is_vip = 'vip'
+        <if test="req.queueOption == 1">
+            AND 12 > pessti.plateau_training_duration
+        </if>
+        <if test="req.queueOption == 2">
+            AND pessti.plateau_training_duration >= 12
+        </if>
+        <if test="req.altitudeOption == 1">
+            AND mission_point_altitude >= 3000 AND 4000 > mission_point_altitude
+        </if>
+        <if test="req.altitudeOption == 2">
+            AND mission_point_altitude >= 4000 AND 5000 > mission_point_altitude
+        </if>
+        <if test="req.altitudeOption == 3">
+            AND mission_point_altitude >= 5000
+        </if>
+        )
+        ) AS score_downgrade_count3,
+        -- 在 time_point=2 得分小于6，time_point=3 得分小于6 的人数 持续阴性
+        (
+        SELECT COUNT(*)
+        FROM prospective_experiment_survey_score_summary t2
+        JOIN prospective_experiment_survey_score_summary t3
+        ON t2.person_id = t3.person_id
+        WHERE t2.time_point = 2
+        AND t2.total_score &lt; 6
+        AND t3.time_point = 3
+        AND t3.total_score &lt; 6
+        AND t2.person_id IN (
+        SELECT pbi.id FROM prospective_basic_info pbi
+        LEFT JOIN prospective_experiment_survey_station_training_info pessti ON pessti.person_id = pbi.id
+        WHERE is_vip = 'vip'
+        <if test="req.queueOption == 1">
+            AND 12 > pessti.plateau_training_duration
+        </if>
+        <if test="req.queueOption == 2">
+            AND pessti.plateau_training_duration >= 12
+        </if>
+        <if test="req.altitudeOption == 1">
+            AND mission_point_altitude >= 3000 AND 4000 > mission_point_altitude
+        </if>
+        <if test="req.altitudeOption == 2">
+            AND mission_point_altitude >= 4000 AND 5000 > mission_point_altitude
+        </if>
+        <if test="req.altitudeOption == 3">
+            AND mission_point_altitude >= 5000
+        </if>
+        )
+        ) AS score_downgrade_count4,
+        -- 在 time_point=2 得分>25，time_point=3 得分>25 的人数 持续重度
+        (
+        SELECT COUNT(*)
+        FROM prospective_experiment_survey_score_summary t2
+        JOIN prospective_experiment_survey_score_summary t3
+        ON t2.person_id = t3.person_id
+        WHERE t2.time_point = 2
+        AND t2.total_score &gt; 25
+        AND t3.time_point = 3
+        AND t3.total_score &gt; 25
+        AND t2.person_id IN (
+        SELECT pbi.id FROM prospective_basic_info pbi
+        LEFT JOIN prospective_experiment_survey_station_training_info pessti ON pessti.person_id = pbi.id
+        WHERE is_vip = 'vip'
+        <if test="req.queueOption == 1">
+            AND 12 > pessti.plateau_training_duration
+        </if>
+        <if test="req.queueOption == 2">
+            AND pessti.plateau_training_duration >= 12
+        </if>
+        <if test="req.altitudeOption == 1">
+            AND mission_point_altitude >= 3000 AND 4000 > mission_point_altitude
+        </if>
+        <if test="req.altitudeOption == 2">
+            AND mission_point_altitude >= 4000 AND 5000 > mission_point_altitude
+        </if>
+        <if test="req.altitudeOption == 3">
+            AND mission_point_altitude >= 5000
+        </if>
+        )
+        ) AS score_downgrade_count5,
+        -- 在 time_point=2 得分小于等于25，time_point=3 得分>25 的人数 转为重度
+        (
+        SELECT COUNT(*)
+        FROM prospective_experiment_survey_score_summary t2
+        JOIN prospective_experiment_survey_score_summary t3
+        ON t2.person_id = t3.person_id
+        WHERE t2.time_point = 2
+        AND t2.total_score &lt;= 25
+        AND t3.time_point = 3
+        AND t3.total_score &gt; 25
+        AND t2.person_id IN (
+        SELECT pbi.id FROM prospective_basic_info pbi
+        LEFT JOIN prospective_experiment_survey_station_training_info pessti ON pessti.person_id = pbi.id
+        WHERE is_vip = 'vip'
+        <if test="req.queueOption == 1">
+            AND 12 > pessti.plateau_training_duration
+        </if>
+        <if test="req.queueOption == 2">
+            AND pessti.plateau_training_duration >= 12
+        </if>
+        <if test="req.altitudeOption == 1">
+            AND mission_point_altitude >= 3000 AND 4000 > mission_point_altitude
+        </if>
+        <if test="req.altitudeOption == 2">
+            AND mission_point_altitude >= 4000 AND 5000 > mission_point_altitude
+        </if>
+        <if test="req.altitudeOption == 3">
+            AND mission_point_altitude >= 5000
+        </if>
+        )
+        ) AS score_downgrade_count6
+        FROM (
+        SELECT DISTINCT pbi.id, pesss.total_score, pesss.time_point
+        FROM prospective_basic_info pbi
+        LEFT JOIN prospective_experiment_survey_score_summary pesss
+        ON pesss.person_id = pbi.id
+        LEFT JOIN prospective_experiment_survey_station_training_info pessti ON pessti.person_id = pbi.id
+        WHERE pbi.is_vip = 'vip'
+        <if test="req.queueOption == 1">
+            AND 12 > pessti.plateau_training_duration
+        </if>
+        <if test="req.queueOption == 2">
+            AND pessti.plateau_training_duration >= 12
+        </if>
+        <if test="req.altitudeOption == 1">
+            AND mission_point_altitude >= 3000 AND 4000 > mission_point_altitude
+        </if>
+        <if test="req.altitudeOption == 2">
+            AND mission_point_altitude >= 4000 AND 5000 > mission_point_altitude
+        </if>
+        <if test="req.altitudeOption == 3">
+            AND mission_point_altitude >= 5000
+        </if>
+        ) t
+    </select>
+
+    <select id="getMissionPointAltitudeCount"
+            resultType="cn.iocoder.yudao.module.prospective.controller.admin.basicinfo.vo.BasicInfoAverageVO">
+        SELECT
+            COUNT(CASE WHEN time_point = 1 AND plateau_training_duration >= 12 AND mission_point_altitude >= 3000 AND 4000 > mission_point_altitude THEN 1 END) AS dur12_a3000_to_4000,
+            COUNT(CASE WHEN time_point = 1 AND plateau_training_duration >= 12 AND mission_point_altitude >= 4000 AND 5000 > mission_point_altitude THEN 1 END) AS dur12_a4000_to_5000,
+            COUNT(CASE WHEN time_point = 1 AND plateau_training_duration >= 12 AND mission_point_altitude >= 5000 THEN 1 END) AS dur12_a5000,
+
+            COUNT(CASE WHEN time_point = 1 AND 12 > plateau_training_duration AND mission_point_altitude >= 3000 AND 4000 > mission_point_altitude THEN 1 END) AS durlt12_a3000_to_4000,
+            COUNT(CASE WHEN time_point = 1 AND 12 > plateau_training_duration AND mission_point_altitude >= 4000 AND 5000 > mission_point_altitude THEN 1 END) AS durlt12_a4000_to_5000,
+            COUNT(CASE WHEN time_point = 1 AND 12 > plateau_training_duration AND mission_point_altitude >= 5000 THEN 1 END) AS durlt12_a5000
+        FROM
+            (SELECT DISTINCT pbi.id, pessti.time_point, pessti.plateau_training_duration, pessti.mission_point_altitude
+             FROM prospective_basic_info pbi
+                      JOIN prospective_experiment_survey_station_training_info pessti ON pessti.person_id = pbi.id
+             WHERE pbi.is_vip = 'vip'
+            ) t
+    </select>
+
+    <select id="getClinicalSymptomsData"
+            resultType="cn.iocoder.yudao.module.prospective.controller.admin.basicinfo.vo.BasicInfoAverageVO">
+        SELECT
+        <!-- 长期训练组(≥12个月) -->
+        <if test="req.pesprs == 'all'">
+            <!-- 全部临床症状时，统计所有症状的总和 -->
+            SUM(CASE WHEN pesprs.time_point = #{req.timePoint} AND pessti.plateau_training_duration >= 12 AND pbi.is_vip = 'vip' THEN pesprs.fatigue ELSE 0 END) +
+            SUM(CASE WHEN pesprs.time_point = #{req.timePoint} AND pessti.plateau_training_duration >= 12 AND pbi.is_vip = 'vip' THEN pesprs.weakness ELSE 0 END) +
+            SUM(CASE WHEN pesprs.time_point = #{req.timePoint} AND pessti.plateau_training_duration >= 12 AND pbi.is_vip = 'vip' THEN pesprs.drowsiness ELSE 0 END) +
+            SUM(CASE WHEN pesprs.time_point = #{req.timePoint} AND pessti.plateau_training_duration >= 12 AND pbi.is_vip = 'vip' THEN pesprs.dizziness ELSE 0 END) +
+            SUM(CASE WHEN pesprs.time_point = #{req.timePoint} AND pessti.plateau_training_duration >= 12 AND pbi.is_vip = 'vip' THEN pesprs.vertigo ELSE 0 END) +
+            SUM(CASE WHEN pesprs.time_point = #{req.timePoint} AND pessti.plateau_training_duration >= 12 AND pbi.is_vip = 'vip' THEN pesprs.poor_concentration ELSE 0 END) +
+            SUM(CASE WHEN pesprs.time_point = #{req.timePoint} AND pessti.plateau_training_duration >= 12 AND pbi.is_vip = 'vip' THEN pesprs.slow_reaction ELSE 0 END) +
+            SUM(CASE WHEN pesprs.time_point = #{req.timePoint} AND pessti.plateau_training_duration >= 12 AND pbi.is_vip = 'vip' THEN pesprs.memory_loss ELSE 0 END) +
+            SUM(CASE WHEN pesprs.time_point = #{req.timePoint} AND pessti.plateau_training_duration >= 12 AND pbi.is_vip = 'vip' THEN pesprs.insomnia ELSE 0 END) +
+            SUM(CASE WHEN pesprs.time_point = #{req.timePoint} AND pessti.plateau_training_duration >= 12 AND pbi.is_vip = 'vip' THEN pesprs.nightmares ELSE 0 END) +
+            SUM(CASE WHEN pesprs.time_point = #{req.timePoint} AND pessti.plateau_training_duration >= 12 AND pbi.is_vip = 'vip' THEN pesprs.sore_throat ELSE 0 END) +
+            SUM(CASE WHEN pesprs.time_point = #{req.timePoint} AND pessti.plateau_training_duration >= 12 AND pbi.is_vip = 'vip' THEN pesprs.cough ELSE 0 END) +
+            SUM(CASE WHEN pesprs.time_point = #{req.timePoint} AND pessti.plateau_training_duration >= 12 AND pbi.is_vip = 'vip' THEN pesprs.phlegm ELSE 0 END) +
+            SUM(CASE WHEN pesprs.time_point = #{req.timePoint} AND pessti.plateau_training_duration >= 12 AND pbi.is_vip = 'vip' THEN pesprs.wheezing ELSE 0 END) +
+            SUM(CASE WHEN pesprs.time_point = #{req.timePoint} AND pessti.plateau_training_duration >= 12 AND pbi.is_vip = 'vip' THEN pesprs.chest_tightness ELSE 0 END) +
+            SUM(CASE WHEN pesprs.time_point = #{req.timePoint} AND pessti.plateau_training_duration >= 12 AND pbi.is_vip = 'vip' THEN pesprs.chest_pain ELSE 0 END) +
+            SUM(CASE WHEN pesprs.time_point = #{req.timePoint} AND pessti.plateau_training_duration >= 12 AND pbi.is_vip = 'vip' THEN pesprs.palpitations ELSE 0 END) +
+            SUM(CASE WHEN pesprs.time_point = #{req.timePoint} AND pessti.plateau_training_duration >= 12 AND pbi.is_vip = 'vip' THEN pesprs.bradycardia ELSE 0 END) +
+            SUM(CASE WHEN pesprs.time_point = #{req.timePoint} AND pessti.plateau_training_duration >= 12 AND pbi.is_vip = 'vip' THEN pesprs.cyanosis ELSE 0 END) +
+            SUM(CASE WHEN pesprs.time_point = #{req.timePoint} AND pessti.plateau_training_duration >= 12 AND pbi.is_vip = 'vip' THEN pesprs.blood_pressure_fluctuation ELSE 0 END) +
+            SUM(CASE WHEN pesprs.time_point = #{req.timePoint} AND pessti.plateau_training_duration >= 12 AND pbi.is_vip = 'vip' THEN pesprs.skin_bleeding ELSE 0 END) +
+            SUM(CASE WHEN pesprs.time_point = #{req.timePoint} AND pessti.plateau_training_duration >= 12 AND pbi.is_vip = 'vip' THEN pesprs.skin_bruising ELSE 0 END) +
+            SUM(CASE WHEN pesprs.time_point = #{req.timePoint} AND pessti.plateau_training_duration >= 12 AND pbi.is_vip = 'vip' THEN pesprs.anemia ELSE 0 END) +
+            SUM(CASE WHEN pesprs.time_point = #{req.timePoint} AND pessti.plateau_training_duration >= 12 AND pbi.is_vip = 'vip' THEN pesprs.weight_loss ELSE 0 END) +
+            SUM(CASE WHEN pesprs.time_point = #{req.timePoint} AND pessti.plateau_training_duration >= 12 AND pbi.is_vip = 'vip' THEN pesprs.increased_appetite ELSE 0 END) +
+            SUM(CASE WHEN pesprs.time_point = #{req.timePoint} AND pessti.plateau_training_duration >= 12 AND pbi.is_vip = 'vip' THEN pesprs.anorexia ELSE 0 END) +
+            SUM(CASE WHEN pesprs.time_point = #{req.timePoint} AND pessti.plateau_training_duration >= 12 AND pbi.is_vip = 'vip' THEN pesprs.constipation ELSE 0 END) +
+            SUM(CASE WHEN pesprs.time_point = #{req.timePoint} AND pessti.plateau_training_duration >= 12 AND pbi.is_vip = 'vip' THEN pesprs.diarrhea ELSE 0 END) +
+            SUM(CASE WHEN pesprs.time_point = #{req.timePoint} AND pessti.plateau_training_duration >= 12 AND pbi.is_vip = 'vip' THEN pesprs.abdominal_pain ELSE 0 END) +
+            SUM(CASE WHEN pesprs.time_point = #{req.timePoint} AND pessti.plateau_training_duration >= 12 AND pbi.is_vip = 'vip' THEN pesprs.abdominal_distension ELSE 0 END) +
+            SUM(CASE WHEN pesprs.time_point = #{req.timePoint} AND pessti.plateau_training_duration >= 12 AND pbi.is_vip = 'vip' THEN pesprs.jaundice ELSE 0 END) +
+            SUM(CASE WHEN pesprs.time_point = #{req.timePoint} AND pessti.plateau_training_duration >= 12 AND pbi.is_vip = 'vip' THEN pesprs.numbness ELSE 0 END) +
+            SUM(CASE WHEN pesprs.time_point = #{req.timePoint} AND pessti.plateau_training_duration >= 12 AND pbi.is_vip = 'vip' THEN pesprs.limb_edema ELSE 0 END) +
+            SUM(CASE WHEN pesprs.time_point = #{req.timePoint} AND pessti.plateau_training_duration >= 12 AND pbi.is_vip = 'vip' THEN pesprs.facial_edema ELSE 0 END) +
+            SUM(CASE WHEN pesprs.time_point = #{req.timePoint} AND pessti.plateau_training_duration >= 12 AND pbi.is_vip = 'vip' THEN pesprs.hair_loss ELSE 0 END) +
+            SUM(CASE WHEN pesprs.time_point = #{req.timePoint} AND pessti.plateau_training_duration >= 12 AND pbi.is_vip = 'vip' THEN pesprs.increased_urination ELSE 0 END)
+            AS total_score_q1,
+        </if>
+        <if test="req.pesprs != 'all'">
+            <!-- 特定临床症状时，只统计该症状 -->
+            SUM(CASE WHEN pesprs.time_point = #{req.timePoint} AND pessti.plateau_training_duration >= 12 AND pbi.is_vip = 'vip' THEN pesprs.${req.pesprs} ELSE 0 END) AS total_score_q1,
+        </if>
+
+        <!-- 短期训练组(<12个月) -->
+        <if test="req.pesprs == 'all'">
+            SUM(CASE WHEN pesprs.time_point = #{req.timePoint} AND 12 > pessti.plateau_training_duration AND pbi.is_vip = 'vip' THEN pesprs.fatigue ELSE 0 END) +
+            SUM(CASE WHEN pesprs.time_point = #{req.timePoint} AND 12 > pessti.plateau_training_duration AND pbi.is_vip = 'vip' THEN pesprs.weakness ELSE 0 END) +
+            SUM(CASE WHEN pesprs.time_point = #{req.timePoint} AND 12 > pessti.plateau_training_duration AND pbi.is_vip = 'vip' THEN pesprs.drowsiness ELSE 0 END) +
+            SUM(CASE WHEN pesprs.time_point = #{req.timePoint} AND 12 > pessti.plateau_training_duration AND pbi.is_vip = 'vip' THEN pesprs.dizziness ELSE 0 END) +
+            SUM(CASE WHEN pesprs.time_point = #{req.timePoint} AND 12 > pessti.plateau_training_duration AND pbi.is_vip = 'vip' THEN pesprs.vertigo ELSE 0 END) +
+            SUM(CASE WHEN pesprs.time_point = #{req.timePoint} AND 12 > pessti.plateau_training_duration AND pbi.is_vip = 'vip' THEN pesprs.poor_concentration ELSE 0 END) +
+            SUM(CASE WHEN pesprs.time_point = #{req.timePoint} AND 12 > pessti.plateau_training_duration AND pbi.is_vip = 'vip' THEN pesprs.slow_reaction ELSE 0 END) +
+            SUM(CASE WHEN pesprs.time_point = #{req.timePoint} AND 12 > pessti.plateau_training_duration AND pbi.is_vip = 'vip' THEN pesprs.memory_loss ELSE 0 END) +
+            SUM(CASE WHEN pesprs.time_point = #{req.timePoint} AND 12 > pessti.plateau_training_duration AND pbi.is_vip = 'vip' THEN pesprs.insomnia ELSE 0 END) +
+            SUM(CASE WHEN pesprs.time_point = #{req.timePoint} AND 12 > pessti.plateau_training_duration AND pbi.is_vip = 'vip' THEN pesprs.nightmares ELSE 0 END) +
+            SUM(CASE WHEN pesprs.time_point = #{req.timePoint} AND 12 > pessti.plateau_training_duration AND pbi.is_vip = 'vip' THEN pesprs.sore_throat ELSE 0 END) +
+            SUM(CASE WHEN pesprs.time_point = #{req.timePoint} AND 12 > pessti.plateau_training_duration AND pbi.is_vip = 'vip' THEN pesprs.cough ELSE 0 END) +
+            SUM(CASE WHEN pesprs.time_point = #{req.timePoint} AND 12 > pessti.plateau_training_duration AND pbi.is_vip = 'vip' THEN pesprs.phlegm ELSE 0 END) +
+            SUM(CASE WHEN pesprs.time_point = #{req.timePoint} AND 12 > pessti.plateau_training_duration AND pbi.is_vip = 'vip' THEN pesprs.wheezing ELSE 0 END) +
+            SUM(CASE WHEN pesprs.time_point = #{req.timePoint} AND 12 > pessti.plateau_training_duration AND pbi.is_vip = 'vip' THEN pesprs.chest_tightness ELSE 0 END) +
+            SUM(CASE WHEN pesprs.time_point = #{req.timePoint} AND 12 > pessti.plateau_training_duration AND pbi.is_vip = 'vip' THEN pesprs.chest_pain ELSE 0 END) +
+            SUM(CASE WHEN pesprs.time_point = #{req.timePoint} AND 12 > pessti.plateau_training_duration AND pbi.is_vip = 'vip' THEN pesprs.palpitations ELSE 0 END) +
+            SUM(CASE WHEN pesprs.time_point = #{req.timePoint} AND 12 > pessti.plateau_training_duration AND pbi.is_vip = 'vip' THEN pesprs.bradycardia ELSE 0 END) +
+            SUM(CASE WHEN pesprs.time_point = #{req.timePoint} AND 12 > pessti.plateau_training_duration AND pbi.is_vip = 'vip' THEN pesprs.cyanosis ELSE 0 END) +
+            SUM(CASE WHEN pesprs.time_point = #{req.timePoint} AND 12 > pessti.plateau_training_duration AND pbi.is_vip = 'vip' THEN pesprs.blood_pressure_fluctuation ELSE 0 END) +
+            SUM(CASE WHEN pesprs.time_point = #{req.timePoint} AND 12 > pessti.plateau_training_duration AND pbi.is_vip = 'vip' THEN pesprs.skin_bleeding ELSE 0 END) +
+            SUM(CASE WHEN pesprs.time_point = #{req.timePoint} AND 12 > pessti.plateau_training_duration AND pbi.is_vip = 'vip' THEN pesprs.skin_bruising ELSE 0 END) +
+            SUM(CASE WHEN pesprs.time_point = #{req.timePoint} AND 12 > pessti.plateau_training_duration AND pbi.is_vip = 'vip' THEN pesprs.anemia ELSE 0 END) +
+            SUM(CASE WHEN pesprs.time_point = #{req.timePoint} AND 12 > pessti.plateau_training_duration AND pbi.is_vip = 'vip' THEN pesprs.weight_loss ELSE 0 END) +
+            SUM(CASE WHEN pesprs.time_point = #{req.timePoint} AND 12 > pessti.plateau_training_duration AND pbi.is_vip = 'vip' THEN pesprs.increased_appetite ELSE 0 END) +
+            SUM(CASE WHEN pesprs.time_point = #{req.timePoint} AND 12 > pessti.plateau_training_duration AND pbi.is_vip = 'vip' THEN pesprs.anorexia ELSE 0 END) +
+            SUM(CASE WHEN pesprs.time_point = #{req.timePoint} AND 12 > pessti.plateau_training_duration AND pbi.is_vip = 'vip' THEN pesprs.constipation ELSE 0 END) +
+            SUM(CASE WHEN pesprs.time_point = #{req.timePoint} AND 12 > pessti.plateau_training_duration AND pbi.is_vip = 'vip' THEN pesprs.diarrhea ELSE 0 END) +
+            SUM(CASE WHEN pesprs.time_point = #{req.timePoint} AND 12 > pessti.plateau_training_duration AND pbi.is_vip = 'vip' THEN pesprs.abdominal_pain ELSE 0 END) +
+            SUM(CASE WHEN pesprs.time_point = #{req.timePoint} AND 12 > pessti.plateau_training_duration AND pbi.is_vip = 'vip' THEN pesprs.abdominal_distension ELSE 0 END) +
+            SUM(CASE WHEN pesprs.time_point = #{req.timePoint} AND 12 > pessti.plateau_training_duration AND pbi.is_vip = 'vip' THEN pesprs.jaundice ELSE 0 END) +
+            SUM(CASE WHEN pesprs.time_point = #{req.timePoint} AND 12 > pessti.plateau_training_duration AND pbi.is_vip = 'vip' THEN pesprs.numbness ELSE 0 END) +
+            SUM(CASE WHEN pesprs.time_point = #{req.timePoint} AND 12 > pessti.plateau_training_duration AND pbi.is_vip = 'vip' THEN pesprs.limb_edema ELSE 0 END) +
+            SUM(CASE WHEN pesprs.time_point = #{req.timePoint} AND 12 > pessti.plateau_training_duration AND pbi.is_vip = 'vip' THEN pesprs.facial_edema ELSE 0 END) +
+            SUM(CASE WHEN pesprs.time_point = #{req.timePoint} AND 12 > pessti.plateau_training_duration AND pbi.is_vip = 'vip' THEN pesprs.hair_loss ELSE 0 END) +
+            SUM(CASE WHEN pesprs.time_point = #{req.timePoint} AND 12 > pessti.plateau_training_duration AND pbi.is_vip = 'vip' THEN pesprs.increased_urination ELSE 0 END)
+            AS total_score_q2
+        </if>
+        <if test="req.pesprs != 'all'">
+            SUM(CASE WHEN pesprs.time_point = #{req.timePoint} AND 12 > pessti.plateau_training_duration AND pbi.is_vip = 'vip' THEN pesprs.${req.pesprs} ELSE 0 END) AS total_score_q2
+        </if>
+
+        FROM prospective_experiment_survey_post_return_symptoms pesprs
+        JOIN prospective_basic_info pbi ON pesprs.person_id = pbi.id
+        JOIN prospective_experiment_survey_station_training_info pessti ON pessti.person_id = pbi.id AND pessti.time_point = pesprs.time_point
+        WHERE pbi.is_vip = 'vip'
+        <if test="req.timePoint != null">
+            AND pesprs.time_point = #{req.timePoint}
+        </if>
+    </select>
+
+    <select id="getExamData"
+            resultType="cn.iocoder.yudao.module.prospective.controller.admin.basicinfo.vo.BasicInfoAverageVO">
+        SELECT
+        -- 第一组结果 (>=12)
+        CONCAT(
+        ROUND(
+        (SELECT AVG(
+        <if test="req.peebr != null">
+            peebr.${req.peebr}
+        </if>
+        <if test="req.peebtv != null">
+            peebt.${req.peebtv}
+        </if>
+        <if test="req.peect != null">
+            pect.${req.peect}
+        </if>
+        ) FROM
+        prospective_basic_info pbi
+        LEFT JOIN
+        prospective_experiment_exam_blood_routine peebr
+        ON peebr.person_id = pbi.id AND peebr.time_point = #{req.timePoint}
+        LEFT JOIN
+        prospective_experiment_exam_biochemical_tests_v2 peebt
+        ON peebt.person_id = pbi.id AND peebt.time_point = #{req.timePoint}
+        LEFT JOIN
+        prospective_experiment_exam_coagulation_tests pect
+        ON pect.person_id = pbi.id AND pect.time_point = #{req.timePoint}
+        JOIN
+        prospective_experiment_survey_station_training_info pessti
+        ON pessti.person_id = pbi.id AND pessti.time_point = #{req.timePoint}
+        WHERE
+        pbi.is_vip = 'vip'
+        AND pessti.plateau_training_duration >= 12
+        <if test="req.peebr != null">
+            AND peebr.${req.peebr} IS NOT NULL
+        </if>
+        <if test="req.peebtv != null">
+            AND peebt.${req.peebtv} IS NOT NULL
+        </if>
+        <if test="req.peect != null">
+            AND pect.${req.peect} IS NOT NULL
+        </if>),
+        2
+        ),
+        '±',
+        ROUND(
+        (SELECT STDDEV_POP(
+        <if test="req.peebr != null">
+            peebr.${req.peebr}
+        </if>
+        <if test="req.peebtv != null">
+            peebt.${req.peebtv}
+        </if>
+        <if test="req.peect != null">
+            pect.${req.peect}
+        </if>
+        ) FROM
+        prospective_basic_info pbi
+        LEFT JOIN
+        prospective_experiment_exam_blood_routine peebr
+        ON peebr.person_id = pbi.id AND peebr.time_point = #{req.timePoint}
+        LEFT JOIN
+        prospective_experiment_exam_biochemical_tests_v2 peebt
+        ON peebt.person_id = pbi.id AND peebt.time_point = #{req.timePoint}
+        LEFT JOIN
+        prospective_experiment_exam_coagulation_tests pect
+        ON pect.person_id = pbi.id AND pect.time_point = #{req.timePoint}
+        JOIN
+        prospective_experiment_survey_station_training_info pessti
+        ON pessti.person_id = pbi.id AND pessti.time_point = #{req.timePoint}
+        WHERE
+        pbi.is_vip = 'vip'
+        AND pessti.plateau_training_duration >= 12
+        <if test="req.peebr != null">
+            AND peebr.${req.peebr} IS NOT NULL
+        </if>
+        <if test="req.peebtv != null">
+            AND peebt.${req.peebtv} IS NOT NULL
+        </if>
+        <if test="req.peect != null">
+            AND pect.${req.peect} IS NOT NULL
+        </if>),
+        2
+        )
+        ) AS mean_stddev_q1,
+
+        (SELECT COUNT(*) FROM
+        prospective_basic_info pbi
+        LEFT JOIN
+        prospective_experiment_exam_blood_routine peebr
+        ON peebr.person_id = pbi.id AND peebr.time_point = #{req.timePoint}
+        LEFT JOIN
+        prospective_experiment_exam_biochemical_tests_v2 peebt
+        ON peebt.person_id = pbi.id AND peebt.time_point = #{req.timePoint}
+        LEFT JOIN
+        prospective_experiment_exam_coagulation_tests pect
+        ON pect.person_id = pbi.id AND pect.time_point = #{req.timePoint}
+        JOIN
+        prospective_experiment_survey_station_training_info pessti
+        ON pessti.person_id = pbi.id AND pessti.time_point = #{req.timePoint}
+        WHERE
+        pbi.is_vip = 'vip'
+        AND pessti.plateau_training_duration >= 12
+        <if test="req.peebr != null">
+            AND peebr.${req.peebr} IS NOT NULL
+        </if>
+        <if test="req.peebtv != null">
+            AND peebt.${req.peebtv} IS NOT NULL
+        </if>
+        <if test="req.peect != null">
+            AND pect.${req.peect} IS NOT NULL
+        </if>
+        ) AS exam_count_q1,
+
+        -- 第二组结果 (小于12)
+        CONCAT(
+        ROUND(
+        (SELECT AVG(
+        <if test="req.peebr != null">
+            peebr.${req.peebr}
+        </if>
+        <if test="req.peebtv != null">
+            peebt.${req.peebtv}
+        </if>
+        <if test="req.peect != null">
+            pect.${req.peect}
+        </if>
+        ) FROM
+        prospective_basic_info pbi
+        LEFT JOIN
+        prospective_experiment_exam_blood_routine peebr
+        ON peebr.person_id = pbi.id AND peebr.time_point = #{req.timePoint}
+        LEFT JOIN
+        prospective_experiment_exam_biochemical_tests_v2 peebt
+        ON peebt.person_id = pbi.id AND peebt.time_point = #{req.timePoint}
+        LEFT JOIN
+        prospective_experiment_exam_coagulation_tests pect
+        ON pect.person_id = pbi.id AND pect.time_point = #{req.timePoint}
+        JOIN
+        prospective_experiment_survey_station_training_info pessti
+        ON pessti.person_id = pbi.id AND pessti.time_point = #{req.timePoint}
+        WHERE
+        pbi.is_vip = 'vip'
+        AND 12 > pessti.plateau_training_duration
+        <if test="req.peebr != null">
+            AND peebr.${req.peebr} IS NOT NULL
+        </if>
+        <if test="req.peebtv != null">
+            AND peebt.${req.peebtv} IS NOT NULL
+        </if>
+        <if test="req.peect != null">
+            AND pect.${req.peect} IS NOT NULL
+        </if>),
+        2
+        ),
+        '±',
+        ROUND(
+        (SELECT STDDEV_POP(
+        <if test="req.peebr != null">
+            peebr.${req.peebr}
+        </if>
+        <if test="req.peebtv != null">
+            peebt.${req.peebtv}
+        </if>
+        <if test="req.peect != null">
+            pect.${req.peect}
+        </if>
+        ) FROM
+        prospective_basic_info pbi
+        LEFT JOIN
+        prospective_experiment_exam_blood_routine peebr
+        ON peebr.person_id = pbi.id AND peebr.time_point = #{req.timePoint}
+        LEFT JOIN
+        prospective_experiment_exam_biochemical_tests_v2 peebt
+        ON peebt.person_id = pbi.id AND peebt.time_point = #{req.timePoint}
+        LEFT JOIN
+        prospective_experiment_exam_coagulation_tests pect
+        ON pect.person_id = pbi.id AND pect.time_point = #{req.timePoint}
+        JOIN
+        prospective_experiment_survey_station_training_info pessti
+        ON pessti.person_id = pbi.id AND pessti.time_point = #{req.timePoint}
+        WHERE
+        pbi.is_vip = 'vip'
+        AND 12 > pessti.plateau_training_duration
+        <if test="req.peebr != null">
+            AND peebr.${req.peebr} IS NOT NULL
+        </if>
+        <if test="req.peebtv != null">
+            AND peebt.${req.peebtv} IS NOT NULL
+        </if>
+        <if test="req.peect != null">
+            AND pect.${req.peect} IS NOT NULL
+        </if>),
+        2
+        )
+        ) AS mean_stddev_q2,
+
+        (SELECT COUNT(*) FROM
+        prospective_basic_info pbi
+        LEFT JOIN
+        prospective_experiment_exam_blood_routine peebr
+        ON peebr.person_id = pbi.id AND peebr.time_point = #{req.timePoint}
+        LEFT JOIN
+        prospective_experiment_exam_biochemical_tests_v2 peebt
+        ON peebt.person_id = pbi.id AND peebt.time_point = #{req.timePoint}
+        LEFT JOIN
+        prospective_experiment_exam_coagulation_tests pect
+        ON pect.person_id = pbi.id AND pect.time_point = #{req.timePoint}
+        JOIN
+        prospective_experiment_survey_station_training_info pessti
+        ON pessti.person_id = pbi.id AND pessti.time_point = #{req.timePoint}
+        WHERE
+        pbi.is_vip = 'vip'
+        AND 12 > pessti.plateau_training_duration
+        <if test="req.peebr != null">
+            AND peebr.${req.peebr} IS NOT NULL
+        </if>
+        <if test="req.peebtv != null">
+            AND peebt.${req.peebtv} IS NOT NULL
+        </if>
+        <if test="req.peect != null">
+            AND pect.${req.peect} IS NOT NULL
+        </if>
+        ) AS exam_count_q2;
+    </select>
+</mapper>
+
+
+        <!--        &#45;&#45; 年龄相关统计-->
+        <!--        AVG(TIMESTAMPDIFF(YEAR, STR_TO_DATE(CONCAT(pbi.birth_date, '01'), '%Y%m%d'), '2024-06-30')) AS average_age,-->
+        <!--        MIN(TIMESTAMPDIFF(YEAR, STR_TO_DATE(CONCAT(pbi.birth_date, '01'), '%Y%m%d'), '2024-06-30')) AS min_age,-->
+        <!--        MAX(TIMESTAMPDIFF(YEAR, STR_TO_DATE(CONCAT(pbi.birth_date, '01'), '%Y%m%d'), '2024-06-30')) AS max_age,-->

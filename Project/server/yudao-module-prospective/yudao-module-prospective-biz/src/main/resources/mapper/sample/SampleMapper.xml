@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.iocoder.yudao.module.prospective.dal.mysql.sample.SampleMapper">
+
+    <!--
+        一般情况下，尽可能使用 Mapper 进行 CRUD 增删改查即可。
+        无法满足的场景，例如说多表关联查询，才使用 XML 编写 SQL。
+        代码生成器暂时只生成 Mapper XML 文件本身，更多推荐 MybatisX 快速开发插件来生成查询。
+        文档可见：https://www.iocoder.cn/MyBatis/x-plugins/
+     -->
+
+    <insert id="batchInsert" parameterType="java.util.List">
+        INSERT INTO bio_sample (
+        creator, create_time, updater, update_time, deleted, tenant_id,
+        layer, column_num, freezer_no, drawer_no, box_no, tube_seq,
+        position_code, tube_no, sample_type, operator_id, status,
+        storage_time, out_time, sample_name, sample_source, sample_volume,
+        sample_concentration, expiration_date, notes, time_point
+        ) VALUES
+        <foreach collection="list" item="item" separator=",">
+            (
+            #{item.creator}, #{item.createTime}, #{item.updater}, #{item.updateTime}, #{item.deleted}, #{item.tenantId},
+            #{item.layer}, #{item.columnNum}, #{item.freezerNo}, #{item.drawerNo}, #{item.boxNo}, #{item.tubeSeq},
+            #{item.positionCode}, #{item.tubeNo}, #{item.sampleType}, #{item.operatorId}, #{item.status},
+            #{item.storageTime}, #{item.outTime}, #{item.sampleName}, #{item.sampleSource}, #{item.sampleVolume},
+            #{item.sampleConcentration}, #{item.expirationDate}, #{item.notes}, #{item.timePoint}
+            )
+        </foreach>
+    </insert>
+
+    <select id="selectBoxesWithGroupedSampleTypes"
+            parameterType="cn.iocoder.yudao.module.prospective.controller.admin.sample.vo.SampleRespVO"
+            resultType="cn.iocoder.yudao.module.prospective.controller.admin.sample.vo.BoxDisplayVO">
+        SELECT freezer_no                         AS freezerNo,
+               layer                              AS layer,
+               column_num                         AS columnNum,
+               drawer_no                          AS drawerNo,
+               box_no                             AS boxNo,
+               box_seq                            AS boxSeq,
+               GROUP_CONCAT(DISTINCT sample_type) AS sampleTypes,
+               CASE
+                   -- 新增条件：如果组中全部的timePoint都等于5，返回'other'
+                   WHEN SUM(CASE WHEN time_point = 5 THEN 1 ELSE 0 END) > 0 THEN 'other'
+                   -- 如果所有sample_type都为NULL，返回NULL
+                   WHEN COUNT(sample_type) = 0 THEN 'other'
+                   -- 如果只有一种非NULL的sample_type，返回映射后的值
+                   WHEN COUNT(DISTINCT
+                              CASE
+                                  WHEN sample_type IN ('u', 'u1', 'u2', 'u3') THEN 'urine'
+                                  WHEN sample_type IN ('t', 't1', 't2', 't3') THEN 'saliva'
+                                  WHEN sample_type IN ('s', 's1', 's2', 's3') THEN 'blood_serum'
+                                  WHEN sample_type IN ('p', 'p1', 'p2', 'p3') THEN 'blood_plasma'
+                                  WHEN sample_type IN ('b', 'b1', 'b2', 'b3') THEN 'blood_whole'
+                                  WHEN sample_type IN ('w', 'w1', 'w2', 'w3') THEN 'blood_granulocyte'
+                                  WHEN sample_type IN ('r', 'r1', 'r2', 'r3') THEN 'blood_erythrocyte'
+                                  WHEN sample_type LIKE 's%' OR sample_type LIKE 'p%' OR sample_type LIKE 'b%'
+                                      OR sample_type LIKE 'w%' OR sample_type LIKE 'r%' THEN 'blood_other'
+                                  ELSE sample_type
+                                  END
+                        ) = 1 THEN
+                       MAX(
+                               CASE
+                                   WHEN sample_type IN ('u', 'u1', 'u2', 'u3') THEN 'urine'
+                                   WHEN sample_type IN ('t', 't1', 't2', 't3') THEN 'saliva'
+                                   WHEN sample_type IN ('s', 's1', 's2', 's3') THEN 'blood_serum'
+                                   WHEN sample_type IN ('p', 'p1', 'p2', 'p3') THEN 'blood_plasma'
+                                   WHEN sample_type IN ('b', 'b1', 'b2', 'b3') THEN 'blood_whole'
+                                   WHEN sample_type IN ('w', 'w1', 'w2', 'w3') THEN 'blood_granulocyte'
+                                   WHEN sample_type IN ('r', 'r1', 'r2', 'r3') THEN 'blood_erythrocyte'
+                                   WHEN sample_type LIKE 's%' OR sample_type LIKE 'p%' OR sample_type LIKE 'b%'
+                                       OR sample_type LIKE 'w%' OR sample_type LIKE 'r%' THEN 'blood_other'
+                                   ELSE sample_type
+                                   END
+                       )
+                   -- 其他情况（多种sample_type），返回'混合'
+                   ELSE 'mixed'
+                   END                            AS displayColor
+        FROM bio_sample
+        WHERE freezer_no = #{freezerNo}
+        GROUP BY freezer_no, drawer_no, box_no, box_seq, layer, column_num
+    </select>
+
+    <select id="selectDataByBoxNo"
+            parameterType="cn.iocoder.yudao.module.prospective.controller.admin.sample.vo.SampleRespVO"
+            resultType="cn.iocoder.yudao.module.prospective.controller.admin.sample.vo.SampleRespVO">
+        select *
+        from bio_sample
+        where box_no = #{boxNo}
+    </select>
+
+    <!-- SampleMapper.xml -->
+    <select id="selectSampleTypeCount"
+            resultType="cn.iocoder.yudao.module.prospective.controller.admin.sample.vo.SampleTypeCountVO">
+        SELECT CASE
+                   WHEN sample_type IN ('u', 'u1', 'u2', 'u3') THEN 'urine'
+                   WHEN sample_type IN ('t', 't1', 't2', 't3') THEN 'saliva'
+                   WHEN sample_type IN
+                        ('p', 'p1', 'p2', 'p3', 's', 's1', 's2', 's3', 'b', 'b1', 'b2', 'b3', 'w', 'w1', 'w2', 'w3',
+                         'r', 'r1', 'r2', 'r3') THEN 'blood'
+                   ELSE 'other'
+                   END AS sampleType,
+               COUNT(*) as count
+        FROM `bio_sample`
+        WHERE sample_type IS NOT NULL
+        GROUP BY
+            CASE
+            WHEN sample_type IN ('u', 'u1', 'u2', 'u3') THEN 'urine'
+            WHEN sample_type IN ('t', 't1', 't2', 't3') THEN 'saliva'
+            WHEN sample_type IN ('p', 'p1', 'p2', 'p3', 's', 's1', 's2', 's3', 'b', 'b1', 'b2', 'b3', 'w', 'w1', 'w2', 'w3', 'r', 'r1', 'r2', 'r3') THEN 'blood'
+            ELSE 'other'
+        END
+        ORDER BY count DESC
+    LIMIT 4
+    </select>
+</mapper>

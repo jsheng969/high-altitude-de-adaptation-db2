@@ -1,0 +1,1464 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.iocoder.yudao.module.review.dal.mysql.basicinfo.BasicInfoMapper">
+
+    <!--
+        一般情况下，尽可能使用 Mapper 进行 CRUD 增删改查即可。
+        无法满足的场景，例如说多表关联查询，才使用 XML 编写 SQL。
+        代码生成器暂时只生成 Mapper XML 文件本身，更多推荐 MybatisX 快速开发插件来生成查询。
+        文档可见：https://www.iocoder.cn/MyBatis/x-plugins/
+     -->
+    <resultMap id="BasicInfoRespVOResultMap"
+               type="cn.iocoder.yudao.module.review.controller.admin.basicinfo.vo.BasicInfoRespVO">
+        <!-- 主表字段 -->
+        <id column="id" property="id"/>
+        <result column="name" property="name"/>
+        <result column="gender" property="gender"/>
+        <result column="highest_education" property="highestEducation"/>
+        <result column="ethnicity" property="ethnicity"/>
+        <result column="marital_status" property="maritalStatus"/>
+        <result column="height" property="height"/>
+        <result column="weight" property="weight"/>
+        <result column="type" property="type"/>
+        <!-- BasicOther 一对一字段 -->
+        <association property="basicOtherInfoRespVO"
+                     javaType="cn.iocoder.yudao.module.review.controller.admin.basicotherinfo.vo.BasicOtherInfoRespVO">
+            <id column="person_id" property="personId"/>
+            <result column="fertility_status" property="fertilityStatus"/>
+            <result column="age" property="age"/>
+            <result column="retired_weight" property="retiredWeight"/>
+            <result column="medical_check_date" property="medicalCheckDate"/>
+            <result column="contact_phone" property="contactPhone"/>
+        </association>
+        <!-- ExperimentSurveyDiet 一对一字段 -->
+        <association property="experimentSurveyDietRespVO"
+                     javaType="cn.iocoder.yudao.module.review.controller.admin.experimentsurveydiet.vo.ExperimentSurveyDietRespVO">
+            <id column="person_id" property="personId"/>
+            <result column="eating_habits" property="eatingHabits"/>
+            <result column="drinking_water" property="drinkingWater"/>
+            <result column="tea" property="tea"/>
+            <result column="fruit_juice" property="fruitJuice"/>
+            <result column="carbonated_drinks" property="carbonatedDrinks"/>
+            <result column="coffee" property="coffee"/>
+            <result column="milk" property="milk"/>
+        </association>
+
+        <!-- drinking 一对一字段 -->
+        <association property="experimentSurveyDrinkingRespVO"
+                     javaType="cn.iocoder.yudao.module.review.controller.admin.experimentsurveydrinking.vo.ExperimentSurveyDrinkingRespVO">
+            <id column="person_id" property="personId"/>
+            <result column="drinking_experience" property="drinkingExperience"/>
+            <result column="still_drinking" property="stillDrinking"/>
+            <result column="drinking_frequency" property="drinkingFrequency"/>
+            <result column="over_Drinking" property="overDrinking"/>
+            <result column="beer" property="beer"/>
+            <result column="liquor" property="liquor"/>
+            <result column="red_wine" property="redWine"/>
+            <result column="cocktails" property="cocktails"/>
+            <result column="spirits" property="spirits"/>
+            <result column="other_alcohol" property="otherAlcohol"/>
+        </association>
+
+        <association property="experimentSurveyExerciseRespVO"
+                     javaType="cn.iocoder.yudao.module.review.controller.admin.experimentsurveyexercise.vo.ExperimentSurveyExerciseRespVO">
+            <id column="person_id" property="personId"/>
+            <result column="id" property="id"/>
+            <result column="regular_exercise" property="regularExercise"/>
+            <result column="exercise_frequency" property="exerciseFrequency"/>
+            <result column="exercise_duration" property="exerciseDuration"/>
+            <result column="exercise_type" property="exerciseType"/>
+            <result column="chest_pain_or_shortness" property="chestPainOrShortness"/>
+            <result column="doctor_guided_exercise" property="doctorGuidedExercise"/>
+        </association>
+
+        <association property="experimentSurveyFamilyDiseasesRespVO"
+                     javaType="cn.iocoder.yudao.module.review.controller.admin.experimentsurveyfamilydiseases.vo.ExperimentSurveyFamilyDiseasesRespVO">
+            <id column="person_id" property="personId"/>
+            <result column="id" property="id"/>
+
+            <!-- 心血管系统 -->
+            <result column="hypertension" property="hypertension"/>
+            <result column="hyperlipidemia" property="hyperlipidemia"/>
+            <result column="congenital_heart_disease" property="congenitalHeartDisease"/>
+            <result column="pulmonary_heart_disease" property="pulmonaryHeartDisease"/>
+            <result column="stroke" property="stroke"/>
+            <result column="coronary_heart_disease" property="coronaryHeartDisease"/>
+            <result column="myocardial_infarction" property="myocardialInfarction"/>
+            <result column="bradycardia" property="bradycardia"/>
+            <result column="tachycardia" property="tachycardia"/>
+            <result column="arrhythmia" property="arrhythmia"/>
+            <result column="atrial_fibrillation" property="atrialFibrillation"/>
+            <result column="paroxysmal_auricular_tachycardia" property="paroxysmalAuricularTachycardia"/>
+            <result column="frequent_premature_atrial_contractions" property="frequentPrematureAtrialContractions"/>
+            <result column="frequent_premature_ventricular_contractions"
+                    property="frequentPrematureVentricularContractions"/>
+            <result column="av_block" property="avBlock"/>
+            <result column="ventricular_tachycardia" property="ventricularTachycardia"/>
+            <result column="other_diseases1" property="otherDiseases1"/>
+
+            <!-- 呼吸系统 -->
+            <result column="chronic_bronchitis" property="chronicBronchitis"/>
+            <result column="asthma" property="asthma"/>
+            <result column="tuberculosis" property="tuberculosis"/>
+            <result column="emphysema" property="emphysema"/>
+            <result column="pneumonia" property="pneumonia"/>
+            <result column="copd" property="copd"/>
+            <result column="other_diseases2" property="otherDiseases2"/>
+
+            <!-- 内分泌、消化系统 -->
+            <result column="thyroid_disease" property="thyroidDisease"/>
+            <result column="diabetes" property="diabetes"/>
+            <result column="gout" property="gout"/>
+            <result column="chronic_gastroenteritis" property="chronicGastroenteritis"/>
+            <result column="duodenal_ulcer" property="duodenalUlcer"/>
+            <result column="gastric_ulcer" property="gastricUlcer"/>
+            <result column="gallstones" property="gallstones"/>
+            <result column="colon_polyps" property="colonPolyps"/>
+            <result column="hepatitis_b" property="hepatitisB"/>
+            <result column="cholecystitis" property="cholecystitis"/>
+            <result column="other_diseases3" property="otherDiseases3"/>
+
+            <!-- 神经系统 -->
+            <result column="dementia" property="dementia"/>
+            <result column="parkinsons_disease" property="parkinsonsDisease"/>
+            <result column="multiple_sclerosis" property="multipleSclerosis"/>
+            <result column="epilepsy" property="epilepsy"/>
+
+            <!-- 肿瘤 -->
+            <result column="lung_cancer" property="lungCancer"/>
+            <result column="liver_cancer" property="liverCancer"/>
+            <result column="gastric_cancer" property="gastricCancer"/>
+            <result column="colon_cancer" property="colonCancer"/>
+            <result column="pancreatic_cancer" property="pancreaticCancer"/>
+            <result column="esophageal_cancer" property="esophagealCancer"/>
+            <result column="prostate_cancer" property="prostateCancer"/>
+            <result column="breast_cancer" property="breastCancer"/>
+            <result column="cervical_cancer" property="cervicalCancer"/>
+            <result column="other_diseases4" property="otherDiseases4"/>
+        </association>
+
+        <association property="experimentSurveyHighlandDiseasesRespVO"
+                     javaType="cn.iocoder.yudao.module.review.controller.admin.experimentsurveyhighlanddiseases.vo.ExperimentSurveyHighlandDiseasesRespVO">
+            <id column="id" property="id"/>
+            <result column="person_id" property="personId"/>
+            <result column="acute_highland_reaction" property="acuteHighlandReaction"/>
+            <result column="highland_pulmonary_edema" property="highlandPulmonaryEdema"/>
+            <result column="highland_cerebral_edema" property="highlandCerebralEdema"/>
+            <result column="highland_heart_disease" property="highlandHeartDisease"/>
+            <result column="highland_polycythemia" property="highlandPolycythemia"/>
+            <result column="other_diseases" property="otherDiseases"/>
+        </association>
+
+        <association property="experimentSurveyHighlandDiseasesDuringServiceRespVO"
+                     javaType="cn.iocoder.yudao.module.review.controller.admin.experimentsurveyhighlanddiseasesduringservice.vo.ExperimentSurveyHighlandDiseasesDuringServiceRespVO">
+            <id column="hdds_id" property="id"/>
+            <result column="hdds_person_id" property="personId"/>
+
+            <result column="hdds_hypertension" property="hypertension"/>
+            <result column="hdds_myocardial_infarction" property="myocardialInfarction"/>
+            <result column="hdds_coronary_heart_disease" property="coronaryHeartDisease"/>
+            <result column="hdds_pulmonary_heart_disease" property="pulmonaryHeartDisease"/>
+            <result column="hdds_lower_extremity_venous_thrombosis" property="lowerExtremityVenousThrombosis"/>
+            <result column="hdds_bradycardia" property="bradycardia"/>
+            <result column="hdds_tachycardia" property="tachycardia"/>
+            <result column="hdds_arrhythmia" property="arrhythmia"/>
+            <result column="hdds_atrial_fibrillation" property="atrialFibrillation"/>
+            <result column="hdds_paroxysmal_auricular_tachycardia" property="paroxysmalAuricularTachycardia"/>
+            <result column="hdds_frequent_premature_atrial_contractions" property="frequentPrematureAtrialContractions"/>
+            <result column="hdds_frequent_premature_ventricular_contractions" property="frequentPrematureVentricularContractions"/>
+            <result column="hdds_av_block" property="avBlock"/>
+            <result column="hdds_ventricular_tachycardia" property="ventricularTachycardia"/>
+            <result column="hdds_other_diseases1" property="otherDiseases1"/>
+            <result column="hdds_dizziness" property="dizziness"/>
+            <result column="hdds_transient_ischemic_attack" property="transientIschemicAttack"/>
+            <result column="hdds_cerebral_infarction" property="cerebralInfarction"/>
+            <result column="hdds_cerebral_hemorrhage" property="cerebralHemorrhage"/>
+            <result column="hdds_other_diseases2" property="otherDiseases2"/>
+            <result column="hdds_hyperlipidemia" property="hyperlipidemia"/>
+            <result column="hdds_diabetes" property="diabetes"/>
+            <result column="hdds_gout" property="gout"/>
+            <result column="hdds_thyroid_disease" property="thyroidDisease"/>
+            <result column="hdds_other_diseases3" property="otherDiseases3"/>
+            <result column="hdds_insomnia" property="insomnia"/>
+            <result column="hdds_tumor" property="tumor"/>
+            <result column="hdds_other_diseases4" property="otherDiseases4"/>
+        </association>
+
+        <association property="experimentSurveyHighlandReactionRespVO"
+                     javaType="cn.iocoder.yudao.module.review.controller.admin.experimentsurveyhighlandreaction.vo.ExperimentSurveyHighlandReactionRespVO">
+            <id column="person_id" property="personId"/>
+            <result column="id" property="id"/>
+            <result column="reaction_occurred" property="reactionOccurred"/>
+            <result column="reaction_count" property="reactionCount"/>
+            <result column="reaction_count_text" property="reactionCountText"/>
+            <result column="unclear_reaction_count" property="unclearReactionCount"/>
+            <result column="multiple_reactions_changes" property="multipleReactionsChanges"/>
+        </association>
+
+        <association property="experimentSurveyHighlandReactionSymptomsRespVO"
+                     javaType="cn.iocoder.yudao.module.review.controller.admin.experimentsurveyhighlandreactionsymptoms.vo.ExperimentSurveyHighlandReactionSymptomsRespVO">
+            <id column="person_id" property="personId"/>
+            <result column="id" property="id"/>
+            <result column="headache" property="headache"/>
+            <result column="vomiting" property="vomiting"/>
+            <result column="dizziness" property="dizziness"/>
+            <result column="nausea" property="nausea"/>
+            <result column="palpitations" property="palpitations"/>
+            <result column="poor_appetite" property="poorAppetite"/>
+            <result column="chest_tightness" property="chestTightness"/>
+            <result column="blurred_vision" property="blurredVision"/>
+            <result column="shortness_of_breath" property="shortnessOfBreath"/>
+            <result column="abdominal_bloating" property="abdominalBloating"/>
+            <result column="diarrhea" property="diarrhea"/>
+        </association>
+
+        <association property="experimentSurveyNewDiseasesRespVO"
+                     javaType="cn.iocoder.yudao.module.review.controller.admin.experimentsurveynewdiseases.vo.ExperimentSurveyNewDiseasesRespVO">
+            <id column="person_id" property="personId"/>
+            <result column="id" property="id"/>
+
+            <result column="new_disease1_name" property="newDisease1Name"/>
+            <result column="diagnosed" property="diagnosed"/>
+            <result column="diagnosis_date" property="diagnosisDate"/>
+            <result column="hospitalized" property="hospitalized"/>
+            <result column="medication" property="medication"/>
+            <result column="medication_effect" property="medicationEffect"/>
+
+            <result column="new_disease2_name" property="newDisease2Name"/>
+            <result column="diagnosed2" property="diagnosed2"/>
+            <result column="diagnosis_date2" property="diagnosisDate2"/>
+            <result column="hospitalized2" property="hospitalized2"/>
+            <result column="medication2" property="medication2"/>
+            <result column="medication_effect2" property="medicationEffect2"/>
+
+            <result column="new_disease3_name" property="newDisease3Name"/>
+            <result column="diagnosed3" property="diagnosed3"/>
+            <result column="diagnosis_date3" property="diagnosisDate3"/>
+            <result column="hospitalized3" property="hospitalized3"/>
+            <result column="medication3" property="medication3"/>
+            <result column="medication_effect3" property="medicationEffect3"/>
+
+            <result column="new_disease4_name" property="newDisease4Name"/>
+            <result column="diagnosed4" property="diagnosed4"/>
+            <result column="diagnosis_date4" property="diagnosisDate4"/>
+            <result column="hospitalized4" property="hospitalized4"/>
+            <result column="medication4" property="medication4"/>
+            <result column="medication_effect4" property="medicationEffect4"/>
+        </association>
+
+        <association property="experimentSurveyNewDiseasesPostReturnRespVO"
+                     javaType="cn.iocoder.yudao.module.review.controller.admin.experimentsurveynewdiseasespostreturn.vo.ExperimentSurveyNewDiseasesPostReturnRespVO">
+            <id column="new_id" property="id"/>
+            <result column="new_person_id" property="personId"/>
+
+            <!-- Cardiovascular Diseases Group 1 -->
+            <result column="new_hypertension" property="hypertension"/>
+            <result column="new_myocardial_infarction" property="myocardialInfarction"/>
+            <result column="new_coronary_heart_disease" property="coronaryHeartDisease"/>
+            <result column="new_pulmonary_heart_disease" property="pulmonaryHeartDisease"/>
+            <result column="new_lower_extremity_venous_thrombosis" property="lowerExtremityVenousThrombosis"/>
+            <result column="new_bradycardia" property="bradycardia"/>
+            <result column="new_tachycardia" property="tachycardia"/>
+            <result column="new_arrhythmia" property="arrhythmia"/>
+            <result column="new_atrial_fibrillation" property="atrialFibrillation"/>
+            <result column="new_paroxysmal_auricular_tachycardia" property="paroxysmalAuricularTachycardia"/>
+            <result column="new_frequent_premature_atrial_contractions" property="frequentPrematureAtrialContractions"/>
+            <result column="new_frequent_premature_ventricular_contractions"
+                    property="frequentPrematureVentricularContractions"/>
+            <result column="new_av_block" property="avBlock"/>
+            <result column="new_ventricular_tachycardia" property="ventricularTachycardia"/>
+            <result column="new_other_diseases1" property="otherDiseases1"/>
+
+            <!-- Neurological Diseases Group 1 -->
+            <result column="new_dizziness" property="dizziness"/>
+            <result column="new_transient_ischemic_attack" property="transientIschemicAttack"/>
+            <result column="new_cerebral_infarction" property="cerebralInfarction"/>
+            <result column="new_cerebral_hemorrhage" property="cerebralHemorrhage"/>
+            <result column="new_other_diseases2" property="otherDiseases2"/>
+
+            <!-- Metabolic Diseases Group 1 -->
+            <result column="new_hyperlipidemia" property="hyperlipidemia"/>
+            <result column="new_diabetes" property="diabetes"/>
+            <result column="new_gout" property="gout"/>
+            <result column="new_thyroid_disease" property="thyroidDisease"/>
+            <result column="new_other_diseases3" property="otherDiseases3"/>
+
+            <!-- Other Diseases Group 1 -->
+            <result column="new_insomnia" property="insomnia"/>
+            <result column="new_tumor" property="tumor"/>
+            <result column="new_other_diseases4" property="otherDiseases4"/>
+
+        </association>
+
+        <association property="experimentSurveyPostReturnInfoRespVO"
+                     javaType="cn.iocoder.yudao.module.review.controller.admin.experimentsurveypostreturninfo.vo.ExperimentSurveyPostReturnInfoRespVO">
+            <id column="id" property="id"/>
+            <result column="person_id" property="personId"/>
+
+            <!-- Residence Information -->
+            <result column="chengdu" property="chengdu"/>
+            <result column="chengdu_residence_time" property="chengduResidenceTime"/>
+            <result column="kunming" property="kunming"/>
+            <result column="kunming_residence_time" property="kunmingResidenceTime"/>
+            <result column="xining" property="xining"/>
+            <result column="xining_residence_time" property="xiningResidenceTime"/>
+            <result column="other_area" property="otherArea"/>
+            <result column="other_area_residence_time" property="otherAreaResidenceTime"/>
+
+            <!-- Work and Health Information -->
+            <result column="post_return_work_status" property="postReturnWorkStatus"/>
+            <result column="annual_checkups" property="annualCheckups"/>
+        </association>
+
+        <association property="experimentSurveyPostReturnSymptomsRespVO"
+                     javaType="cn.iocoder.yudao.module.review.controller.admin.experimentsurveypostreturnsymptoms.vo.ExperimentSurveyPostReturnSymptomsRespVO">
+            <id column="id" property="id"/>
+            <result column="person_id" property="personId"/>
+
+            <!-- General Symptoms -->
+            <result column="fatigue" property="fatigue"/>
+            <result column="drowsiness" property="drowsiness"/>
+            <result column="dizziness" property="dizziness"/>
+            <result column="vertigo" property="vertigo"/>
+
+            <!-- Cognitive Symptoms -->
+            <result column="poor_concentration" property="poorConcentration"/>
+            <result column="slow_reaction" property="slowReaction"/>
+            <result column="memory_loss" property="memoryLoss"/>
+
+            <!-- Sleep Symptoms -->
+            <result column="insomnia" property="insomnia"/>
+            <result column="nightmares" property="nightmares"/>
+
+            <!-- Cardiovascular Symptoms -->
+            <result column="chest_pain" property="chestPain"/>
+            <result column="palpitations" property="palpitations"/>
+            <result column="bradycardia" property="bradycardia"/>
+            <result column="cyanosis" property="cyanosis"/>
+            <result column="blood_pressure_fluctuation" property="bloodPressureFluctuation"/>
+
+            <!-- Skin/Hematological Symptoms -->
+            <result column="skin_bleeding" property="skinBleeding"/>
+            <result column="skin_bruising" property="skinBruising"/>
+            <result column="anemia" property="anemia"/>
+
+            <!-- Respiratory Symptoms -->
+            <result column="sore_throat" property="soreThroat"/>
+            <result column="cough" property="cough"/>
+            <result column="phlegm" property="phlegm"/>
+            <result column="wheezing" property="wheezing"/>
+            <result column="chest_tightness" property="chestTightness"/>
+
+            <!-- Metabolic/GI Symptoms -->
+            <result column="weight_loss" property="weightLoss"/>
+            <result column="increased_appetite" property="increasedAppetite"/>
+            <result column="anorexia" property="anorexia"/>
+            <result column="constipation" property="constipation"/>
+            <result column="diarrhea" property="diarrhea"/>
+            <result column="abdominal_pain" property="abdominalPain"/>
+            <result column="jaundice" property="jaundice"/>
+
+            <!-- Neurological Symptoms -->
+            <result column="numbness" property="numbness"/>
+
+            <!-- Edema Symptoms -->
+            <result column="limb_edema" property="limbEdema"/>
+            <result column="facial_edema" property="facialEdema"/>
+
+            <!-- Other Symptoms -->
+            <result column="hair_loss" property="hairLoss"/>
+            <result column="increased_urination" property="increasedUrination"/>
+        </association>
+
+        <association property="experimentSurveySelfAssessmentRespVO"
+                     javaType="cn.iocoder.yudao.module.review.controller.admin.experimentsurveyselfassessment.vo.ExperimentSurveySelfAssessmentRespVO">
+            <id column="id" property="id"/>
+            <result column="person_id" property="personId"/>
+
+            <!-- Self-Assessment Information -->
+            <result column="health_comparison_with_peers" property="healthComparisonWithPeers"/>
+            <result column="health_score" property="healthScore"/>
+        </association>
+
+        <association property="experimentSurveyServiceInfoRespVO"
+                     javaType="cn.iocoder.yudao.module.review.controller.admin.experimentsurveyserviceinfo.vo.ExperimentSurveyServiceInfoRespVO">
+            <id column="person_id" property="personId"/>
+            <result column="id" property="id"/>
+            <result column="enlistment_year" property="enlistmentYear"/>
+            <result column="highland_entry_year" property="highlandEntryYear"/>
+            <result column="discharge_year" property="dischargeYear"/>
+            <result column="service_position" property="servicePosition"/>
+            <result column="highland_service_location1" property="highlandServiceLocation1"/>
+            <result column="altitude1" property="altitude1"/>
+            <result column="year1" property="year1"/>
+            <result column="month1" property="month1"/>
+            <result column="highland_service_location2" property="highlandServiceLocation2"/>
+            <result column="altitude2" property="altitude2"/>
+            <result column="year2" property="year2"/>
+            <result column="month2" property="month2"/>
+            <result column="highland_service_location3" property="highlandServiceLocation3"/>
+            <result column="altitude3" property="altitude3"/>
+            <result column="year3" property="year3"/>
+            <result column="month3" property="month3"/>
+            <result column="highland_service_location4" property="highlandServiceLocation4"/>
+            <result column="altitude4" property="altitude4"/>
+            <result column="year4" property="year4"/>
+            <result column="month4" property="month4"/>
+            <result column="highland_service_location5" property="highlandServiceLocation5"/>
+            <result column="altitude5" property="altitude5"/>
+            <result column="year5" property="year5"/>
+            <result column="month5" property="month5"/>
+            <result column="highland_service_location6" property="highlandServiceLocation6"/>
+            <result column="altitude6" property="altitude6"/>
+            <result column="year6" property="year6"/>
+            <result column="month6" property="month6"/>
+            <result column="highland_task_type" property="highlandTaskType"/>
+            <result column="altitude" property="altitude"/>
+            <result column="month" property="month"/>
+            <result column="highland_service_location" property="highlandServiceLocation"/>
+            <result column="plateau_total_duration" property="plateauTotalDuration"/>
+            <result column="max_altitude" property="maxAltitude"/>
+            <result column="max_altitude_duration" property="maxAltitudeDuration"/>
+            <result column="altitude_category" property="altitudeCategory"/>
+            <result column="highest_altitude" property="highestAltitude"/>
+        </association>
+
+        <association property="experimentSurveySleepRespVO"
+                     javaType="cn.iocoder.yudao.module.review.controller.admin.experimentsurveysleep.vo.ExperimentSurveySleepRespVO">
+            <id column="id" property="id"/>
+            <result column="person_id" property="personId"/>
+
+            <!-- Sleep Timing Information -->
+            <result column="sleep_time_start" property="sleepTimeStart"/>
+            <result column="sleep_onset_time" property="sleepOnsetTime"/>
+            <result column="wake_time" property="wakeTime"/>
+            <result column="actual_sleep_duration" property="actualSleepDuration"/>
+
+            <!-- Sleep Quality Factors -->
+            <result column="sleep_difficulties" property="sleepDifficulties"/>
+            <result column="night_awakening" property="nightAwakening"/>
+            <result column="night_urination" property="nightUrination"/>
+            <result column="breathing_difficulties" property="breathingDifficulties"/>
+            <result column="cough_or_snore" property="coughOrSnore"/>
+            <result column="feeling_cold" property="feelingCold"/>
+            <result column="feeling_hot" property="feelingHot"/>
+            <result column="nightmares" property="nightmares"/>
+            <result column="pain_or_discomfort" property="painOrDiscomfort"/>
+            <result column="other_sleep_issues" property="otherSleepIssues"/>
+
+            <!-- Sleep Aids and Effects -->
+            <result column="sleep_aids" property="sleepAids"/>
+            <result column="fatigue" property="fatigue"/>
+            <result column="lack_of_energy" property="lackOfEnergy"/>
+
+            <!-- Overall Assessment -->
+            <result column="self_assessment_sleep" property="selfAssessmentSleep"/>
+        </association>
+
+        <association property="experimentSurveySmokingRespVO"
+                     javaType="cn.iocoder.yudao.module.review.controller.admin.experimentsurveysmoking.vo.ExperimentSurveySmokingRespVO">
+            <id column="id" property="id"/>
+            <result column="person_id" property="personId"/>
+
+            <!-- Basic Smoking Information -->
+            <result column="smoking_status" property="smokingStatus"/>
+            <result column="daily_smoking" property="dailySmoking"/>
+            <result column="smoking_start_age" property="smokingStartAge"/>
+            <result column="smoking_years" property="smokingYears"/>
+
+            <!-- Quit Smoking Information -->
+            <result column="tried_quit" property="triedQuit"/>
+            <result column="quit_time" property="quitTime"/>
+
+            <!-- Plateau/Plain Smoking Status -->
+            <result column="highland_plain_smoking_status" property="highlandPlainSmokingStatus"/>
+            <result column="highland_plain_smoking_status2" property="highlandPlainSmokingStatus2"/>
+            <result column="smoking_years2" property="smokingYears2"/>
+        </association>
+
+        <!--对照组体检-腹部超声-->
+        <association property="experimentExamAbdominalUltrasoundRespVO"
+                     javaType="cn.iocoder.yudao.module.review.controller.admin.experimentexamabdominalultrasound.vo.ExperimentExamAbdominalUltrasoundRespVO">
+            <id column="ree_id" property="id"/>
+            <result column="ree_person_id" property="personId"/>
+            <result column="ree_ultrasound_description" property="ultrasoundDescription"/>
+            <result column="ree_ultrasound_summary" property="ultrasoundSummary"/>
+        </association>
+
+
+        <!--对照组体检-基本检测信息-->
+        <association property="experimentExamBasicTestsRespVO"
+                     javaType="cn.iocoder.yudao.module.review.controller.admin.experimentexambasictests.vo.ExperimentExamBasicTestsRespVO">
+            <id column="ree_id" property="id"/>
+            <result column="ree_person_id" property="personId"/>
+            <result column="ree_systolic_pressure" property="systolicPressure"/>
+            <result column="ree_diastolic_pressure" property="diastolicPressure"/>
+            <result column="ree_pulse" property="pulse"/>
+            <result column="ree_height" property="height"/>
+            <result column="ree_weight" property="weight"/>
+            <result column="ree_bmi" property="bmi"/>
+        </association>
+
+        <!--对照组体检-生化-->
+        <association property="experimentExamBiochemicalTestsRespVO"
+                     javaType="cn.iocoder.yudao.module.review.controller.admin.experimentexambiochemicaltests.vo.ExperimentExamBiochemicalTestsRespVO">
+            <id column="ree_id" property="id"/>
+            <result column="ree_person_id" property="personId"/>
+            <result column="ree_urea" property="urea"/>
+            <result column="ree_creatinine" property="creatinine"/>
+            <result column="ree_alt" property="alt"/>
+            <result column="ree_ast" property="ast"/>
+            <result column="ree_total_cholesterol" property="totalCholesterol"/>
+            <result column="ree_triglycerides" property="triglycerides"/>
+            <result column="ree_hdl_c" property="hdlC"/>
+            <result column="ree_ldl_c" property="ldlC"/>
+            <result column="ree_uric_acid" property="uricAcid"/>
+            <result column="ree_total_protein" property="totalProtein"/>
+            <result column="ree_albumin" property="albumin"/>
+            <result column="ree_globulin" property="globulin"/>
+            <result column="ree_alb_glob_ratio" property="albGlobRatio"/>
+            <result column="ree_total_bilirubin" property="totalBilirubin"/>
+            <result column="ree_direct_bilirubin" property="directBilirubin"/>
+            <result column="ree_indirect_bilirubin" property="indirectBilirubin"/>
+            <result column="ree_glycated_hemoglobin" property="glycatedHemoglobin"/>
+            <result column="ree_potassium" property="potassium"/>
+            <result column="ree_sodium" property="sodium"/>
+            <result column="ree_chloride" property="chloride"/>
+            <result column="ree_calcium" property="calcium"/>
+            <result column="ree_phosphorus" property="phosphorus"/>
+            <result column="ree_magnesium" property="magnesium"/>
+            <result column="ree_fasting_glucose" property="fastingGlucose"/>
+            <result column="ree_prothrombin_time" property="prothrombinTime"/>
+            <result column="ree_prothrombin_activity" property="prothrombinActivity"/>
+            <result column="ree_inr" property="inr"/>
+            <result column="ree_fibrinogen" property="fibrinogen"/>
+            <result column="ree_aptt" property="aptt"/>
+            <result column="ree_thrombin_time" property="thrombinTime"/>
+        </association>
+
+        <!--对照组体检-血常规-->
+        <association property="experimentExamBloodRoutineRespVO"
+                     javaType="cn.iocoder.yudao.module.review.controller.admin.experimentexambloodroutine.vo.ExperimentExamBloodRoutineRespVO">
+            <id column="ree_id" property="id"/>
+            <result column="ree_person_id" property="personId"/>
+            <result column="ree_wbc" property="wbc"/>
+            <result column="ree_rbc" property="rbc"/>
+            <result column="ree_neutrophils" property="neutrophils"/>
+            <result column="ree_lymphocytes" property="lymphocytes"/>
+            <result column="ree_monocytes" property="monocytes"/>
+            <result column="ree_eosinophils" property="eosinophils"/>
+            <result column="ree_basophils" property="basophils"/>
+            <result column="ree_mcv" property="mcv"/>
+            <result column="ree_mch" property="mch"/>
+            <result column="ree_mchc" property="mchc"/>
+            <result column="ree_rdw_cv" property="rdwCv"/>
+            <result column="ree_rdw_sd" property="rdwSd"/>
+            <result column="ree_hemoglobin" property="hemoglobin"/>
+            <result column="ree_platelet_crit" property="plateletCrit"/>
+            <result column="ree_mpv" property="mpv"/>
+            <result column="ree_pdw" property="pdw"/>
+            <result column="ree_hematocrit" property="hematocrit"/>
+            <result column="ree_platelet_count" property="plateletCount"/>
+            <result column="ree_neutrophils_percentage" property="neutrophilsPercentage"/>
+            <result column="ree_lymphocytes_percentage" property="lymphocytesPercentage"/>
+            <result column="ree_monocytes_percentage" property="monocytesPercentage"/>
+            <result column="ree_eosinophils_percentage" property="eosinophilsPercentage"/>
+            <result column="ree_basophils_percentage" property="basophilsPercentage"/>
+        </association>
+
+        <!--对照组体检-心电图-->
+        <association property="experimentExamEcgRespVO"
+                     javaType="cn.iocoder.yudao.module.review.controller.admin.experimentexamecg.vo.ExperimentExamEcgRespVO">
+            <id column="ree_id" property="id"/>
+            <result column="ree_person_id" property="personId"/>
+            <result column="ree_ecg_description" property="ecgDescription"/>
+        </association>
+
+        <!--对照组体检-既往病史-->
+        <association property="experimentExamPastMedicalHistoryRespVO"
+                     javaType="cn.iocoder.yudao.module.review.controller.admin.experimentexampastmedicalhistory.vo.ExperimentExamPastMedicalHistoryRespVO">
+            <id column="ree_id" property="id"/>
+            <result column="ree_person_id" property="personId"/>
+            <result column="ree_internal_disease_history" property="internalDiseaseHistory"/>
+            <result column="ree_external_disease_history" property="externalDiseaseHistory"/>
+        </association>
+
+        <!--对照组流调-饮酒情况-->
+        <association property="controlSurveyDrinkingInfoRespVO"
+                     javaType="cn.iocoder.yudao.module.review.controller.admin.controlsurveydrinkinginfo.vo.ControlSurveyDrinkingInfoRespVO">
+            <id column="id" property="id"/>
+            <result column="person_id" property="personId"/>
+            <result column="drinking_experience" property="drinkingExperience"/>
+            <result column="drinking_frequency" property="drinkingFrequency"/>
+        </association>
+
+        <!--对照组流调-既往疾病-->
+        <association property="controlSurveyPastDiseasesRespVO"
+                     javaType="cn.iocoder.yudao.module.review.controller.admin.controlsurveypastdiseases.vo.ControlSurveyPastDiseasesRespVO">
+            <id column="id" property="id"/>
+            <result column="person_id" property="personId"/>
+
+            <!-- 疾病1相关字段 -->
+            <result column="disease1_name" property="disease1Name"/>
+            <result column="disease1_diagnosed" property="disease1Diagnosed"/>
+            <result column="disease1_diagnosis_date" property="disease1DiagnosisDate"/>
+            <result column="disease1_hospitalized" property="disease1Hospitalized"/>
+            <result column="disease1_treated" property="disease1Treated"/>
+            <result column="disease1_treatment_effect" property="disease1TreatmentEffect"/>
+
+            <!-- 疾病2相关字段 -->
+            <result column="disease2_name" property="disease2Name"/>
+            <result column="disease2_diagnosed" property="disease2Diagnosed"/>
+            <result column="disease2_diagnosis_date" property="disease2DiagnosisDate"/>
+            <result column="disease2_hospitalized" property="disease2Hospitalized"/>
+            <result column="disease2_treated" property="disease2Treated"/>
+            <result column="disease2_treatment_effect" property="disease2TreatmentEffect"/>
+
+            <!-- 疾病3相关字段 -->
+            <result column="disease3_name" property="disease3Name"/>
+            <result column="disease3_diagnosed" property="disease3Diagnosed"/>
+            <result column="disease3_diagnosis_date" property="disease3DiagnosisDate"/>
+            <result column="disease3_hospitalized" property="disease3Hospitalized"/>
+            <result column="disease3_treated" property="disease3Treated"/>
+            <result column="disease3_treatment_effect" property="disease3TreatmentEffect"/>
+
+            <!-- 疾病4相关字段 -->
+            <result column="disease4_name" property="disease4Name"/>
+            <result column="disease4_diagnosed" property="disease4Diagnosed"/>
+            <result column="disease4_diagnosis_date" property="disease4DiagnosisDate"/>
+            <result column="disease4_hospitalized" property="disease4Hospitalized"/>
+            <result column="disease4_treated" property="disease4Treated"/>
+            <result column="disease4_treatment_effect" property="disease4TreatmentEffect"/>
+
+            <!-- 疾病5相关字段 -->
+            <result column="disease5_name" property="disease5Name"/>
+            <result column="disease5_diagnosed" property="disease5Diagnosed"/>
+            <result column="disease5_diagnosis_date" property="disease5DiagnosisDate"/>
+            <result column="disease5_hospitalized" property="disease5Hospitalized"/>
+            <result column="disease5_treated" property="disease5Treated"/>
+            <result column="disease5_treatment_effect" property="disease5TreatmentEffect"/>
+
+            <!-- 疾病6相关字段 -->
+            <result column="disease6_name" property="disease6Name"/>
+            <result column="disease6_diagnosed" property="disease6Diagnosed"/>
+            <result column="disease6_diagnosis_date" property="disease6DiagnosisDate"/>
+            <result column="disease6_hospitalized" property="disease6Hospitalized"/>
+            <result column="disease6_treated" property="disease6Treated"/>
+            <result column="disease6_treatment_effect" property="disease6TreatmentEffect"/>
+        </association>
+
+        <!--对照组流调-旅居信息-->
+        <association property="controlSurveyResidenceInfoRespVO"
+                     javaType="cn.iocoder.yudao.module.review.controller.admin.controlsurveyresidenceinfo.vo.ControlSurveyResidenceInfoRespVO">
+            <id column="id" property="id"/>
+            <result column="person_id" property="personId"/>
+            <result column="highland_experience" property="highlandExperience"/>
+            <result column="long_term_plain_experience" property="longTermPlainExperience"/>
+            <result column="residence1" property="residence1"/>
+            <result column="residence2" property="residence2"/>
+            <result column="residence3" property="residence3"/>
+        </association>
+
+        <!--对照组流调-自我评价-->
+        <association property="controlSurveySelfAssessmentRespVO"
+                     javaType="cn.iocoder.yudao.module.review.controller.admin.controlsurveyselfassessment.vo.ControlSurveySelfAssessmentRespVO">
+            <id column="id" property="id"/>
+            <result column="person_id" property="personId"/>
+            <result column="annual_checkups" property="annualCheckups"/>
+            <result column="health_comparison" property="healthComparison"/>
+            <result column="health_score" property="healthScore"/>
+        </association>
+
+        <!--对照组流调-吸烟情况-->
+        <association property="controlSurveySmokingInfoRespVO"
+                     javaType="cn.iocoder.yudao.module.review.controller.admin.controlsurveysmokinginfo.vo.ControlSurveySmokingInfoRespVO">
+            <id column="id" property="id"/>
+            <result column="person_id" property="personId"/>
+            <result column="smoking_status" property="smokingStatus"/>
+            <result column="smoking_years" property="smokingYears"/>
+            <result column="tried_quit" property="triedQuit"/>
+            <result column="quit_time" property="quitTime"/>
+        </association>
+
+        <!--对照组体检-腹部超声-->
+        <association property="controlExamAbdominalUltrasoundRespVO"
+                     javaType="cn.iocoder.yudao.module.review.controller.admin.controlexamabdominalultrasound.vo.ControlExamAbdominalUltrasoundRespVO">
+            <id column="id" property="id"/>
+            <result column="person_id" property="personId"/>
+            <result column="ultrasound_description" property="ultrasoundDescription"/>
+            <result column="ultrasound_summary" property="ultrasoundSummary"/>
+        </association>
+
+
+        <!--对照组体检-基本检测信息-->
+        <association property="controlExamBasicTestsRespVO"
+                     javaType="cn.iocoder.yudao.module.review.controller.admin.controlexambasictests.vo.ControlExamBasicTestsRespVO">
+            <id column="id" property="id"/>
+            <result column="person_id" property="personId"/>
+            <result column="systolic_pressure" property="systolicPressure"/>
+            <result column="diastolic_pressure" property="diastolicPressure"/>
+            <result column="pulse" property="pulse"/>
+            <result column="height" property="height"/>
+            <result column="weight" property="weight"/>
+            <result column="bmi" property="bmi"/>
+        </association>
+
+        <!--对照组体检-生化-->
+        <association property="controlExamBiochemicalTestsRespVO"
+                     javaType="cn.iocoder.yudao.module.review.controller.admin.controlexambiochemicaltests.vo.ControlExamBiochemicalTestsRespVO">
+            <id column="id" property="id"/>
+            <result column="person_id" property="personId"/>
+            <result column="urea" property="urea"/>
+            <result column="creatinine" property="creatinine"/>
+            <result column="alt" property="alt"/>
+            <result column="ast" property="ast"/>
+            <result column="total_cholesterol" property="totalCholesterol"/>
+            <result column="triglycerides" property="triglycerides"/>
+            <result column="hdl_c" property="hdlC"/>
+            <result column="ldl_c" property="ldlC"/>
+            <result column="uric_acid" property="uricAcid"/>
+            <result column="total_protein" property="totalProtein"/>
+            <result column="albumin" property="albumin"/>
+            <result column="globulin" property="globulin"/>
+            <result column="alb_glob_ratio" property="albGlobRatio"/>
+            <result column="total_bilirubin" property="totalBilirubin"/>
+            <result column="direct_bilirubin" property="directBilirubin"/>
+            <result column="indirect_bilirubin" property="indirectBilirubin"/>
+            <result column="glycated_hemoglobin" property="glycatedHemoglobin"/>
+            <result column="potassium" property="potassium"/>
+            <result column="sodium" property="sodium"/>
+            <result column="chloride" property="chloride"/>
+            <result column="calcium" property="calcium"/>
+            <result column="phosphorus" property="phosphorus"/>
+            <result column="magnesium" property="magnesium"/>
+            <result column="fasting_glucose" property="fastingGlucose"/>
+            <result column="prothrombin_time" property="prothrombinTime"/>
+            <result column="prothrombin_activity" property="prothrombinActivity"/>
+            <result column="inr" property="inr"/>
+            <result column="fibrinogen" property="fibrinogen"/>
+            <result column="aptt" property="aptt"/>
+            <result column="thrombin_time" property="thrombinTime"/>
+        </association>
+
+        <!--对照组体检-血常规-->
+        <association property="controlExamBloodRoutineRespVO"
+                     javaType="cn.iocoder.yudao.module.review.controller.admin.controlexambloodroutine.vo.ControlExamBloodRoutineRespVO">
+            <id column="id" property="id"/>
+            <result column="person_id" property="personId"/>
+            <result column="wbc" property="wbc"/>
+            <result column="rbc" property="rbc"/>
+            <result column="neutrophils" property="neutrophils"/>
+            <result column="lymphocytes" property="lymphocytes"/>
+            <result column="monocytes" property="monocytes"/>
+            <result column="eosinophils" property="eosinophils"/>
+            <result column="basophils" property="basophils"/>
+            <result column="mcv" property="mcv"/>
+            <result column="mch" property="mch"/>
+            <result column="mchc" property="mchc"/>
+            <result column="rdw_cv" property="rdwCv"/>
+            <result column="rdw_sd" property="rdwSd"/>
+            <result column="hemoglobin" property="hemoglobin"/>
+            <result column="platelet_crit" property="plateletCrit"/>
+            <result column="mpv" property="mpv"/>
+            <result column="pdw" property="pdw"/>
+            <result column="hematocrit" property="hematocrit"/>
+            <result column="platelet_count" property="plateletCount"/>
+            <result column="neutrophils_percentage" property="neutrophilsPercentage"/>
+            <result column="lymphocytes_percentage" property="lymphocytesPercentage"/>
+            <result column="monocytes_percentage" property="monocytesPercentage"/>
+            <result column="eosinophils_percentage" property="eosinophilsPercentage"/>
+            <result column="basophils_percentage" property="basophilsPercentage"/>
+        </association>
+
+        <!--对照组体检-心电图-->
+        <association property="controlExamEcgRespVO"
+                     javaType="cn.iocoder.yudao.module.review.controller.admin.controlexamecg.vo.ControlExamEcgRespVO">
+            <id column="id" property="id"/>
+            <result column="person_id" property="personId"/>
+            <result column="ecg_description" property="ecgDescription"/>
+        </association>
+
+        <!--对照组体检-既往病史-->
+        <association property="controlExamPastMedicalHistoryRespVO"
+                     javaType="cn.iocoder.yudao.module.review.controller.admin.controlexampastmedicalhistory.vo.ControlExamPastMedicalHistoryRespVO">
+            <id column="id" property="id"/>
+            <result column="person_id" property="personId"/>
+            <result column="internal_disease_history" property="internalDiseaseHistory"/>
+            <result column="external_disease_history" property="externalDiseaseHistory"/>
+        </association>
+
+        <association property="experimentDiseaseSpectrumRespVO"
+                     javaType="cn.iocoder.yudao.module.review.controller.admin.experimentdiseasespectrum.vo.ExperimentDiseaseSpectrumRespVO">
+            <id column="person_id" property="personId"/>
+            <result column="fatty_liver" property="fattyLiver"/>
+            <result column="hepatic_cyst" property="hepaticCyst"/>
+            <result column="gallbladder_polyp" property="gallbladderPolyp"/>
+            <result column="gallbladder_stone" property="gallbladderStone"/>
+            <result column="hepatic_hemangioma" property="hepaticHemangioma"/>
+            <result column="splenomegaly" property="splenomegaly"/>
+            <result column="chronic_gastritis" property="chronicGastritis"/>
+            <result column="intestinal_polyp" property="intestinalPolyp"/>
+            <result column="appendicitis" property="appendicitis"/>
+            <result column="acute_pancreatitis" property="acutePancreatitis"/>
+            <result column="digestive_ulcer" property="digestiveUlcer"/>
+            <result column="digestive_bleeding" property="digestiveBleeding"/>
+            <result column="hypertension" property="hypertension"/>
+            <result column="bradycardia" property="bradycardia"/>
+            <result column="transient_ischemic_attack" property="transientIschemicAttack"/>
+            <result column="tachycardia" property="tachycardia"/>
+            <result column="cerebral_infarction" property="cerebralInfarction"/>
+            <result column="frequent_premature_atrial_contractions" property="frequentPrematureAtrialContractions"/>
+            <result column="frequent_premature_ventricular_contractions" property="frequentPrematureVentricularContractions"/>
+            <result column="coronary_heart_disease" property="coronaryHeartDisease"/>
+            <result column="atrial_fibrillation" property="atrialFibrillation"/>
+            <result column="myocardial_infarction" property="myocardialInfarction"/>
+            <result column="hypertriglyceridemia" property="hypertriglyceridemia"/>
+            <result column="high_ldl" property="highLdl"/>
+            <result column="high_hdl" property="highHdl"/>
+            <result column="hyperuricemia" property="hyperuricemia"/>
+            <result column="hypercholesterolemia" property="hypercholesterolemia"/>
+            <result column="diabetes" property="diabetes"/>
+            <result column="thyroid_disease" property="thyroidDisease"/>
+            <result column="lung_nodule" property="lungNodule"/>
+            <result column="pulmonary_emphysema" property="pulmonaryEmphysema"/>
+            <result column="copd" property="copd"/>
+            <result column="asthma" property="asthma"/>
+            <result column="kidney_stone" property="kidneyStone"/>
+            <result column="renal_cyst" property="renalCyst"/>
+            <result column="prostatitis" property="prostatitis"/>
+            <result column="lumbar_spondylosis" property="lumbarSpondylosis"/>
+            <result column="cervical_spondylosis" property="cervicalSpondylosis"/>
+            <result column="insomnia" property="insomnia"/>
+            <result column="create_time" property="createTime"/>
+        </association>
+
+        <association property="controlDiseaseSpectrumRespVO"
+                     javaType="cn.iocoder.yudao.module.review.controller.admin.controldiseasespectrum.vo.ControlDiseaseSpectrumRespVO">
+            <id column="cds_person_id" property="personId"/>
+            <result column="cds_fatty_liver" property="fattyLiver"/>
+            <result column="cds_hepatic_cyst" property="hepaticCyst"/>
+            <result column="cds_gallbladder_polyp" property="gallbladderPolyp"/>
+            <result column="cds_gallbladder_stone" property="gallbladderStone"/>
+            <result column="cds_hepatic_hemangioma" property="hepaticHemangioma"/>
+            <result column="cds_splenomegaly" property="splenomegaly"/>
+            <result column="cds_chronic_gastritis" property="chronicGastritis"/>
+            <result column="cds_intestinal_polyp" property="intestinalPolyp"/>
+            <result column="cds_appendicitis" property="appendicitis"/>
+            <result column="cds_acute_pancreatitis" property="acutePancreatitis"/>
+            <result column="cds_digestive_ulcer" property="digestiveUlcer"/>
+            <result column="cds_digestive_bleeding" property="digestiveBleeding"/>
+            <result column="cds_hypertension" property="hypertension"/>
+            <result column="cds_bradycardia" property="bradycardia"/>
+            <result column="cds_transient_ischemic_attack" property="transientIschemicAttack"/>
+            <result column="cds_tachycardia" property="tachycardia"/>
+            <result column="cds_cerebral_infarction" property="cerebralInfarction"/>
+            <result column="cds_frequent_premature_atrial_contractions" property="frequentPrematureAtrialContractions"/>
+            <result column="cds_frequent_premature_ventricular_contractions" property="frequentPrematureVentricularContractions"/>
+            <result column="cds_coronary_heart_disease" property="coronaryHeartDisease"/>
+            <result column="cds_atrial_fibrillation" property="atrialFibrillation"/>
+            <result column="cds_myocardial_infarction" property="myocardialInfarction"/>
+            <result column="cds_hypertriglyceridemia" property="hypertriglyceridemia"/>
+            <result column="cds_high_ldl" property="highLdl"/>
+            <result column="cds_high_hdl" property="highHdl"/>
+            <result column="cds_hyperuricemia" property="hyperuricemia"/>
+            <result column="cds_hypercholesterolemia" property="hypercholesterolemia"/>
+            <result column="cds_diabetes" property="diabetes"/>
+            <result column="cds_thyroid_disease" property="thyroidDisease"/>
+            <result column="cds_lung_nodule" property="lungNodule"/>
+            <result column="cds_pulmonary_emphysema" property="pulmonaryEmphysema"/>
+            <result column="cds_copd" property="copd"/>
+            <result column="cds_asthma" property="asthma"/>
+            <result column="cds_kidney_stone" property="kidneyStone"/>
+            <result column="cds_renal_cyst" property="renalCyst"/>
+            <result column="cds_prostatitis" property="prostatitis"/>
+            <result column="cds_lumbar_spondylosis" property="lumbarSpondylosis"/>
+            <result column="cds_cervical_spondylosis" property="cervicalSpondylosis"/>
+            <result column="cds_insomnia" property="insomnia"/>
+            <result column="cds_create_time" property="createTime"/>
+        </association>
+
+        <association property="experimentFraminghamRespVO"
+                     javaType="cn.iocoder.yudao.module.review.controller.admin.experimentframingham.vo.ExperimentFraminghamRespVO">
+            <id column="person_id" property="personId"/>
+            <result column="framingham_score" property="framinghamScore"/>
+            <result column="framingham_risk" property="framinghamRisk"/>
+            <result column="framingham_risk_type" property="framinghamRiskType"/>
+        </association>
+
+        <association property="controlFraminghamRespVO"
+                     javaType="cn.iocoder.yudao.module.review.controller.admin.controlframingham.vo.ControlFraminghamRespVO">
+            <id column="cf_person_id" property="personId"/>
+            <result column="cf_framingham_score" property="framinghamScore"/>
+            <result column="cf_framingham_risk" property="framinghamRisk"/>
+            <result column="cf_framingham_risk_type" property="framinghamRiskType"/>
+        </association>
+    </resultMap>
+
+
+    <select id="selectDataByParamPage"
+            parameterType="cn.iocoder.yudao.module.review.controller.admin.basicinfo.vo.BasicInfoPageReqVO"
+            resultMap="BasicInfoRespVOResultMap">
+        <!--SELECT-->
+        <!--rbi.id,rbi.name-->
+        <!--&lt;!&ndash; 动态字段 &ndash;&gt;-->
+        <!--<if test="req.reviewBasicInfoFields != null and req.reviewBasicInfoFields.size() > 0">-->
+        <!--    <foreach collection="req.reviewBasicInfoFields" item="field" separator=",">-->
+        <!--        ,rbi.${field}-->
+        <!--    </foreach>-->
+        <!--</if>-->
+        <!--<if test="req.reviewBasicOtherInfoFields != null and req.reviewBasicOtherInfoFields.size() > 0">-->
+        <!--    &lt;!&ndash; 动态字段 &ndash;&gt;-->
+        <!--    <foreach collection="req.reviewBasicOtherInfoFields" item="field" separator=",">-->
+        <!--        ,rboi.${field}-->
+        <!--    </foreach>-->
+        <!--</if>-->
+        <!--<if test="req.joinTables != null and req.joinTables.size() > 0">-->
+        <!--    &lt;!&ndash; 动态联表字段 &ndash;&gt;-->
+        <!--    <if test="req.joinTables != null and req.joinTables.contains('review_experiment_survey_diet')">-->
+        <!--        , diet.*-->
+        <!--    </if>-->
+
+        <!--    <if test="req.joinTables != null and req.joinTables.contains('review_experiment_survey_drinking')">-->
+        <!--        , drink.*-->
+        <!--    </if>-->
+        <!--</if>-->
+        SELECT
+        rbi.*
+        ,rboi.*
+        ,diet.*
+        ,drinking.*
+        ,exercise.*
+        ,family_diseases.*
+        ,highland_diseases.*
+        ,highland_diseases_during_service.id as hdds_id
+        ,highland_diseases_during_service.person_id as hdds_person_id
+        ,highland_diseases_during_service.hypertension as hdds_hypertension
+        ,highland_diseases_during_service.myocardial_infarction as hdds_myocardial_infarction
+        ,highland_diseases_during_service.coronary_heart_disease as hdds_coronary_heart_disease
+        ,highland_diseases_during_service.pulmonary_heart_disease as hdds_pulmonary_heart_disease
+        ,highland_diseases_during_service.lower_extremity_venous_thrombosis as hdds_lower_extremity_venous_thrombosis
+        ,highland_diseases_during_service.bradycardia as hdds_bradycardia
+        ,highland_diseases_during_service.tachycardia as hdds_tachycardia
+        ,highland_diseases_during_service.arrhythmia as hdds_arrhythmia
+        ,highland_diseases_during_service.atrial_fibrillation as hdds_atrial_fibrillation
+        ,highland_diseases_during_service.paroxysmal_auricular_tachycardia as hdds_paroxysmal_auricular_tachycardia
+        ,highland_diseases_during_service.frequent_premature_atrial_contractions as hdds_frequent_premature_atrial_contractions
+        ,highland_diseases_during_service.frequent_premature_ventricular_contractions as hdds_frequent_premature_ventricular_contractions
+        ,highland_diseases_during_service.av_block as hdds_av_block
+        ,highland_diseases_during_service.ventricular_tachycardia as hdds_ventricular_tachycardia
+        ,highland_diseases_during_service.other_diseases1 as hdds_other_diseases1
+        ,highland_diseases_during_service.dizziness as hdds_dizziness
+        ,highland_diseases_during_service.transient_ischemic_attack as hdds_transient_ischemic_attack
+        ,highland_diseases_during_service.cerebral_infarction as hdds_cerebral_infarction
+        ,highland_diseases_during_service.cerebral_hemorrhage as hdds_cerebral_hemorrhage
+        ,highland_diseases_during_service.other_diseases2 as hdds_other_diseases2
+        ,highland_diseases_during_service.hyperlipidemia as hdds_hyperlipidemia
+        ,highland_diseases_during_service.diabetes as hdds_diabetes
+        ,highland_diseases_during_service.gout as hdds_gout
+        ,highland_diseases_during_service.thyroid_disease as hdds_thyroid_disease
+        ,highland_diseases_during_service.other_diseases3 as hdds_other_diseases3
+        ,highland_diseases_during_service.insomnia as hdds_insomnia
+        ,highland_diseases_during_service.tumor as hdds_tumor
+        ,highland_diseases_during_service.other_diseases4 as hdds_other_diseases4
+        ,highland_reaction.*
+        ,highland_reaction_symptoms.*
+        ,new_diseases.*
+        ,new_diseases_post_return.id as new_id
+        ,new_diseases_post_return.person_id as new_person_id
+        ,new_diseases_post_return.hypertension as new_hypertension
+        ,new_diseases_post_return.myocardial_infarction as new_myocardial_infarction
+        ,new_diseases_post_return.coronary_heart_disease as new_coronary_heart_disease
+        ,new_diseases_post_return.pulmonary_heart_disease as new_pulmonary_heart_disease
+        ,new_diseases_post_return.lower_extremity_venous_thrombosis as new_lower_extremity_venous_thrombosis
+        ,new_diseases_post_return.bradycardia as new_bradycardia
+        ,new_diseases_post_return.tachycardia as new_tachycardia
+        ,new_diseases_post_return.arrhythmia as new_arrhythmia
+        ,new_diseases_post_return.atrial_fibrillation as new_atrial_fibrillation
+        ,new_diseases_post_return.paroxysmal_auricular_tachycardia as new_paroxysmal_auricular_tachycardia
+        ,new_diseases_post_return.frequent_premature_atrial_contractions as new_frequent_premature_atrial_contractions
+        ,new_diseases_post_return.frequent_premature_ventricular_contractions as new_frequent_premature_ventricular_contractions
+        ,new_diseases_post_return.av_block as new_av_block
+        ,new_diseases_post_return.ventricular_tachycardia as new_ventricular_tachycardia
+        ,new_diseases_post_return.other_diseases1 as new_other_diseases1
+        ,new_diseases_post_return.dizziness as new_dizziness
+        ,new_diseases_post_return.transient_ischemic_attack as new_transient_ischemic_attack
+        ,new_diseases_post_return.cerebral_infarction as new_cerebral_infarction
+        ,new_diseases_post_return.cerebral_hemorrhage as new_cerebral_hemorrhage
+        ,new_diseases_post_return.other_diseases2 as new_other_diseases2
+        ,new_diseases_post_return.hyperlipidemia as new_hyperlipidemia
+        ,new_diseases_post_return.diabetes as new_diabetes
+        ,new_diseases_post_return.gout as new_gout
+        ,new_diseases_post_return.thyroid_disease as new_thyroid_disease
+        ,new_diseases_post_return.other_diseases3 as new_other_diseases3
+        ,new_diseases_post_return.insomnia as new_insomnia
+        ,new_diseases_post_return.tumor as new_tumor
+        ,new_diseases_post_return.other_diseases4 as new_other_diseases4
+        ,post_return_info.*
+        ,post_return_symptoms.*
+        ,self_assessment.*
+        ,service_info.*
+        ,sleep.*
+        ,smoking.*
+        ,rce_abdominal_ultrasound.*
+        ,rce_basic_tests.*
+        ,rce_biochemical_tests.*
+        ,rce_blood_routine.*
+        ,rce_ecg.*
+        ,rce_past_medical_history.*
+        ,rcs_drinking_info.*
+        ,rcs_past_diseases.*
+        ,rcs_residence_info.*
+        ,rcs_self_assessment.*
+        ,rcs_smoking_info.*
+        ,ree_abdominal_ultrasound.id as ree_id
+        ,ree_abdominal_ultrasound.person_id as ree_person_id
+        ,ree_abdominal_ultrasound.ultrasound_description as ree_ultrasound_description
+        ,ree_abdominal_ultrasound.ultrasound_summary as ree_ultrasound_summary
+        ,ree_basic_tests.id as ree_id
+        ,ree_basic_tests.person_id as ree_person_id
+        ,ree_basic_tests.systolic_pressure as ree_systolic_pressure
+        ,ree_basic_tests.diastolic_pressure as ree_diastolic_pressure
+        ,ree_basic_tests.pulse as ree_pulse
+        ,ree_basic_tests.height as ree_height
+        ,ree_basic_tests.weight as ree_weight
+        ,ree_basic_tests.bmi as ree_bmi
+        ,ree_biochemical_tests.id as ree_id
+        ,ree_biochemical_tests.person_id as ree_person_id
+        ,ree_biochemical_tests.urea as ree_urea
+        ,ree_biochemical_tests.creatinine as ree_creatinine
+        ,ree_biochemical_tests.alt as ree_alt
+        ,ree_biochemical_tests.ast as ree_ast
+        ,ree_biochemical_tests.total_cholesterol as ree_total_cholesterol
+        ,ree_biochemical_tests.triglycerides as ree_triglycerides
+        ,ree_biochemical_tests.hdl_c as ree_hdl_c
+        ,ree_biochemical_tests.ldl_c as ree_ldl_c
+        ,ree_biochemical_tests.uric_acid as ree_uric_acid
+        ,ree_biochemical_tests.total_protein as ree_total_protein
+        ,ree_biochemical_tests.albumin as ree_albumin
+        ,ree_biochemical_tests.globulin as ree_globulin
+        ,ree_biochemical_tests.alb_glob_ratio as ree_alb_glob_ratio
+        ,ree_biochemical_tests.total_bilirubin as ree_total_bilirubin
+        ,ree_biochemical_tests.direct_bilirubin as ree_direct_bilirubin
+        ,ree_biochemical_tests.indirect_bilirubin as ree_indirect_bilirubin
+        ,ree_biochemical_tests.glycated_hemoglobin as ree_glycated_hemoglobin
+        ,ree_biochemical_tests.potassium as ree_potassium
+        ,ree_biochemical_tests.sodium as ree_sodium
+        ,ree_biochemical_tests.chloride as ree_chloride
+        ,ree_biochemical_tests.calcium as ree_calcium
+        ,ree_biochemical_tests.phosphorus as ree_phosphorus
+        ,ree_biochemical_tests.magnesium as ree_magnesium
+        ,ree_biochemical_tests.fasting_glucose as ree_fasting_glucose
+        ,ree_biochemical_tests.prothrombin_time as ree_prothrombin_time
+        ,ree_biochemical_tests.prothrombin_activity as ree_prothrombin_activity
+        ,ree_biochemical_tests.inr as ree_inr
+        ,ree_biochemical_tests.fibrinogen as ree_fibrinogen
+        ,ree_biochemical_tests.aptt as ree_aptt
+        ,ree_biochemical_tests.thrombin_time as ree_thrombin_time
+        ,ree_blood_routine.id as ree_id
+        ,ree_blood_routine.person_id as ree_person_id
+        ,ree_blood_routine.wbc as ree_wbc
+        ,ree_blood_routine.rbc as ree_rbc
+        ,ree_blood_routine.neutrophils as ree_neutrophils
+        ,ree_blood_routine.lymphocytes as ree_lymphocytes
+        ,ree_blood_routine.monocytes as ree_monocytes
+        ,ree_blood_routine.eosinophils as ree_eosinophils
+        ,ree_blood_routine.basophils as ree_basophils
+        ,ree_blood_routine.mcv as ree_mcv
+        ,ree_blood_routine.mch as ree_mch
+        ,ree_blood_routine.mchc as ree_mchc
+        ,ree_blood_routine.rdw_cv as ree_rdw_cv
+        ,ree_blood_routine.rdw_sd as ree_rdw_sd
+        ,ree_blood_routine.hemoglobin as ree_hemoglobin
+        ,ree_blood_routine.platelet_crit as ree_platelet_crit
+        ,ree_blood_routine.mpv as ree_mpv
+        ,ree_blood_routine.pdw as ree_pdw
+        ,ree_blood_routine.hematocrit as ree_hematocrit
+        ,ree_blood_routine.platelet_count as ree_platelet_count
+        ,ree_blood_routine.neutrophils_percentage as ree_neutrophils_percentage
+        ,ree_blood_routine.lymphocytes_percentage as ree_lymphocytes_percentage
+        ,ree_blood_routine.monocytes_percentage as ree_monocytes_percentage
+        ,ree_blood_routine.eosinophils_percentage as ree_eosinophils_percentage
+        ,ree_blood_routine.basophils_percentage as ree_basophils_percentage
+        ,ree_ecg.id as ree_id
+        ,ree_ecg.person_id as ree_person_id
+        ,ree_ecg.ecg_description as ree_ecg_description
+        ,ree_past_medical_history.id as ree_id
+        ,ree_past_medical_history.person_id as ree_person_id
+        ,ree_past_medical_history.internal_disease_history as ree_internal_disease_history
+        ,ree_past_medical_history.external_disease_history as ree_external_disease_history
+        ,experiment_disease_spectrum.*
+        ,control_disease_spectrum.person_id as cds_person_id
+        ,control_disease_spectrum.fatty_liver as cds_fatty_liver
+        ,control_disease_spectrum.hepatic_cyst as cds_hepatic_cyst
+        ,control_disease_spectrum.gallbladder_polyp as cds_gallbladder_polyp
+        ,control_disease_spectrum.gallbladder_stone as cds_gallbladder_stone
+        ,control_disease_spectrum.hepatic_hemangioma as cds_hepatic_hemangioma
+        ,control_disease_spectrum.splenomegaly as cds_splenomegaly
+        ,control_disease_spectrum.chronic_gastritis as cds_chronic_gastritis
+        ,control_disease_spectrum.intestinal_polyp as cds_intestinal_polyp
+        ,control_disease_spectrum.appendicitis as cds_appendicitis
+        ,control_disease_spectrum.acute_pancreatitis as cds_acute_pancreatitis
+        ,control_disease_spectrum.digestive_ulcer as cds_digestive_ulcer
+        ,control_disease_spectrum.digestive_bleeding as cds_digestive_bleeding
+        ,control_disease_spectrum.hypertension as cds_hypertension
+        ,control_disease_spectrum.bradycardia as cds_bradycardia
+        ,control_disease_spectrum.transient_ischemic_attack as cds_transient_ischemic_attack
+        ,control_disease_spectrum.tachycardia as cds_tachycardia
+        ,control_disease_spectrum.cerebral_infarction as cds_cerebral_infarction
+        ,control_disease_spectrum.frequent_premature_atrial_contractions as cds_frequent_premature_atrial_contractions
+        ,control_disease_spectrum.frequent_premature_ventricular_contractions as cds_frequent_premature_ventricular_contractions
+        ,control_disease_spectrum.coronary_heart_disease as cds_coronary_heart_disease
+        ,control_disease_spectrum.atrial_fibrillation as cds_atrial_fibrillation
+        ,control_disease_spectrum.myocardial_infarction as cds_myocardial_infarction
+        ,control_disease_spectrum.hypertriglyceridemia as cds_hypertriglyceridemia
+        ,control_disease_spectrum.high_ldl as cds_high_ldl
+        ,control_disease_spectrum.high_hdl as cds_high_hdl
+        ,control_disease_spectrum.hyperuricemia as cds_hyperuricemia
+        ,control_disease_spectrum.hypercholesterolemia as cds_hypercholesterolemia
+        ,control_disease_spectrum.diabetes as cds_diabetes
+        ,control_disease_spectrum.thyroid_disease as cds_thyroid_disease
+        ,control_disease_spectrum.lung_nodule as cds_lung_nodule
+        ,control_disease_spectrum.pulmonary_emphysema as cds_pulmonary_emphysema
+        ,control_disease_spectrum.copd as cds_copd
+        ,control_disease_spectrum.asthma as cds_asthma
+        ,control_disease_spectrum.kidney_stone as cds_kidney_stone
+        ,control_disease_spectrum.renal_cyst as cds_renal_cyst
+        ,control_disease_spectrum.prostatitis as cds_prostatitis
+        ,control_disease_spectrum.lumbar_spondylosis as cds_lumbar_spondylosis
+        ,control_disease_spectrum.cervical_spondylosis as cds_cervical_spondylosis
+        ,control_disease_spectrum.insomnia as cds_insomnia
+        ,control_disease_spectrum.create_time as cds_create_time
+        ,experiment_framingham.*
+        ,control_framingham.person_id as cf_person_id
+        ,control_framingham.framingham_score as cf_framingham_score
+        ,control_framingham.framingham_risk as cf_framingham_risk
+        ,control_framingham.framingham_risk_type as cf_framingham_risk_type
+        FROM review_basic_info rbi
+        LEFT JOIN review_basic_other_info rboi ON rboi.person_id = rbi.id
+        LEFT JOIN review_experiment_survey_diet diet ON diet.person_id = rbi.id
+        LEFT JOIN review_experiment_survey_drinking drinking ON drinking.person_id = rbi.id
+        LEFT JOIN review_experiment_survey_exercise exercise ON exercise.person_id = rbi.id
+        LEFT JOIN review_experiment_survey_family_diseases family_diseases ON family_diseases.person_id = rbi.id
+        LEFT JOIN review_experiment_survey_highland_diseases highland_diseases ON highland_diseases.person_id = rbi.id
+        LEFT JOIN review_experiment_survey_highland_diseases_during_service highland_diseases_during_service ON
+        highland_diseases_during_service.person_id = rbi.id
+        LEFT JOIN review_experiment_survey_highland_reaction highland_reaction ON highland_reaction.person_id = rbi.id
+        LEFT JOIN review_experiment_survey_highland_reaction_symptoms highland_reaction_symptoms ON
+        highland_reaction_symptoms.person_id = rbi.id
+        LEFT JOIN review_experiment_survey_new_diseases new_diseases ON new_diseases.person_id = rbi.id
+        LEFT JOIN review_experiment_survey_new_diseases_post_return new_diseases_post_return ON
+        new_diseases_post_return.person_id = rbi.id
+        LEFT JOIN review_experiment_survey_post_return_info post_return_info ON post_return_info.person_id = rbi.id
+        LEFT JOIN review_experiment_survey_post_return_symptoms post_return_symptoms ON post_return_symptoms.person_id =
+        rbi.id
+        LEFT JOIN review_experiment_survey_self_assessment self_assessment ON self_assessment.person_id = rbi.id
+        LEFT JOIN review_experiment_survey_service_info service_info ON service_info.person_id = rbi.id
+        LEFT JOIN review_experiment_survey_sleep sleep ON sleep.person_id = rbi.id
+        LEFT JOIN review_experiment_survey_smoking smoking ON smoking.person_id = rbi.id
+        LEFT JOIN review_experiment_exam_abdominal_ultrasound ree_abdominal_ultrasound ON ree_abdominal_ultrasound.person_id = rbi.id
+        LEFT JOIN review_experiment_exam_basic_tests ree_basic_tests ON ree_basic_tests.person_id = rbi.id
+        LEFT JOIN review_experiment_exam_biochemical_tests ree_biochemical_tests ON ree_biochemical_tests.person_id = rbi.id
+        LEFT JOIN review_experiment_exam_blood_routine ree_blood_routine ON ree_blood_routine.person_id = rbi.id
+        LEFT JOIN review_experiment_exam_ecg ree_ecg ON ree_ecg.person_id = rbi.id
+        LEFT JOIN review_experiment_exam_past_medical_history ree_past_medical_history ON ree_past_medical_history.person_id = rbi.id
+        LEFT JOIN review_control_exam_abdominal_ultrasound rce_abdominal_ultrasound ON rce_abdominal_ultrasound.person_id = rbi.id
+        LEFT JOIN review_control_exam_basic_tests rce_basic_tests ON rce_basic_tests.person_id = rbi.id
+        LEFT JOIN review_control_exam_biochemical_tests rce_biochemical_tests ON rce_biochemical_tests.person_id = rbi.id
+        LEFT JOIN review_control_exam_blood_routine rce_blood_routine ON rce_blood_routine.person_id = rbi.id
+        LEFT JOIN review_control_exam_ecg rce_ecg ON rce_ecg.person_id = rbi.id
+        LEFT JOIN review_control_exam_past_medical_history rce_past_medical_history ON rce_past_medical_history.person_id = rbi.id
+        LEFT JOIN review_control_survey_drinking_info rcs_drinking_info ON rcs_drinking_info.person_id = rbi.id
+        LEFT JOIN review_control_survey_past_diseases rcs_past_diseases ON rcs_past_diseases.person_id = rbi.id
+        LEFT JOIN review_control_survey_residence_info rcs_residence_info ON rcs_residence_info.person_id = rbi.id
+        LEFT JOIN review_control_survey_self_assessment rcs_self_assessment ON rcs_self_assessment.person_id = rbi.id
+        LEFT JOIN review_control_survey_smoking_info rcs_smoking_info ON rcs_smoking_info.person_id = rbi.id
+        LEFT JOIN review_experiment_disease_spectrum experiment_disease_spectrum ON experiment_disease_spectrum.person_id = rbi.id
+        LEFT JOIN review_control_disease_spectrum control_disease_spectrum ON control_disease_spectrum.person_id = rbi.id
+        LEFT JOIN review_experiment_framingham experiment_framingham ON experiment_framingham.person_id = rbi.id
+        LEFT JOIN review_control_framingham control_framingham ON control_framingham.person_id = rbi.id
+        <where>
+            rbi.type = #{req.group}
+            <if test="req.advancedConditions != null and req.advancedConditions.size() > 0">
+                <trim prefix="AND (" suffix=")" suffixOverrides="AND OR">
+                    <foreach collection="req.advancedConditions" item="cond" separator=" ">
+                        <choose>
+                            <when test="cond.logic != null and cond.logic.toUpperCase() == 'NOT'">
+                                NOT (${cond.field} ${cond.operator}
+                                <if test="cond.operator.toLowerCase() == 'like'">
+                                    CONCAT('%', #{cond.value}, '%'))
+                                </if>
+                                <if test="cond.operator.toLowerCase() != 'like'">
+                                    #{cond.value})
+                                </if>
+                            </when>
+                            <otherwise>
+                                ${cond.logic} ${cond.field} ${cond.operator}
+                                <if test="cond.operator.toLowerCase() == 'like'">
+                                    CONCAT('%', #{cond.value}, '%')
+                                </if>
+                                <if test="cond.operator.toLowerCase() != 'like'">
+                                    #{cond.value}
+                                </if>
+                            </otherwise>
+                        </choose>
+                    </foreach>
+                </trim>
+            </if>
+            <if test="req.name != null and req.name != ''">
+                and rbi.name LIKE CONCAT('%', #{req.name}, '%')
+            </if>
+<!--            <if test="req.gender != null and req.gender != ''">-->
+<!--                rbi.gender = #{gender}-->
+<!--            </if>-->
+<!--            <if test="req.highestEducation != null and req.highestEducation != ''">-->
+<!--                rbi.highest_education = #{highestEducation}-->
+<!--            </if>-->
+<!--            &lt;!&ndash; 服役年限范围判断 &ndash;&gt;-->
+<!--            <if test="req.serviceDurationRange != null and req.serviceDurationRange != ''">-->
+<!--                <choose>-->
+<!--                    <when test="req.serviceDurationRange == 1">-->
+<!--                        service_info.discharge_year - service_info.highland_entry_year &lt; 10-->
+<!--                    </when>-->
+<!--                    <when test="req.serviceDurationRange == 2">-->
+<!--                        service_info.discharge_year - service_info.highland_entry_year &gt;= 10-->
+<!--                        AND service_info.discharge_year - service_info.highland_entry_year &lt; 15-->
+<!--                    </when>-->
+<!--                    <when test="req.serviceDurationRange == 3">-->
+<!--                        service_info.discharge_year - service_info.highland_entry_year &gt;= 15-->
+<!--                    </when>-->
+<!--                </choose>-->
+<!--            </if>-->
+
+<!--            &lt;!&ndash; 海拔高度最小值 &ndash;&gt;-->
+<!--            <if test="req.altitudeMin != null">-->
+<!--                AND service_info.altitude1 &gt;= #{req.altitudeMin}-->
+<!--            </if>-->
+
+<!--            &lt;!&ndash; 海拔高度最大值 &ndash;&gt;-->
+<!--            <if test="req.altitudeMax != null">-->
+<!--                AND service_info.altitude1 &lt;= #{req.altitudeMax}-->
+<!--            </if>-->
+            <!--    <if test="ethnicity != null and ethnicity != ''">-->
+            <!--        rbi.ethnicity = #{ethnicity}-->
+            <!--    </if>-->
+            <!--    <if test="maritalStatus != null and maritalStatus != ''">-->
+            <!--        rbi.marital_status = #{maritalStatus}-->
+            <!--    </if>-->
+            <!--    <if test="height != null">-->
+            <!--        rbi.height = #{height}-->
+            <!--    </if>-->
+            <!--    <if test="weight != null">-->
+            <!--        rbi.weight = #{weight}-->
+            <!--    </if>-->
+        </where>
+    </select>
+
+    <select id="getAverageByParam"
+            parameterType="cn.iocoder.yudao.module.review.controller.admin.basicinfo.vo.BasicInfoPageReqVO"
+            resultType="cn.iocoder.yudao.module.review.controller.admin.basicinfo.vo.BasicInfoAverageVO">
+        SELECT
+        (COUNT(*) * 1.0 / (SELECT COUNT(*) FROM review_basic_info where type = #{req.group})) AS data_ratio,
+        COUNT(CASE WHEN rbi.gender = '男' THEN 1 END) AS male_count,
+        COUNT(CASE WHEN rbi.gender = '女' THEN 1 END) AS female_count,
+        -- Age metrics
+        AVG(rboi.age) AS average_age,
+        MIN(rboi.age) AS min_age,
+        MAX(rboi.age) AS max_age,
+
+        -- Highland service metrics
+        AVG(service_info.altitude) AS average_highland_altitude,
+        MAX(service_info.altitude) AS max_highland_altitude,
+        MIN(service_info.altitude) AS min_highland_altitude,
+        AVG((service_info.year1 + service_info.year2 + service_info.year3 + service_info.year4 + service_info.year5 - service_info.year6) * 12 + (service_info.month1 + service_info.month2 + service_info.month3 + service_info.month4 + service_info.month5 + service_info.month6 )) AS average_highland_service_duration,
+        MAX((service_info.year1 + service_info.year2 + service_info.year3 + service_info.year4 + service_info.year5 - service_info.year6) * 12 + (service_info.month1 + service_info.month2 + service_info.month3 + service_info.month4 + service_info.month5 + service_info.month6 )) AS max_highland_service_duration,
+        MIN((service_info.year1 + service_info.year2 + service_info.year3 + service_info.year4 + service_info.year5 - service_info.year6) * 12 + (service_info.month1 + service_info.month2 + service_info.month3 + service_info.month4 + service_info.month5 + service_info.month6 )) AS min_highland_service_duration,
+
+        -- Post-retirement Chengdu living metrics
+        AVG(post_return_info.chengdu_residence_time) AS average_chengdu_living_duration,
+        MAX(post_return_info.chengdu_residence_time) AS max_chengdu_living_duration,
+        MIN(post_return_info.chengdu_residence_time) AS min_chengdu_living_duration,
+        AVG(rcs_residence_info.residence1) AS average_chengdu_living_duration,
+        MAX(rcs_residence_info.residence1) AS max_chengdu_living_duration,
+        MIN(rcs_residence_info.residence1) AS min_chengdu_living_duration,
+
+        AVG(2023 - service_info.discharge_year) AS average_years_since_discharge,
+        MAX(2023 - service_info.discharge_year) AS max_years_since_discharge,
+        MIN(2023 - service_info.discharge_year) AS min_years_since_discharge,
+
+        AVG(ree_biochemical_tests.total_cholesterol) AS ree_average_total_cholesterol,
+        AVG(ree_biochemical_tests.triglycerides) AS ree_average_triglycerides,
+        AVG(ree_biochemical_tests.hdl_c) AS ree_average_hdl_c,
+        AVG(ree_biochemical_tests.ldl_c) AS ree_average_ldl_c,
+        AVG(ree_biochemical_tests.total_protein) AS ree_average_total_protein,
+        AVG(ree_biochemical_tests.albumin) AS ree_average_albumin,
+        AVG(ree_biochemical_tests.globulin) AS ree_average_globulin,
+        AVG(ree_biochemical_tests.alb_glob_ratio) AS ree_average_alb_glob_ratio,
+        AVG(ree_biochemical_tests.total_bilirubin) AS ree_average_total_bilirubin,
+        AVG(ree_biochemical_tests.direct_bilirubin) AS ree_average_direct_bilirubin,
+        AVG(ree_biochemical_tests.indirect_bilirubin) AS ree_average_indirect_bilirubin,
+        AVG(ree_biochemical_tests.alt) AS ree_average_alt,
+        AVG(ree_biochemical_tests.ast) AS ree_average_ast,
+        AVG(ree_biochemical_tests.uric_acid) AS ree_average_uric_acid,
+        AVG(ree_biochemical_tests.urea) AS ree_average_urea,
+        AVG(ree_biochemical_tests.creatinine) AS ree_average_creatinine,
+        AVG(ree_biochemical_tests.prothrombin_time) AS ree_average_prothrombin_time,
+        AVG(ree_biochemical_tests.prothrombin_activity) AS ree_average_prothrombin_activity,
+        AVG(ree_biochemical_tests.inr) AS ree_average_inr,
+        AVG(ree_biochemical_tests.fibrinogen) AS ree_average_fibrinogen,
+        AVG(ree_biochemical_tests.aptt) AS ree_average_aptt,
+        AVG(ree_biochemical_tests.thrombin_time) AS ree_average_thrombin_time,
+
+        AVG(rce_biochemical_tests.total_cholesterol) AS rce_average_total_cholesterol,
+        AVG(rce_biochemical_tests.triglycerides) AS rce_average_triglycerides,
+        AVG(rce_biochemical_tests.hdl_c) AS rce_average_hdl_c,
+        AVG(rce_biochemical_tests.ldl_c) AS rce_average_ldl_c,
+        AVG(rce_biochemical_tests.total_protein) AS rce_average_total_protein,
+        AVG(rce_biochemical_tests.albumin) AS rce_average_albumin,
+        AVG(rce_biochemical_tests.globulin) AS rce_average_globulin,
+        AVG(rce_biochemical_tests.alb_glob_ratio) AS rce_average_alb_glob_ratio,
+        AVG(rce_biochemical_tests.total_bilirubin) AS rce_average_total_bilirubin,
+        AVG(rce_biochemical_tests.direct_bilirubin) AS rce_average_direct_bilirubin,
+        AVG(rce_biochemical_tests.indirect_bilirubin) AS rce_average_indirect_bilirubin,
+        AVG(rce_biochemical_tests.alt) AS rce_average_alt,
+        AVG(rce_biochemical_tests.ast) AS rce_average_ast,
+        AVG(rce_biochemical_tests.uric_acid) AS rce_average_uric_acid,
+        AVG(rce_biochemical_tests.urea) AS rce_average_urea,
+        AVG(rce_biochemical_tests.creatinine) AS rce_average_creatinine,
+        AVG(rce_biochemical_tests.prothrombin_time) AS rce_average_prothrombin_time,
+        AVG(rce_biochemical_tests.prothrombin_activity) AS rce_average_prothrombin_activity,
+        AVG(rce_biochemical_tests.inr) AS rce_average_inr,
+        AVG(rce_biochemical_tests.fibrinogen) AS rce_average_fibrinogen,
+        AVG(rce_biochemical_tests.aptt) AS rce_average_aptt,
+        AVG(rce_biochemical_tests.thrombin_time) AS rce_average_thrombin_time,
+
+        AVG(ree_blood_routine.wbc) AS ree_average_wbc,
+        AVG(ree_blood_routine.rbc) AS ree_average_rbc,
+        AVG(ree_blood_routine.neutrophils) AS ree_average_neutrophils,
+        AVG(ree_blood_routine.lymphocytes) AS ree_average_lymphocytes,
+        AVG(ree_blood_routine.monocytes) AS ree_average_monocytes,
+        AVG(ree_blood_routine.eosinophils) AS ree_average_eosinophils,
+        AVG(ree_blood_routine.basophils) AS ree_average_basophils,
+        AVG(ree_blood_routine.mcv) AS ree_average_mcv,
+        AVG(ree_blood_routine.mch) AS ree_average_mch,
+        AVG(ree_blood_routine.mchc) AS ree_average_mchc,
+        AVG(ree_blood_routine.rdw_cv) AS ree_average_rdw_cv,
+        AVG(ree_blood_routine.rdw_sd) AS ree_average_rdw_sd,
+        AVG(ree_blood_routine.hemoglobin) AS ree_average_hemoglobin,
+        AVG(ree_blood_routine.platelet_crit) AS ree_average_platelet_crit,
+        AVG(ree_blood_routine.mpv) AS ree_average_mpv,
+        AVG(ree_blood_routine.pdw) AS ree_average_pdw,
+        AVG(ree_blood_routine.hematocrit) AS ree_average_hematocrit,
+        AVG(ree_blood_routine.platelet_count) AS ree_average_platelet_count,
+        AVG(ree_blood_routine.neutrophils_percentage) AS ree_average_neutrophils_percentage,
+        AVG(ree_blood_routine.lymphocytes_percentage) AS ree_average_lymphocytes_percentage,
+        AVG(ree_blood_routine.monocytes_percentage) AS ree_average_monocytes_percentage,
+        AVG(ree_blood_routine.eosinophils_percentage) AS ree_average_eosinophils_percentage,
+        AVG(ree_blood_routine.basophils_percentage) AS ree_average_basophils_percentage,
+
+        AVG(rce_blood_routine.wbc) AS rce_average_wbc,
+        AVG(rce_blood_routine.rbc) AS rce_average_rbc,
+        AVG(rce_blood_routine.neutrophils) AS rce_average_neutrophils,
+        AVG(rce_blood_routine.lymphocytes) AS rce_average_lymphocytes,
+        AVG(rce_blood_routine.monocytes) AS rce_average_monocytes,
+        AVG(rce_blood_routine.eosinophils) AS rce_average_eosinophils,
+        AVG(rce_blood_routine.basophils) AS rce_average_basophils,
+        AVG(rce_blood_routine.mcv) AS rce_average_mcv,
+        AVG(rce_blood_routine.mch) AS rce_average_mch,
+        AVG(rce_blood_routine.mchc) AS rce_average_mchc,
+        AVG(rce_blood_routine.rdw_cv) AS rce_average_rdw_cv,
+        AVG(rce_blood_routine.rdw_sd) AS rce_average_rdw_sd,
+        AVG(rce_blood_routine.hemoglobin) AS rce_average_hemoglobin,
+        AVG(rce_blood_routine.platelet_crit) AS rce_average_platelet_crit,
+        AVG(rce_blood_routine.mpv) AS rce_average_mpv,
+        AVG(rce_blood_routine.pdw) AS rce_average_pdw,
+        AVG(rce_blood_routine.hematocrit) AS rce_average_hematocrit,
+        AVG(rce_blood_routine.platelet_count) AS rce_average_platelet_count,
+        AVG(rce_blood_routine.neutrophils_percentage) AS rce_average_neutrophils_percentage,
+        AVG(rce_blood_routine.lymphocytes_percentage) AS rce_average_lymphocytes_percentage,
+        AVG(rce_blood_routine.monocytes_percentage) AS rce_average_monocytes_percentage,
+        AVG(rce_blood_routine.eosinophils_percentage) AS rce_average_eosinophils_percentage,
+        AVG(rce_blood_routine.basophils_percentage) AS rce_average_basophils_percentage
+        FROM review_basic_info rbi
+        LEFT JOIN review_basic_other_info rboi ON rboi.person_id = rbi.id
+        LEFT JOIN review_experiment_survey_diet diet ON diet.person_id = rbi.id
+        LEFT JOIN review_experiment_survey_drinking drinking ON drinking.person_id = rbi.id
+        LEFT JOIN review_experiment_survey_exercise exercise ON exercise.person_id = rbi.id
+        LEFT JOIN review_experiment_survey_family_diseases family_diseases ON family_diseases.person_id = rbi.id
+        LEFT JOIN review_experiment_survey_highland_diseases highland_diseases ON highland_diseases.person_id = rbi.id
+        LEFT JOIN review_experiment_survey_highland_diseases_during_service highland_diseases_during_service ON
+        highland_diseases_during_service.person_id = rbi.id
+        LEFT JOIN review_experiment_survey_highland_reaction highland_reaction ON highland_reaction.person_id = rbi.id
+        LEFT JOIN review_experiment_survey_highland_reaction_symptoms highland_reaction_symptoms ON
+        highland_reaction_symptoms.person_id = rbi.id
+        LEFT JOIN review_experiment_survey_new_diseases new_diseases ON new_diseases.person_id = rbi.id
+        LEFT JOIN review_experiment_survey_new_diseases_post_return new_diseases_post_return ON
+        new_diseases_post_return.person_id = rbi.id
+        LEFT JOIN review_experiment_survey_post_return_info post_return_info ON post_return_info.person_id = rbi.id
+        LEFT JOIN review_experiment_survey_post_return_symptoms post_return_symptoms ON post_return_symptoms.person_id =
+        rbi.id
+        LEFT JOIN review_experiment_survey_self_assessment self_assessment ON self_assessment.person_id = rbi.id
+        LEFT JOIN review_experiment_survey_service_info service_info ON service_info.person_id = rbi.id
+        LEFT JOIN review_experiment_survey_sleep sleep ON sleep.person_id = rbi.id
+        LEFT JOIN review_experiment_survey_smoking smoking ON smoking.person_id = rbi.id
+        LEFT JOIN review_experiment_exam_abdominal_ultrasound ree_abdominal_ultrasound ON ree_abdominal_ultrasound.person_id = rbi.id
+        LEFT JOIN review_experiment_exam_basic_tests ree_basic_tests ON ree_basic_tests.person_id = rbi.id
+        LEFT JOIN review_experiment_exam_biochemical_tests ree_biochemical_tests ON ree_biochemical_tests.person_id = rbi.id
+        LEFT JOIN review_experiment_exam_blood_routine ree_blood_routine ON ree_blood_routine.person_id = rbi.id
+        LEFT JOIN review_experiment_exam_ecg ree_ecg ON ree_ecg.person_id = rbi.id
+        LEFT JOIN review_experiment_exam_past_medical_history ree_past_medical_history ON ree_past_medical_history.person_id = rbi.id
+        LEFT JOIN review_control_exam_abdominal_ultrasound rce_abdominal_ultrasound ON rce_abdominal_ultrasound.person_id = rbi.id
+        LEFT JOIN review_control_exam_basic_tests rce_basic_tests ON rce_basic_tests.person_id = rbi.id
+        LEFT JOIN review_control_exam_biochemical_tests rce_biochemical_tests ON rce_biochemical_tests.person_id = rbi.id
+        LEFT JOIN review_control_exam_blood_routine rce_blood_routine ON rce_blood_routine.person_id = rbi.id
+        LEFT JOIN review_control_exam_ecg rce_ecg ON rce_ecg.person_id = rbi.id
+        LEFT JOIN review_control_exam_past_medical_history rce_past_medical_history ON rce_past_medical_history.person_id = rbi.id
+        LEFT JOIN review_control_survey_drinking_info rcs_drinking_info ON rcs_drinking_info.person_id = rbi.id
+        LEFT JOIN review_control_survey_past_diseases rcs_past_diseases ON rcs_past_diseases.person_id = rbi.id
+        LEFT JOIN review_control_survey_residence_info rcs_residence_info ON rcs_residence_info.person_id = rbi.id
+        LEFT JOIN review_control_survey_self_assessment rcs_self_assessment ON rcs_self_assessment.person_id = rbi.id
+        LEFT JOIN review_control_survey_smoking_info rcs_smoking_info ON rcs_smoking_info.person_id = rbi.id
+        LEFT JOIN review_experiment_disease_spectrum experiment_disease_spectrum ON experiment_disease_spectrum.person_id = rbi.id
+        LEFT JOIN review_control_disease_spectrum control_disease_spectrum ON control_disease_spectrum.person_id = rbi.id
+        LEFT JOIN review_experiment_framingham experiment_framingham ON experiment_framingham.person_id = rbi.id
+        LEFT JOIN review_control_framingham control_framingham ON control_framingham.person_id = rbi.id
+        <where>
+            rbi.type = #{req.group}
+            <if test="req.advancedConditions != null and req.advancedConditions.size() > 0">
+                <trim prefix="AND (" suffix=")" suffixOverrides="AND OR">
+                    <foreach collection="req.advancedConditions" item="cond" separator=" ">
+                        <choose>
+                            <when test="cond.logic != null and cond.logic.toUpperCase() == 'NOT'">
+                                NOT (${cond.field} ${cond.operator}
+                                <if test="cond.operator.toLowerCase() == 'like'">
+                                    CONCAT('%', #{cond.value}, '%'))
+                                </if>
+                                <if test="cond.operator.toLowerCase() != 'like'">
+                                    #{cond.value})
+                                </if>
+                            </when>
+                            <otherwise>
+                                ${cond.logic} ${cond.field} ${cond.operator}
+                                <if test="cond.operator.toLowerCase() == 'like'">
+                                    CONCAT('%', #{cond.value}, '%')
+                                </if>
+                                <if test="cond.operator.toLowerCase() != 'like'">
+                                    #{cond.value}
+                                </if>
+                            </otherwise>
+                        </choose>
+                    </foreach>
+                </trim>
+            </if>
+        </where>
+    </select>
+</mapper>
+
+
+        <!-- 动态 JOIN -->
+        <!--<if test="req.joinTables != null and req.joinTables.contains('review_experiment_survey_diet')">-->
+        <!--    LEFT JOIN review_experiment_survey_diet diet ON diet.person_id = rbi.id-->
+        <!--</if>-->
+
+        <!--<if test="req.joinTables != null and req.joinTables.contains('review_experiment_survey_drinking')">-->
+        <!--    LEFT JOIN review_experiment_survey_drinking drink ON drink.person_id = rbi.id-->
+        <!--</if>-->
