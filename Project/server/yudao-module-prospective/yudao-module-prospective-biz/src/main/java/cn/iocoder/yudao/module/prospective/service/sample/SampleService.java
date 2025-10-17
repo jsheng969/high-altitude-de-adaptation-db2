@@ -22,6 +22,13 @@ public interface SampleService {
      */
     Long createSample(@Valid SampleSaveReqVO createReqVO);
 
+    // 新增：根据条件查询样本
+    SampleDO getSampleByUniqueCondition(String freezerNo, String layer, String columnNum,
+                                        String drawerNo, String boxSeq, Integer tubeSeq);
+
+    // 新增：创建或更新样本
+    void createOrUpdateSample(SampleSaveReqVO reqVO);
+
     /**
      * 更新生物样本
      *

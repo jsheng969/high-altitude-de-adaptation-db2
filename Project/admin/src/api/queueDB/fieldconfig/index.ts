@@ -45,9 +45,21 @@ export const FieldConfigApi = {
   exportFieldConfig: async (params) => {
     return await request.download({ url: `/queueDB/field-config/export-excel`, params })
   },
-  // 导出动态字段配置 Excel
-  listByModuleCode: async (params) => {
-    return await request.get({ url: `/queueDB/field-config/list`, params })
-  }
+  // 根据模块代码获取字段列表
+  listByModuleCode: async (moduleCode: string) => {
+    return await request.get({ url: '/queueDB/field-config/list', params: { moduleCode } })
+  },
   
+  // 获取字段类型选项
+  getFieldTypeOptions: async () => {
+    return await request.get({ url: '/queueDB/field-config/field-type-options' })
+  },
+
+  // 检查字段代码是否可用
+  checkFieldCode: async (moduleCode: string, fieldCode: string) => {
+    return await request.get({ 
+      url: '/queueDB/field-config/check-code', 
+      params: { moduleCode, fieldCode } 
+    })
+  }
 }

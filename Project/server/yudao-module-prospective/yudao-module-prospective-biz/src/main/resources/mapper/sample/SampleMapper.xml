@@ -112,4 +112,16 @@
         ORDER BY count DESC
     LIMIT 4
     </select>
+
+    <select id="selectByUniqueCondition" resultType="cn.iocoder.yudao.module.prospective.dal.dataobject.sample.SampleDO">
+        SELECT *
+        FROM bio_sample
+        WHERE freezer_no = #{freezerNo}
+        AND layer = #{layer}
+        AND column_num = #{columnNum}
+        AND drawer_no = #{drawerNo}
+        AND box_seq = #{boxSeq}
+        AND tube_seq = #{tubeSeq}
+        LIMIT 1
+    </select>
 </mapper>

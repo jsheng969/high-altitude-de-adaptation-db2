@@ -70,4 +70,6 @@ public class FieldConfigDO extends BaseDO {
     @NotBlank
     private String fieldName; // 对应数据库列名
 
+    private String fieldGroup; // 字段分组代码，如：station_training
+    private String fieldGroupName; // 字段分组名称，如：驻训信息
 }

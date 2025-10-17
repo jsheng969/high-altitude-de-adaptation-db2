@@ -1,11 +1,14 @@
 package cn.iocoder.yudao.module.queueDB.dal.dataobject.moduleconfig;
 
+import cn.iocoder.yudao.module.queueDB.controller.admin.moduleconfig.vo.ModuleConfigTreeVO;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import java.util.*;
 import java.time.LocalDateTime;
 import java.time.LocalDateTime;
 import com.baomidou.mybatisplus.annotation.*;
 import cn.iocoder.yudao.framework.mybatis.core.dataobject.BaseDO;
+import org.springframework.data.annotation.Transient;
 
 /**
  * 动态模块配置表（支持三级结构） DO
@@ -68,5 +71,9 @@ public class ModuleConfigDO extends BaseDO {
      */
     private Integer status;
     private String remark;
+
+    @Schema(description = "子模块列表")
+    @TableField(exist = false)
+    private List<ModuleConfigDO> children;
 
 }

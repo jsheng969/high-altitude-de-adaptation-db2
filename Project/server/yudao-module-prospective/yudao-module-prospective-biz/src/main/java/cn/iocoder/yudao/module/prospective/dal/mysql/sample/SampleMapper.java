@@ -8,6 +8,7 @@ import cn.iocoder.yudao.framework.mybatis.core.mapper.BaseMapperX;
 import cn.iocoder.yudao.module.prospective.dal.dataobject.sample.SampleDO;
 import org.apache.ibatis.annotations.Mapper;
 import cn.iocoder.yudao.module.prospective.controller.admin.sample.vo.*;
+import org.apache.ibatis.annotations.Param;
 
 /**
  * 生物样本 Mapper
@@ -49,4 +50,12 @@ public interface SampleMapper extends BaseMapperX<SampleDO> {
     List<SampleRespVO> selectDataByBoxNo(SampleRespVO sampleRespVO);
 
     List<SampleTypeCountVO> selectSampleTypeCount();
+
+    // 根据唯一条件查询样本
+    SampleDO selectByUniqueCondition(@Param("freezerNo") String freezerNo,
+                                     @Param("layer") String layer,
+                                     @Param("columnNum") String columnNum,
+                                     @Param("drawerNo") String drawerNo,
+                                     @Param("boxSeq") String boxSeq,
+                                     @Param("tubeSeq") Integer tubeSeq);
 }

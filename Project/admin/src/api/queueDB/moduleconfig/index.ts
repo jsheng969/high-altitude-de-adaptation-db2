@@ -45,5 +45,20 @@ export const ModuleConfigApi = {
   // 导出动态模块配置表（支持三级结构） Excel
   exportModuleConfig: async (params) => {
     return await request.download({ url: `/queueDB/module-config/export-excel`, params })
+  },
+
+  // 获取模块树（包含字段统计）
+  getModuleTreeWithStats: async () => {
+    return await request.get({ url: '/queueDB/module-config/tree-with-stats' })
+  },
+
+  // 检查模块代码是否可用
+  checkModuleCode: async (moduleCode: string) => {
+    return await request.get({ url: '/queueDB/module-config/check-code', params: { moduleCode } })
+  },
+
+  // 获取模块及字段
+  getModulesWithFields: () => {
+    return request.get({ url: '/queueDB/module-config/with-fields' })
   }
 }

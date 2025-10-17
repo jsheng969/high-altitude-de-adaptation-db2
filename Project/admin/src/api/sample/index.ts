@@ -86,4 +86,10 @@ export const SampleApi = {
   getSampleHistoryPage: async (params: any) => {
     return await request.get({ url: `/samplehistory/sample-history/page`, params })
   },
+
+  // 新增生物样本
+  importSamples: async (data: any) => {
+    return await request.upload({ url: `/prospective/sample/importUpdate`, data })
+  },
+
 }

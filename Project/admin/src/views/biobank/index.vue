@@ -2,6 +2,25 @@
 <template>
   <div class="main">
     <div class="toolbar">
+      <!-- 添加上传按钮 -->
+      <el-button type="text" size="mini" @click="handleImport">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke-width="1.5"
+          stroke="currentColor"
+          width="16"
+          height="16"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"
+          />
+        </svg>
+        <span>导入样本数据</span>
+      </el-button>
       <el-button type="text" size="mini" @click="showTakeOutDialog">
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -181,6 +200,45 @@
       </div>
     </template>
   </el-dialog>
+
+  <!-- 文件上传对话框 -->
+    <el-dialog v-model="importDialogVisible" title="导入样本数据" width="500px">
+      <div class="upload-container">
+        <el-upload
+          ref="uploadRef"
+          class="upload-demo"
+          drag
+          action=""
+          :auto-upload="false"
+          :on-change="handleFileChange"
+          :file-list="fileList"
+          accept=".xlsx,.xls"
+        >
+          <div class="el-upload__text">
+            <i class="el-icon-upload"></i>
+            <div>将文件拖到此处，或<em>点击上传</em></div>
+          </div>
+          <template #tip>
+            <div class="el-upload__tip">
+              只能上传 xlsx/xls 文件，且不超过10MB
+            </div>
+          </template>
+        </el-upload>
+      </div>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="importDialogVisible = false">取消</el-button>
+          <el-button 
+            type="primary" 
+            @click="submitImport" 
+            :loading="importLoading"
+            :disabled="!selectedFile"
+          >
+            开始导入
+          </el-button>
+        </div>
+      </template>
+    </el-dialog>
 </template>
 
 <script setup lang="ts">
@@ -305,6 +363,67 @@ const openTubeDetail = async (row: any) => {
 // 对话框打开事件
 const handleUsageRecordView = () => {
   initData()
+}
+
+// 导入相关的响应式数据
+const importDialogVisible = ref(false)
+const importLoading = ref(false)
+const selectedFile = ref<File | null>(null)
+const fileList = ref<any[]>([])
+const uploadRef = ref()
+
+// 显示导入对话框
+const handleImport = () => {
+  importDialogVisible.value = true
+  selectedFile.value = null
+  fileList.value = []
+}
+
+// 处理文件选择
+const handleFileChange = (file: any) => {
+  selectedFile.value = file.raw
+}
+
+// 提交导入
+const submitImport = async () => {
+  if (!selectedFile.value) {
+    ElMessage.warning('请选择要上传的文件')
+    return
+  }
+
+  // 检查文件类型
+  const fileExtension = selectedFile.value.name.split('.').pop()?.toLowerCase()
+  if (!['xlsx', 'xls'].includes(fileExtension || '')) {
+    ElMessage.error('只能上传Excel文件（.xlsx 或 .xls）')
+    return
+  }
+
+  // 检查文件大小（10MB限制）
+  if (selectedFile.value.size > 10 * 1024 * 1024) {
+    ElMessage.error('文件大小不能超过10MB')
+    return
+  }
+
+  importLoading.value = true
+
+  try {
+    const formData = new FormData()
+    formData.append('file', selectedFile.value)
+
+    // 调用上传API
+    await SampleApi.importSamples(formData)
+    
+    ElMessage.success('样本数据导入成功')
+    importDialogVisible.value = false
+    
+    // 重新加载数据
+    await initData()
+  } catch (error: any) {
+    console.error('导入失败:', error)
+    ElMessage.error(error.message || '样本数据导入失败')
+  } finally {
+    importLoading.value = false
+  }
 }
 </script>
 

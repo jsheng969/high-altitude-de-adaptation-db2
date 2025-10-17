@@ -45,6 +45,10 @@ public interface ModuleConfigService {
     ModuleConfigDO getModuleConfig(Long id);
 
     /**
+     * 获得模块配置详情（包含字段列表）
+     */
+    ModuleConfigDetailVO getModuleConfigDetail(Long id);
+    /**
      * 获得动态模块配置表（支持三级结构）分页
      *
      * @param pageReqVO 分页查询
@@ -54,5 +58,16 @@ public interface ModuleConfigService {
 
     List<ModuleConfigDO> getModuleTree();
 
-    List<ModuleConfigDO> getChildren(String parentCode);
+    /**
+     * 获取模块树（包含字段统计）
+     */
+    List<ModuleConfigTreeVO> getModuleTreeWithStats();
+
+    /**
+     * 检查模块代码是否可用
+     */
+    boolean checkModuleCodeAvailable(String moduleCode);
+
+    public List<ModuleWithFieldsRespVO> getModulesWithFields();
+
 }

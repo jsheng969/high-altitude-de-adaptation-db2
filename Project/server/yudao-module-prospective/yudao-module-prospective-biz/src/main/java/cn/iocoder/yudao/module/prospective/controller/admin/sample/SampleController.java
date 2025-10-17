@@ -34,6 +34,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import javax.validation.constraints.*;
 import javax.validation.*;
 import javax.servlet.http.*;
+import java.io.InputStream;
 import java.util.*;
 import java.io.IOException;
 import java.util.stream.Collectors;
@@ -54,6 +55,7 @@ import static cn.iocoder.yudao.framework.apilog.core.enums.OperateTypeEnum.*;
 import cn.iocoder.yudao.module.prospective.controller.admin.sample.vo.*;
 import cn.iocoder.yudao.module.prospective.dal.dataobject.sample.SampleDO;
 import cn.iocoder.yudao.module.prospective.service.sample.SampleService;
+import org.springframework.web.multipart.MultipartFile;
 
 @Tag(name = "管理后台 - 生物样本")
 @RestController
@@ -177,6 +179,88 @@ public class SampleController {
         @Override
         public void doAfterAllAnalysed(AnalysisContext context) {
             System.out.println("所有数据存储完成。");
+        }
+    }
+
+    @PostMapping("/importUpdate")
+    public String importUpdateBioSamples(@RequestParam("file") MultipartFile file) {
+        try {
+            // 使用 EasyExcel 读取上传的文件
+            InputStream inputStream = file.getInputStream();
+            EasyExcel.read(inputStream, new SampleController.IndexListenerUpdate(sampleService))
+                    .sheet()
+                    .doRead();
+            return "样本库数据导入完成";
+        } catch (IOException e) {
+            e.printStackTrace();
+            return "导入失败: " + e.getMessage();
+        }
+    }
+
+    // 监听器，用于读取每行数据
+    static class IndexListenerUpdate extends AnalysisEventListener<Map<Integer, String>> {
+
+        private SampleService sampleService;
+
+        public IndexListenerUpdate(SampleService sampleService) {
+            this.sampleService = sampleService;
+        }
+
+        @Override
+        public void invoke(Map<Integer, String> rowData, AnalysisContext context) {
+            try {
+                SampleSaveReqVO bioSample = new SampleSaveReqVO();
+                bioSample.setFreezerNo(rowData.get(2));// 冰箱编号
+                bioSample.setLayer(rowData.get(3));// 层号
+                bioSample.setColumnNum(rowData.get(4));// 列号
+                bioSample.setDrawerNo(rowData.get(5));// 抽屉号
+                bioSample.setBoxSeq(rowData.get(6));// 盒序号
+                bioSample.setBoxNo(rowData.get(7));// 盒号
+                bioSample.setTubeSeq(getIntegerValue(rowData.get(8)));// 管序号
+                bioSample.setPositionCode(rowData.get(9));// 位置编码
+
+                bioSample.setStatus(0); // 默认状态
+
+                if (rowData.get(10) != null && !"".equals(rowData.get(10))) {
+                    bioSample.setOperatorId(rowData.get(0));//人员id
+                    if (rowData.get(0) != null && !rowData.get(0).contains("DZQ") && rowData.get(1) != null && !"".equals(rowData.get(1))) {
+                        bioSample.setTimePoint(getIntegerValue(rowData.get(1)));
+                    }
+                    bioSample.setTubeNo(rowData.get(10));//管号
+                    bioSample.setSampleType(rowData.get(13));// 样本类型
+                    bioSample.setStatus(1); // 1=在库
+                }
+
+                // 根据唯一标识判断是创建还是更新
+                sampleService.createOrUpdateSample(bioSample);
+
+            } catch (Exception e) {
+                // 记录错误日志，但继续处理后续行
+                System.err.println("处理行数据时出错: " + e.getMessage());
+                e.printStackTrace();
+            }
+        }
+
+        @Override
+        public void doAfterAllAnalysed(AnalysisContext context) {
+            System.out.println("所有数据存储完成。");
+        }
+
+        // 安全转换整数值
+        private Integer getIntegerValue(String value) {
+            if (value == null || value.trim().isEmpty()) {
+                return null;
+            }
+            try {
+                // 处理可能的小数点
+                if (value.contains(".")) {
+                    return Integer.valueOf(value.split("\\.")[0]);
+                }
+                return Integer.valueOf(value.trim());
+            } catch (NumberFormatException e) {
+                System.err.println("数值转换错误: " + value);
+                return null;
+            }
         }
     }
 

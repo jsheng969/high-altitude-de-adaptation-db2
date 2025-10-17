@@ -98,4 +98,23 @@ public class ModuleConfigController {
         return success(moduleConfigService.getModuleTree());
     }
 
+    @GetMapping("/tree-with-stats")
+    @Operation(summary = "获取模块树（包含字段统计）")
+    public CommonResult<List<ModuleConfigTreeVO>> getModuleTreeWithStats() {
+        return success(moduleConfigService.getModuleTreeWithStats());
+    }
+
+    @GetMapping("/check-code")
+    @Operation(summary = "检查模块代码是否可用")
+    public CommonResult<Boolean> checkModuleCode(@RequestParam("moduleCode") String moduleCode) {
+        return success(moduleConfigService.checkModuleCodeAvailable(moduleCode));
+    }
+
+    /**
+     * 获取模块及其字段列表（用于前端动态展示）
+     */
+    @GetMapping("with-fields")
+    public CommonResult<List<ModuleWithFieldsRespVO>> getModulesWithFields() {
+        return CommonResult.success(moduleConfigService.getModulesWithFields());
+    }
 }

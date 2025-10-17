@@ -93,9 +93,30 @@ public class FieldConfigController {
     }
 
     @GetMapping("/list")
-    public List<FieldConfigRespVO> listByModuleCode(@RequestParam("moduleCode") String moduleCode) {
+    public CommonResult<List<FieldConfigRespVO>> listByModuleCode(@RequestParam("moduleCode") String moduleCode) {
         List<FieldConfigDO> fieldConfigDOS = fieldConfigService.listByModuleCode(moduleCode);
-        return BeanUtils.toBean(fieldConfigDOS, FieldConfigRespVO.class);
+        List<FieldConfigRespVO> bean = BeanUtils.toBean(fieldConfigDOS, FieldConfigRespVO.class);
+        return success(bean);
+    }
+
+    @GetMapping("/field-type-options")
+    @Operation(summary = "获取字段类型选项列表")
+    public CommonResult<List<FieldTypeOptionVO>> getFieldTypeOptions() {
+        return success(fieldConfigService.getFieldTypeOptions());
+    }
+
+//    @GetMapping("/data-type-by-field-type")
+//    @Operation(summary = "根据字段类型获取数据库类型")
+//    public CommonResult<String> getDataTypeByFieldType(
+//            @RequestParam("fieldType") String fieldType,
+//            @RequestParam(value = "fieldLength", required = false) Integer fieldLength) {
+//        return success(fieldConfigService.getDataTypeByFieldType(fieldType, fieldLength));
+//    }
+
+    @GetMapping("/check-code")
+    @Operation(summary = "获取字段类型选项列表")
+    public CommonResult<Boolean> checkFieldCodeAvailable(String moduleCode,String fieldCode) {
+        return success(fieldConfigService.checkFieldCodeAvailable(moduleCode,fieldCode));
     }
 
 }

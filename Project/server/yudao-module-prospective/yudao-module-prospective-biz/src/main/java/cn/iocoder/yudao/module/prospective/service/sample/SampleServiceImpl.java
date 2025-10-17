@@ -252,4 +252,51 @@ public class SampleServiceImpl implements SampleService {
         }
     }
 
+    @Override
+    public SampleDO getSampleByUniqueCondition(String freezerNo, String layer, String columnNum,
+                                               String drawerNo, String boxSeq, Integer tubeSeq) {
+        String encrypt = encryptor.encrypt(freezerNo);
+        return sampleMapper.selectByUniqueCondition(encrypt, layer, columnNum, drawerNo, boxSeq, tubeSeq);
+    }
+
+    @Override
+    public void createOrUpdateSample(SampleSaveReqVO reqVO) {
+        // 检查必填字段
+        if (reqVO.getFreezerNo() == null || reqVO.getLayer() == null ||
+                reqVO.getColumnNum() == null || reqVO.getDrawerNo() == null ||
+                reqVO.getBoxSeq() == null || reqVO.getTubeSeq() == null) {
+//            throw exception("唯一标识字段不能为空");
+        }
+
+        // 根据唯一条件查询是否存在
+        SampleDO existingSample = getSampleByUniqueCondition(
+                reqVO.getFreezerNo(),
+                reqVO.getLayer(),
+                reqVO.getColumnNum(),
+                reqVO.getDrawerNo(),
+                reqVO.getBoxSeq(),
+                reqVO.getTubeSeq()
+        );
+
+        if (existingSample != null) {
+            // 执行更新操作
+            SampleSaveReqVO updateReqVO = new SampleSaveReqVO();
+            updateReqVO.setId(existingSample.getId());
+            updateReqVO.setBoxNo(reqVO.getBoxNo());
+            updateReqVO.setPositionCode(reqVO.getPositionCode());
+            updateReqVO.setOperatorId(reqVO.getOperatorId());
+            updateReqVO.setTimePoint(reqVO.getTimePoint());
+            updateReqVO.setTubeNo(reqVO.getTubeNo());
+            updateReqVO.setSampleType(reqVO.getSampleType());
+            updateReqVO.setStatus(reqVO.getStatus());
+
+            updateSample(updateReqVO);
+            System.out.println("更新样本: " + existingSample.getId());
+        } else if(reqVO.getBoxNo() != null && !reqVO.getBoxNo().isEmpty()) {
+            // 执行创建操作
+            createSample(reqVO);
+            System.out.println("创建新样本");
+        }
+    }
+
 }

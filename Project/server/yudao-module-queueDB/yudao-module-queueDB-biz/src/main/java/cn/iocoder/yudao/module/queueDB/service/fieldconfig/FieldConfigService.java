@@ -57,4 +57,19 @@ public interface FieldConfigService {
      */
     List<FieldConfigDO> listByModuleCode(String moduleCode);
 
+    /**
+     * 批量创建字段配置
+     */
+    void batchCreateFieldConfig(List<FieldConfigSaveReqVO> createReqVOs);
+
+    /**
+     * 获取字段类型选项
+     */
+    List<FieldTypeOptionVO> getFieldTypeOptions();
+
+    /**
+     * 检查字段代码是否可用
+     */
+    boolean checkFieldCodeAvailable(String moduleCode, String fieldCode);
+
 }

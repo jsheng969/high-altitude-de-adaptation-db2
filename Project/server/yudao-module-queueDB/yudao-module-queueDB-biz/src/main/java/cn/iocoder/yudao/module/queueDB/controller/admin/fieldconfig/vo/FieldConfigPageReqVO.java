@@ -42,9 +42,9 @@ public class FieldConfigPageReqVO extends PageParam {
     @Schema(description = "状态（1启用）", example = "1")
     private Integer status;
 
-    @Schema(description = "创建时间")
-    @DateTimeFormat(pattern = FORMAT_YEAR_MONTH_DAY_HOUR_MINUTE_SECOND)
-    private LocalDateTime[] createTime;
     private Integer fieldLength; // 对应 VARCHAR 长度等
-    private String fieldName; // 对应数据库列名
+    @Schema(description = "是否默认显示", example = "1")
+    private Integer isDefault;
+    @Schema(description = "是否默认显示")
+    private Integer displayOrder;
 }
