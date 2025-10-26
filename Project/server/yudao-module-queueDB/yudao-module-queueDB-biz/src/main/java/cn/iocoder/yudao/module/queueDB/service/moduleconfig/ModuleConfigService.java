@@ -70,4 +70,18 @@ public interface ModuleConfigService {
 
     public List<ModuleWithFieldsRespVO> getModulesWithFields();
 
+    /**
+     * 获取模块树（包含字段）
+     */
+    List<ModuleConfigRespVO> getModuleTreeWithFields();
+
+    /**
+     * 获取基础信息模块（一级模块）
+     */
+    List<ModuleConfigDO> getBaseModules();
+
+    /**
+     * 根据模块编码获取模块详情（包含子模块和字段）
+     */
+    ModuleConfigRespVO getModuleDetailByCode(String moduleCode);
 }

@@ -1,11 +1,16 @@
 package cn.iocoder.yudao.module.queueDB.dal.mysql.moduleconfig;
 
+import java.time.LocalDateTime;
 import java.util.*;
+import java.util.stream.Collectors;
 
+import cn.iocoder.yudao.framework.common.pojo.PageParam;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.framework.mybatis.core.query.LambdaQueryWrapperX;
 import cn.iocoder.yudao.framework.mybatis.core.mapper.BaseMapperX;
 import cn.iocoder.yudao.module.queueDB.dal.dataobject.moduleconfig.ModuleConfigDO;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Mapper;
 import cn.iocoder.yudao.module.queueDB.controller.admin.moduleconfig.vo.*;
 import org.apache.ibatis.annotations.Param;
@@ -117,5 +122,128 @@ public interface ModuleConfigMapper extends BaseMapperX<ModuleConfigDO> {
      */
     @Select("SELECT * FROM module_config WHERE group_type = #{groupType} AND status = 1 AND is_leaf = 1 ORDER BY order_no ASC")
     List<ModuleConfigDO> selectByGroupType(@Param("groupType") String groupType);
+
+    /**
+     * 根据模块编码查询模块配置
+     */
+    default ModuleConfigDO selectByModuleCode(String moduleCode) {
+        return selectOne(new LambdaQueryWrapperX<ModuleConfigDO>()
+                .eq(ModuleConfigDO::getModuleCode, moduleCode)
+                .eq(ModuleConfigDO::getDeleted, false));
+    }
+
+    /**
+     * 根据模块编码查询（包含已删除的）
+     */
+    default ModuleConfigDO selectByModuleCodeIncludeDeleted(String moduleCode) {
+        return selectOne(new LambdaQueryWrapperX<ModuleConfigDO>()
+                .eq(ModuleConfigDO::getModuleCode, moduleCode));
+    }
+
+    /**
+     * 查询所有需要建表的叶子模块
+     */
+    default List<ModuleConfigDO> selectLeafModules() {
+        return selectList(new LambdaQueryWrapperX<ModuleConfigDO>()
+                .eq(ModuleConfigDO::getIsLeaf, 1)
+                .eq(ModuleConfigDO::getDeleted, false)
+                .orderByAsc(ModuleConfigDO::getOrderNo));
+    }
+
+    /**
+     * 查询启用的叶子模块
+     */
+    default List<ModuleConfigDO> selectActiveLeafModules() {
+        return selectList(new LambdaQueryWrapperX<ModuleConfigDO>()
+                .eq(ModuleConfigDO::getIsLeaf, 1)
+                .eq(ModuleConfigDO::getStatus, 1)
+                .eq(ModuleConfigDO::getDeleted, false)
+                .orderByAsc(ModuleConfigDO::getOrderNo));
+    }
+
+//    /**
+//     * 检查模块编码是否存在
+//     */
+//    default boolean existsByModuleCode(String moduleCode) {
+//        Long count = selectCount(new LambdaQueryWrapper<ModuleConfigDO>()
+//                .eq(ModuleConfigDO::getModuleCode, moduleCode));
+//        return count != null && count > 0;
+//    }
+
+    /**
+     * 检查模块编码是否存在
+     */
+    @Select("SELECT COUNT(*) FROM module_config WHERE module_code = #{moduleCode}")
+    int existsByModuleCode(@Param("moduleCode") String moduleCode);
+
+    /**
+     * 根据模块编码更新模块状态
+     */
+    default int updateStatusByModuleCode(String moduleCode, Integer status) {
+        ModuleConfigDO updateDO = new ModuleConfigDO();
+        updateDO.setStatus(status);
+        updateDO.setUpdateTime(LocalDateTime.now());
+
+        return update(updateDO, new LambdaQueryWrapperX<ModuleConfigDO>()
+                .eq(ModuleConfigDO::getModuleCode, moduleCode)
+                .eq(ModuleConfigDO::getDeleted, false));
+    }
+
+    /**
+     * 根据模块编码逻辑删除
+     */
+    default int deleteByModuleCode(String moduleCode) {
+        return delete(new LambdaQueryWrapperX<ModuleConfigDO>()
+                .eq(ModuleConfigDO::getModuleCode, moduleCode));
+    }
+
+    /**
+     * 查询模块统计信息
+     */
+    default Map<String, Long> countByModuleType() {
+        LambdaQueryWrapper<ModuleConfigDO> wrapper = new LambdaQueryWrapper<ModuleConfigDO>()
+                .select(ModuleConfigDO::getModuleType)
+                .eq(ModuleConfigDO::getDeleted, false)
+                .groupBy(ModuleConfigDO::getModuleType);
+
+        List<ModuleConfigDO> list = selectList(wrapper);
+        return list.stream()
+                .collect(Collectors.groupingBy(ModuleConfigDO::getModuleType, Collectors.counting()));
+    }
+
+    /**
+     * 根据父级ID查询子模块列表（包含逻辑删除的记录）
+     */
+    @Select("SELECT * FROM module_config WHERE parent_id = #{parentId}")
+    List<ModuleConfigDO> selectByParentIdIncludeDeleted(@Param("parentId") Long parentId);
+
+    /**
+     * 根据模块编码物理删除模块
+     */
+    @Delete("DELETE FROM module_config WHERE module_code = #{moduleCode}")
+    int physicallyDeleteByModuleCode(@Param("moduleCode") String moduleCode);
+
+    /**
+     * 根据ID物理删除模块
+     */
+    @Delete("DELETE FROM module_config WHERE id = #{id}")
+    int physicallyDeleteById(@Param("id") Long id);
+
+    /**
+     * 根据父级ID物理删除子模块
+     */
+    @Delete("DELETE FROM module_config WHERE parent_id = #{parentId}")
+    int physicallyDeleteByParentId(@Param("parentId") Long parentId);
+
+    /**
+     * 根据ID列表物理删除模块
+     */
+    @Delete("<script>" +
+            "DELETE FROM module_config WHERE id IN " +
+            "<foreach collection='ids' item='id' open='(' separator=',' close=')'>" +
+            "#{id}" +
+            "</foreach>" +
+            "</script>")
+    int physicallyDeleteByIds(@Param("ids") List<Long> ids);
 
 }

@@ -1,36 +1,43 @@
 <template>
   <el-form-item label="基础信息：">
-    <div class="checkbox-container">
-      <el-checkbox
-        :indeterminate="isIndeterminateBase"
-        v-model="checkAllBase"
-        @change="handleCheckAllBaseChange"
-        class="check-all"
-      >
-        全选
-      </el-checkbox>
-      <el-checkbox-group 
-        v-model="localBaseInfo" 
-        @change="handleBaseInfoChange"
-        class="checkbox-group"
-      >
+    <div class="checkbox-container" v-loading="loading">
+      <div class="checkbox-row">
         <el-checkbox
-          v-for="item in baseInfoItems"
-          :key="item"
-          :label="item"
+          :indeterminate="isIndeterminateBase"
+          v-model="checkAllBase"
+          @change="handleCheckAllBaseChange"
+          class="check-all"
+          :disabled="baseModules.length === 0"
         >
-          {{ item }}
+          全选
         </el-checkbox>
-      </el-checkbox-group>
+        
+        <el-checkbox-group 
+          v-model="localBaseInfo" 
+          @change="handleBaseInfoChange"
+          class="checkbox-group"
+        >
+          <el-checkbox
+            v-for="module in baseModules"
+            :key="module.id"
+            :label="module.moduleName"
+            :disabled="loading"
+          >
+            {{ module.moduleName }}
+          </el-checkbox>
+        </el-checkbox-group>
+      </div>
     </div>
   </el-form-item>
 </template>
 
 <script lang="ts" setup>
-import { ref, watch } from 'vue'
+import { ref, watch, onMounted } from 'vue'
 
 interface Props {
   queryParams: any
+  baseModules: any[]
+  loading: boolean
 }
 
 interface Emits {
@@ -41,18 +48,6 @@ interface Emits {
 const props = defineProps<Props>()
 const emit = defineEmits<Emits>()
 
-const baseInfoItems = [
-  '超声',
-  '肺功能',
-  '人体成分',
-  '认知',
-  '神经外科',
-  '心电',
-  '血液',
-  '眼科',
-  '血栓弹力图'
-]
-
 // 本地响应式数据
 const localBaseInfo = ref<string[]>(props.queryParams.baseInfo || [])
 const checkAllBase = ref(false)
@@ -61,13 +56,14 @@ const isIndeterminateBase = ref(true)
 // 更新全选状态
 const updateCheckAllState = () => {
   const checkedCount = localBaseInfo.value.length
-  checkAllBase.value = checkedCount === baseInfoItems.length
-  isIndeterminateBase.value = checkedCount > 0 && checkedCount < baseInfoItems.length
+  const totalCount = props.baseModules.length
+  checkAllBase.value = checkedCount === totalCount && totalCount > 0
+  isIndeterminateBase.value = checkedCount > 0 && checkedCount < totalCount
 }
 
 // 全选处理
 const handleCheckAllBaseChange = (val: boolean) => {
-  localBaseInfo.value = val ? [...baseInfoItems] : []
+  localBaseInfo.value = val ? props.baseModules.map(module => module.moduleName) : []
   isIndeterminateBase.value = false
   handleBaseInfoChange(localBaseInfo.value)
 }
@@ -91,19 +87,33 @@ watch(
   },
   { immediate: true }
 )
+
+// 监听基础模块变化
+watch(
+  () => props.baseModules,
+  () => {
+    updateCheckAllState()
+  }
+)
 </script>
 
 <style scoped>
 .checkbox-container {
+  width: 100%;
+}
+
+.checkbox-row {
   display: flex;
   align-items: center;
   gap: 20px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  width: 100%;
 }
 
 .check-all {
-  margin-right: 20px;
   flex-shrink: 0;
+  white-space: nowrap;
+  margin-right: 0;
 }
 
 .checkbox-group {
@@ -111,9 +121,23 @@ watch(
   flex-wrap: wrap;
   gap: 12px 24px;
   align-items: center;
+  flex: 1;
+  min-width: 0;
 }
 
 :deep(.el-checkbox) {
   margin-right: 0;
+  white-space: nowrap;
+}
+
+/* 确保在小屏幕上也能正常显示 */
+@media (max-width: 1200px) {
+  .checkbox-row {
+    gap: 15px;
+  }
+  
+  .checkbox-group {
+    gap: 10px 20px;
+  }
 }
 </style>

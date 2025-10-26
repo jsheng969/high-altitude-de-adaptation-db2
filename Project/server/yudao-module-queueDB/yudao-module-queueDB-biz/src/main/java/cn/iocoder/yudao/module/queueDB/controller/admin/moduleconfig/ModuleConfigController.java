@@ -117,4 +117,26 @@ public class ModuleConfigController {
     public CommonResult<List<ModuleWithFieldsRespVO>> getModulesWithFields() {
         return CommonResult.success(moduleConfigService.getModulesWithFields());
     }
+
+    @GetMapping("/tree-with-fields")
+    @Operation(summary = "获取模块树（包含字段）")
+    public CommonResult<List<ModuleConfigRespVO>> getModuleTreeWithFields() {
+        List<ModuleConfigRespVO> tree = moduleConfigService.getModuleTreeWithFields();
+        return success(tree);
+    }
+
+    @GetMapping("/base-modules")
+    @Operation(summary = "获取基础信息模块（一级模块）")
+    public CommonResult<List<ModuleConfigRespVO>> getBaseModules() {
+        List<ModuleConfigDO> modules = moduleConfigService.getBaseModules();
+        return success(BeanUtils.toBean(modules, ModuleConfigRespVO.class));
+    }
+
+    @GetMapping("/detail/{moduleCode}")
+    @Operation(summary = "根据模块编码获取模块详情（包含子模块和字段）")
+    public CommonResult<ModuleConfigRespVO> getModuleDetail(@PathVariable String moduleCode) {
+        // 这里需要实现根据moduleCode获取模块详情的方法
+        ModuleConfigRespVO detail = moduleConfigService.getModuleDetailByCode(moduleCode);
+        return success(detail);
+    }
 }

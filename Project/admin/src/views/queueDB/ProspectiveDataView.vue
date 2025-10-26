@@ -2,6 +2,8 @@
   <div class="prospective-data-view">
     <FilterCard 
       :query-params="queryParams"
+      :base-modules="baseModules"
+      :loading="moduleLoading"
       @update:query-params="handleQueryParamsUpdate"
       @query-change="handleQueryChange"
     />
@@ -46,6 +48,7 @@ const route = useRoute()
 
 // 响应式数据
 const loading = ref(true)
+const moduleLoading = ref(false)
 const total = ref(0)
 const list = ref([])
 const average = ref({})
@@ -67,17 +70,7 @@ const queryParams = reactive({
   status: undefined,
   deptId: undefined,
   createTime: [],
-  baseInfo: [
-    '超声',
-  '肺功能',
-  '人体成分',
-  '认知',
-  '神经外科',
-  '心电',
-  '血液',
-  '眼科',
-  '血栓弹力图'
-  ],
+  baseInfo: [], // 初始为空，从服务器获取
   experimentGroupSurvey: [],
   experimentGroupExam: [],
   compareGroupSurvey: [],
@@ -87,7 +80,15 @@ const queryParams = reactive({
 })
 
 // 组合式函数
-const { displayedFields, updateDisplayedFields, fieldGroups } = useFieldManager(queryParams)
+const { 
+  displayedFields, 
+  updateDisplayedFields, 
+  fieldGroups, 
+  baseModules, 
+  loadModuleTree,
+  loading: fieldLoading 
+} = useFieldManager(queryParams)
+
 const { conditions, handleFieldSelect } = useConditionManager()
 const { handleExport, exportLoading } = useExportHandler(queryParams)
 const { getList, loadPageData } = useDataHandler(
@@ -98,10 +99,22 @@ const { getList, loadPageData } = useDataHandler(
   loading
 )
 
+// 初始化加载模块树
+onMounted(async () => {
+  moduleLoading.value = true
+  await loadModuleTree()
+  moduleLoading.value = false
+  await getList()
+})
+
 // 事件处理
 const handleQueryChange = () => {
   queryParams.pageNo = 1
   getList()
+}
+
+const handleQueryParamsUpdate = (newQueryParams: any) => {
+  Object.assign(queryParams, newQueryParams)
 }
 
 const handlePageChange = (page: number, pageSize: number) => {
@@ -111,12 +124,7 @@ const handlePageChange = (page: number, pageSize: number) => {
 }
 
 const handleHeaderClick = (column: any) => {
-  // 处理表头点击逻辑
   console.log('Header clicked:', column)
-}
-
-const handleQueryParamsUpdate = (newQueryParams: any) => {
-  Object.assign(queryParams, newQueryParams)
 }
 
 // 监听查询参数变化
@@ -138,19 +146,4 @@ watch(
   { deep: true, immediate: true }
 )
 
-// 初始化
-onMounted(async () => {
-  await getList()
-})
 </script>
-
-<style scoped>
-.prospective-data-view {
-  padding: 20px;
-  background-color: #f5f7fa;
-}
-
-.prospective-data-view > * {
-  margin-bottom: 20px;
-}
-</style>

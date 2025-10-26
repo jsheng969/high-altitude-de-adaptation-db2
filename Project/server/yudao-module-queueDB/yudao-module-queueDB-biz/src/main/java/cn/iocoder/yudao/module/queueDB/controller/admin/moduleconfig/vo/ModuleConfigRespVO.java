@@ -1,5 +1,6 @@
 package cn.iocoder.yudao.module.queueDB.controller.admin.moduleconfig.vo;
 
+import cn.iocoder.yudao.module.queueDB.controller.admin.fieldconfig.vo.FieldConfigRespVO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import java.util.*;
@@ -60,4 +61,14 @@ public class ModuleConfigRespVO {
     @ExcelProperty("创建时间")
     private LocalDateTime createTime;
     private String remark;
+
+    /**
+     * 子模块列表
+     */
+    private List<ModuleConfigRespVO> children;
+
+    /**
+     * 字段列表
+     */
+    private List<FieldConfigRespVO> fields;
 }

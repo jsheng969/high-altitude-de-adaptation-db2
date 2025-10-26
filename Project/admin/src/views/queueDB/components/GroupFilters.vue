@@ -5,27 +5,29 @@
     v-if="showExperimentSurvey"
   >
     <div class="checkbox-container">
-      <el-checkbox
-        :indeterminate="isIndeterminateSurvey"
-        v-model="checkAllSurvey"
-        @change="handleCheckAllSurveyChange"
-        class="check-all"
-      >
-        全选
-      </el-checkbox>
-      <el-checkbox-group 
-        v-model="localExperimentSurvey" 
-        @change="handleExperimentSurveyChange"
-        class="checkbox-group"
-      >
+      <div class="checkbox-row">
         <el-checkbox
-          v-for="item in experimentSurveyItems"
-          :key="item"
-          :label="item"
+          :indeterminate="isIndeterminateSurvey"
+          v-model="checkAllSurvey"
+          @change="handleCheckAllSurveyChange"
+          class="check-all"
         >
-          {{ item }}
+          全选
         </el-checkbox>
-      </el-checkbox-group>
+        <el-checkbox-group 
+          v-model="localExperimentSurvey" 
+          @change="handleExperimentSurveyChange"
+          class="checkbox-group"
+        >
+          <el-checkbox
+            v-for="item in experimentSurveyItems"
+            :key="item"
+            :label="item"
+          >
+            {{ item }}
+          </el-checkbox>
+        </el-checkbox-group>
+      </div>
     </div>
   </el-form-item>
 
@@ -35,27 +37,29 @@
     v-if="showExperimentExam"
   >
     <div class="checkbox-container">
-      <el-checkbox
-        :indeterminate="isIndeterminateExam"
-        v-model="checkAllExam"
-        @change="handleCheckAllExamChange"
-        class="check-all"
-      >
-        全选
-      </el-checkbox>
-      <el-checkbox-group 
-        v-model="localExperimentExam" 
-        @change="handleExperimentExamChange"
-        class="checkbox-group"
-      >
+      <div class="checkbox-row">
         <el-checkbox
-          v-for="item in experimentExamItems"
-          :key="item"
-          :label="item"
+          :indeterminate="isIndeterminateExam"
+          v-model="checkAllExam"
+          @change="handleCheckAllExamChange"
+          class="check-all"
         >
-          {{ item }}
+          全选
         </el-checkbox>
-      </el-checkbox-group>
+        <el-checkbox-group 
+          v-model="localExperimentExam" 
+          @change="handleExperimentExamChange"
+          class="checkbox-group"
+        >
+          <el-checkbox
+            v-for="item in experimentExamItems"
+            :key="item"
+            :label="item"
+          >
+            {{ item }}
+          </el-checkbox>
+        </el-checkbox-group>
+      </div>
     </div>
   </el-form-item>
 
@@ -65,27 +69,29 @@
     v-if="showControlGroup"
   >
     <div class="checkbox-container">
-      <el-checkbox
-        :indeterminate="isIndeterminateControl"
-        v-model="checkAllControl"
-        @change="handleCheckAllControlChange"
-        class="check-all"
-      >
-        全选
-      </el-checkbox>
-      <el-checkbox-group 
-        v-model="localControlSurvey" 
-        @change="handleControlGroupChange"
-        class="checkbox-group"
-      >
+      <div class="checkbox-row">
         <el-checkbox
-          v-for="item in controlSurveyItems"
-          :key="item"
-          :label="item"
+          :indeterminate="isIndeterminateControl"
+          v-model="checkAllControl"
+          @change="handleCheckAllControlChange"
+          class="check-all"
         >
-          {{ item }}
+          全选
         </el-checkbox>
-      </el-checkbox-group>
+        <el-checkbox-group 
+          v-model="localControlSurvey" 
+          @change="handleControlGroupChange"
+          class="checkbox-group"
+        >
+          <el-checkbox
+            v-for="item in controlSurveyItems"
+            :key="item"
+            :label="item"
+          >
+            {{ item }}
+          </el-checkbox>
+        </el-checkbox-group>
+      </div>
     </div>
   </el-form-item>
 </template>
@@ -239,15 +245,21 @@ watch(
 
 <style scoped>
 .checkbox-container {
+  width: 100%;
+}
+
+.checkbox-row {
   display: flex;
   align-items: center;
   gap: 20px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  width: 100%;
 }
 
 .check-all {
-  margin-right: 20px;
   flex-shrink: 0;
+  white-space: nowrap;
+  margin-right: 0;
 }
 
 .checkbox-group {
@@ -255,9 +267,23 @@ watch(
   flex-wrap: wrap;
   gap: 12px 24px;
   align-items: center;
+  flex: 1;
+  min-width: 0;
 }
 
 :deep(.el-checkbox) {
   margin-right: 0;
+  white-space: nowrap;
+}
+
+/* 确保在小屏幕上也能正常显示 */
+@media (max-width: 1200px) {
+  .checkbox-row {
+    gap: 15px;
+  }
+  
+  .checkbox-group {
+    gap: 10px 20px;
+  }
 }
 </style>

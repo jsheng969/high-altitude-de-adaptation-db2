@@ -24,12 +24,13 @@
         class-name="level-1-header"
       />
 
-      <!-- 动态字段 -->
-      <template v-for="(fields, groupName) in displayedFields" :key="groupName">
-        <el-table-column :label="groupName" align="center" class-name="level-1-header">
-          <template v-if="Array.isArray(fields)">
+      <!-- 动态字段 - 支持多级表头 -->
+      <template v-for="(fieldGroup, groupName) in displayedFields" :key="groupName">
+        <!-- 情况1: 字段组是数组，显示为一级表头 + 二级表头（如超声） -->
+        <template v-if="Array.isArray(fieldGroup)">
+          <el-table-column :label="groupName" align="center" class-name="level-1-header">
             <el-table-column
-              v-for="field in fields"
+              v-for="field in fieldGroup"
               :key="field.prop"
               :label="field.label"
               :prop="field.prop"
@@ -38,29 +39,35 @@
               align="center"
               class-name="level-2-header"
             />
-          </template>
-          
-          <template v-else>
-            <template v-for="(subFields, subGroupName) in fields" :key="subGroupName">
-              <el-table-column
-                :label="subGroupName"
-                align="center"
-                class-name="level-2-header"
-              >
+          </el-table-column>
+        </template>
+        
+        <!-- 情况2: 字段组是对象，显示多级表头（如吸烟情况） -->
+        <template v-else>
+          <el-table-column :label="groupName" align="center" class-name="level-1-header">
+            <template v-for="(subFields, subGroupName) in fieldGroup" :key="subGroupName">
+              <!-- 子组是数组，显示为二级表头 + 三级表头 -->
+              <template v-if="Array.isArray(subFields)">
                 <el-table-column
-                  v-for="field in subFields"
-                  :key="field.prop"
-                  :label="field.label"
-                  :prop="field.prop"
-                  :formatter="formatField"
-                  :min-width="getAutoMinWidth(field.label, field.prop, list)"
+                  :label="subGroupName"
                   align="center"
-                  class-name="level-3-header"
-                />
-              </el-table-column>
+                  class-name="level-2-header"
+                >
+                  <el-table-column
+                    v-for="field in subFields"
+                    :key="field.prop"
+                    :label="field.label"
+                    :prop="field.prop"
+                    :formatter="formatField"
+                    :min-width="getAutoMinWidth(field.label, field.prop, list)"
+                    align="center"
+                    class-name="level-3-header"
+                  />
+                </el-table-column>
+              </template>
             </template>
-          </template>
-        </el-table-column>
+          </el-table-column>
+        </template>
       </template>
     </el-table>
   </div>

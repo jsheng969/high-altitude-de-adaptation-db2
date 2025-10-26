@@ -1,5 +1,6 @@
 package cn.iocoder.yudao.module.queueDB.dal.dataobject.fieldconfig;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import java.util.*;
 import java.time.LocalDateTime;
@@ -72,4 +73,6 @@ public class FieldConfigDO extends BaseDO {
 
     private String fieldGroup; // 字段分组代码，如：station_training
     private String fieldGroupName; // 字段分组名称，如：驻训信息
+    private Integer isDefault; //是否默认显示
+    private Integer displayOrder; //显示顺序
 }

@@ -49,7 +49,6 @@ public class FieldConfigSaveReqVO {
     private Integer displayOrder;
 
     @Schema(description = "模块类型", required = true, example = "baseline")
-    @NotNull(message = "模块类型不能为空")
     private String moduleType;
 
 }

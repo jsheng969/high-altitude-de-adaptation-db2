@@ -1,349 +1,170 @@
 <template>
-  <el-dialog
-    v-model="visible"
-    title="字段显示配置"
-    width="1000px"
-    :before-close="handleClose"
-  >
-    <div class="field-config-dialog">
-      <!-- 配置头部 -->
-      <div class="config-header">
-        <el-form :inline="true" :model="configParams">
-          <el-form-item label="模块类型">
-            <el-select v-model="configParams.moduleType" @change="loadFieldGroups">
-              <el-option label="基线数据" value="baseline" />
-              <el-option label="基础信息" value="base" />
-            </el-select>
-          </el-form-item>
-          <el-form-item label="海拔">
-            <el-select v-model="configParams.altitude" @change="loadFieldGroups">
-              <el-option 
-                v-for="option in altitudeOptions" 
-                :key="option.value" 
-                :label="option.label" 
-                :value="option.value" 
-              />
-            </el-select>
-          </el-form-item>
-          <el-form-item label="编号范围">
-            <el-select v-model="configParams.codeRange" @change="loadFieldGroups">
-              <el-option 
-                v-for="option in codeRangeOptions" 
-                :key="option.value" 
-                :label="option.label" 
-                :value="option.value" 
-              />
-            </el-select>
-          </el-form-item>
-          <el-form-item>
-            <el-button type="primary" @click="loadFieldGroups">
-              <Icon icon="ep:refresh" />刷新
-            </el-button>
-          </el-form-item>
-        </el-form>
-        
-        <div class="selection-info">
-          <span>已选择 {{ selectedFieldsCount }} 个字段</span>
-          <el-button link type="primary" @click="selectAll">全选</el-button>
-          <el-button link type="primary" @click="clearAll">清空</el-button>
-        </div>
-      </div>
+  <el-form-item label="数据节点：">
+    <div class="select-bar">
+      <!-- 组别选择 -->
+      <el-select
+        class="select-width"
+        size="small"
+        clearable
+        :model-value="queryParams.group"
+        placeholder="请选择组"
+        @update:model-value="handleChange('group', $event)"
+      >
+        <el-option 
+          v-for="dict in getDictOptions('data_node')" 
+          :key="dict.value"
+          :label="dict.label" 
+          :value="dict.value" 
+        />
+      </el-select>
 
-      <!-- 字段组列表 -->
-      <div class="field-groups-container">
-        <el-card 
-          v-for="group in fieldGroups" 
-          :key="group.groupCode"
-          class="field-group-card"
-          shadow="never"
+      <!-- 实验组特有字段 -->
+      <template v-if="showExperimentFields">
+        <el-select
+          class="select-width"
+          size="small"
+          clearable
+          :model-value="queryParams.type"
+          placeholder="请选择类"
+          @update:model-value="handleChange('type', $event)"
         >
-          <template #header>
-            <div class="group-header">
-              <el-checkbox 
-                v-model="group.selected" 
-                :indeterminate="isGroupPartiallySelected(group)"
-                @change="handleGroupSelect(group)"
-              >
-                <span class="group-name">{{ group.groupName }}</span>
-                <span class="field-count">({{ getSelectedFieldCount(group) }}/{{ group.fields.length }})</span>
-              </el-checkbox>
-              <div class="group-actions">
-                <el-button link type="primary" @click="selectGroup(group)">全选</el-button>
-                <el-button link type="primary" @click="deselectGroup(group)">清空</el-button>
-              </div>
-            </div>
-          </template>
-          
-          <div class="field-list">
-            <el-checkbox
-              v-for="field in group.fields"
-              :key="field.fieldCode"
-              v-model="field.selected"
-              :disabled="!group.selected"
-              class="field-checkbox"
-            >
-              <span class="field-label">{{ field.fieldLabel }}</span>
-              <span class="field-type">{{ field.fieldType }}</span>
-            </el-checkbox>
-          </div>
-        </el-card>
+          <el-option 
+            v-for="dict in getDictOptions('type_node')" 
+            :key="dict.value"
+            :label="dict.label" 
+            :value="dict.value" 
+          />
+        </el-select>
 
-        <!-- 空状态 -->
-        <el-empty v-if="fieldGroups.length === 0" description="暂无字段配置" />
-      </div>
+        <el-select
+          class="select-width"
+          size="small"
+          clearable
+          :model-value="queryParams.year"
+          placeholder="请选择年份"
+          @update:model-value="handleChange('year', $event)"
+        >
+          <el-option 
+            v-for="dict in getDictOptions('year_node')" 
+            :key="dict.value"
+            :label="dict.label" 
+            :value="dict.value" 
+          />
+        </el-select>
+
+        <el-select
+          class="select-width"
+          size="small"
+          clearable
+          :model-value="queryParams.timePoint"
+          placeholder="请选择时相"
+          @update:model-value="handleChange('timePoint', $event)"
+        >
+          <el-option 
+            v-for="dict in getDictOptions('time_point_node')" 
+            :key="dict.value"
+            :label="dict.label" 
+            :value="dict.value" 
+          />
+        </el-select>
+      </template>
+
+      <!-- 调查/体检选择 -->
+      <el-select
+        class="select-width"
+        size="small"
+        clearable
+        :model-value="queryParams.surveyOrExam"
+        placeholder="请选择类"
+        @update:model-value="handleChange('surveyOrExam', $event)"
+      >
+        <el-option 
+          v-for="dict in getDictOptions('survey_exam_node')" 
+          :key="dict.value"
+          :label="dict.label" 
+          :value="dict.value" 
+        />
+      </el-select>
     </div>
-
-    <template #footer>
-      <el-button @click="handleClose">取消</el-button>
-      <el-button type="primary" @click="handleSave" :loading="loading">
-        保存配置并应用
-      </el-button>
-    </template>
-  </el-dialog>
+  </el-form-item>
 </template>
 
-<script setup lang="ts">
-import { ref, reactive, computed, watch } from 'vue'
-import { ElMessage } from 'element-plus'
-import { 
-  FieldDisplayApi, 
-  getSelectedFields,
-  toggleGroupSelection,
-  isGroupPartiallySelected,
-  DEFAULT_ALTITUDE_OPTIONS,
-  DEFAULT_CODE_RANGE_OPTIONS
-} from '@/api/queueDB/fieldDisplay'
+<script lang="ts" setup>
+import { computed } from 'vue'
+import { getIntDictOptions, DICT_TYPE } from '@/utils/dict'
 
 interface Props {
-  modelValue: boolean
-  moduleType?: string
-  altitude?: number
-  codeRange?: number
+  queryParams: any
 }
 
-interface FieldGroup {
-  groupCode: string
-  groupName: string
-  selected: boolean
-  fields: FieldItem[]
-}
-
-interface FieldItem {
-  fieldCode: string
-  fieldLabel: string
-  selected: boolean
-  tableName?: string
-  fieldType?: string
-  dataType?: string
+interface Emits {
+  (e: 'update:queryParams', value: any): void
+  (e: 'change'): void
 }
 
 const props = defineProps<Props>()
-const emit = defineEmits(['update:modelValue', 'config-change'])
+const emit = defineEmits<Emits>()
 
-const visible = ref(props.modelValue)
-const loading = ref(false)
-const fieldGroups = ref<FieldGroup[]>([])
-const altitudeOptions = ref(DEFAULT_ALTITUDE_OPTIONS)
-const codeRangeOptions = ref(DEFAULT_CODE_RANGE_OPTIONS)
+// 字典类型映射配置
+const dictConfig = {
+  group: 'data_node', // 组别
+  type: 'type_node', // 类型
+  year: 'year_node', // 年份
+  timePoint: 'time_point_node', // 时相
+  surveyOrExam: 'survey_exam_node' // 调查/体检
+} as const
 
-const configParams = reactive({
-  moduleType: props.moduleType || 'baseline',
-  altitude: props.altitude,
-  codeRange: props.codeRange
-})
+// 获取字典选项的方法
+const getDictOptions = (dictType: string) => {
+  return getIntDictOptions(DICT_TYPE.PROSPECTIVE_QUEUE_DB_CONDITION[dictType])
+}
 
 // 计算属性
-const selectedFieldsCount = computed(() => {
-  return getSelectedFields(fieldGroups.value).length
-})
+const showExperimentFields = computed(() => props.queryParams.group === 1)
 
-// 方法
-const loadFieldGroups = async () => {
-  try {
-    loading.value = true
-    const response = await FieldDisplayApi.getFieldDisplayConfig({
-      moduleType: configParams.moduleType,
-      altitude: configParams.altitude,
-      codeRange: configParams.codeRange?.toString()
-    })
-    fieldGroups.value = response.data
-  } catch (error: any) {
-    console.error('加载字段组失败:', error)
-    ElMessage.error(error.message || '加载字段组失败')
-  } finally {
-    loading.value = false
-  }
-}
-
-const handleGroupSelect = (group: FieldGroup) => {
-  toggleGroupSelection(group, group.selected)
-}
-
-const selectGroup = (group: FieldGroup) => {
-  toggleGroupSelection(group, true)
-}
-
-const deselectGroup = (group: FieldGroup) => {
-  toggleGroupSelection(group, false)
-}
-
-const getSelectedFieldCount = (group: FieldGroup): number => {
-  return group.fields.filter(field => field.selected).length
-}
-
-const selectAll = () => {
-  fieldGroups.value.forEach(group => {
-    toggleGroupSelection(group, true)
-  })
-}
-
-const clearAll = () => {
-  fieldGroups.value.forEach(group => {
-    toggleGroupSelection(group, false)
-  })
-}
-
-const handleSave = async () => {
-  try {
-    loading.value = true
-    
-    if (selectedFieldsCount.value === 0) {
-      ElMessage.warning('请至少选择一个字段')
-      return
+// 统一处理变化
+const handleChange = (field: string, value: any) => {
+  let newParams = { ...props.queryParams }
+  
+  if (field === 'group') {
+    newParams.group = value
+    // 如果切换到对照组，重置实验组特有字段
+    if (value === 2) {
+      newParams.type = undefined
+      newParams.year = undefined
+      newParams.timePoint = undefined
     }
-    
-    // 保存配置到后端
-    await FieldDisplayApi.saveFieldDisplayConfig({
-      moduleType: configParams.moduleType,
-      altitude: configParams.altitude,
-      codeRange: configParams.codeRange?.toString(),
-      fieldGroups: fieldGroups.value
-    })
-    
-    ElMessage.success('配置保存成功')
-    emit('config-change', fieldGroups.value)
-    handleClose()
-  } catch (error: any) {
-    console.error('保存配置失败:', error)
-    ElMessage.error(error.message || '保存配置失败')
-  } finally {
-    loading.value = false
+  } else {
+    newParams[field] = value
   }
+  
+  emit('update:queryParams', newParams)
+  emit('change')
 }
-
-const handleClose = () => {
-  visible.value = false
-}
-
-// 监听显示状态
-watch(visible, (val) => {
-  emit('update:modelValue', val)
-})
-
-watch(() => props.modelValue, (val) => {
-  visible.value = val
-  if (val) {
-    loadFieldGroups()
-  }
-})
-
-// 监听props变化
-watch(() => props.moduleType, (val) => {
-  if (val) {
-    configParams.moduleType = val
-    loadFieldGroups()
-  }
-})
-
-watch(() => props.altitude, (val) => {
-  configParams.altitude = val
-  loadFieldGroups()
-})
-
-watch(() => props.codeRange, (val) => {
-  configParams.codeRange = val
-  loadFieldGroups()
-})
 </script>
 
 <style scoped>
-.field-config-dialog {
-  max-height: 70vh;
-  overflow-y: auto;
-}
-
-.config-header {
-  margin-bottom: 16px;
-  padding-bottom: 16px;
-  border-bottom: 1px solid #e8e8e8;
-}
-
-.selection-info {
-  margin-top: 12px;
-  color: #666;
-  font-size: 14px;
-}
-
-.selection-info .el-button {
-  margin-left: 12px;
-}
-
-.field-groups-container {
+.select-bar {
   display: flex;
-  flex-direction: column;
   gap: 12px;
-}
-
-.field-group-card {
-  :deep(.el-card__header) {
-    padding: 12px 16px;
-    background-color: #f8f9fa;
-  }
-}
-
-.group-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.group-name {
-  font-weight: bold;
-  margin-right: 8px;
-}
-
-.field-count {
-  color: #666;
-  font-size: 12px;
-}
-
-.group-actions {
-  display: flex;
-  gap: 8px;
-}
-
-.field-list {
-  display: flex;
   flex-wrap: wrap;
-  gap: 12px;
-}
-
-.field-checkbox {
-  display: flex;
   align-items: center;
-  min-width: 180px;
-  margin-right: 0;
 }
 
-.field-label {
-  margin-right: 8px;
+.select-width {
+  width: 200px;
+  min-width: 200px;
 }
 
-.field-type {
-  color: #999;
-  font-size: 12px;
-  background: #f5f5f5;
-  padding: 2px 6px;
-  border-radius: 4px;
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .select-bar {
+    gap: 8px;
+  }
+  
+  .select-width {
+    width: 100%;
+    min-width: auto;
+  }
 }
 </style>

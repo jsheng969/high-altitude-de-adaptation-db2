@@ -119,6 +119,167 @@
       :parent-module="editDialog.parentModule"
       @success="handleEditSuccess"
     />
+
+    <el-card class="import-card">
+      <template #header>
+        <div class="card-header">
+          <span>Excel 导入</span>
+          <el-button type="primary" link @click="downloadTemplate('simple')">
+            下载模板
+          </el-button>
+          <!-- <el-button type="primary" link @click="downloadTemplate('full')">
+            下载完整模板
+          </el-button> -->
+        </div>
+      </template>
+
+      <el-form :model="importForm" :rules="rules" ref="importFormRef" label-width="120px">
+        <el-form-item label="Excel文件" prop="file">
+          <el-upload
+            ref="uploadRef"
+            class="upload-demo"
+            action=""
+            :auto-upload="false"
+            :on-change="handleFileChange"
+            :on-remove="handleFileRemove"
+            :file-list="fileList"
+            accept=".xlsx,.xls"
+            :limit="1"
+          >
+            <el-button type="primary">选择文件</el-button>
+            <template #tip>
+              <div class="el-upload__tip">
+                请上传 .xlsx 或 .xls 格式的Excel文件，文件大小不超过10MB
+              </div>
+            </template>
+          </el-upload>
+        </el-form-item>
+
+        <el-form-item label="模块类型" prop="moduleType">
+          <el-select v-model="importForm.moduleType" placeholder="请选择模块类型">
+            <el-option label="调查问卷" value="survey" />
+            <el-option label="考试测评" value="exam" />
+            <el-option label="数据采集" value="data_collection" />
+            <el-option label="其他" value="other" />
+          </el-select>
+        </el-form-item>
+
+        <el-form-item label="分组类型" prop="groupType">
+          <el-select v-model="importForm.groupType" placeholder="请选择分组类型">
+            <el-option label="通用" value="general" />
+            <el-option label="医疗" value="medical" />
+            <el-option label="教育" value="education" />
+            <el-option label="企业" value="enterprise" />
+          </el-select>
+        </el-form-item>
+
+        <el-form-item label="配置模式" prop="configMode">
+          <el-radio-group v-model="importForm.configMode">
+            <el-radio label="auto">自动检测</el-radio>
+            <el-radio label="simple">简单模式</el-radio>
+            <el-radio label="full">完整模式</el-radio>
+          </el-radio-group>
+        </el-form-item>
+
+        <el-form-item label="模块编码" prop="moduleCode">
+          <el-input 
+            v-model="importForm.moduleCode" 
+            placeholder="留空则根据文件名自动生成"
+            clearable
+          />
+        </el-form-item>
+
+        <el-form-item label="模块名称" prop="moduleName">
+          <el-input 
+            v-model="importForm.moduleName" 
+            placeholder="留空则根据文件名自动生成"
+            clearable
+          />
+        </el-form-item>
+
+        <el-form-item label="备注">
+          <el-input
+            v-model="importForm.remark"
+            type="textarea"
+            :rows="2"
+            placeholder="请输入备注信息"
+          />
+        </el-form-item>
+
+        <el-form-item>
+          <el-button 
+            type="primary" 
+            :loading="loading" 
+            @click="handleImport"
+          >
+            {{ loading ? '导入中...' : '开始导入' }}
+          </el-button>
+          <el-button @click="handleReset">重置</el-button>
+        </el-form-item>
+      </el-form>
+    </el-card>
+
+    <!-- 导入结果展示 -->
+    <el-card v-if="importResult" class="result-card">
+      <template #header>
+        <div class="result-header">
+          <span>导入结果</span>
+          <el-tag :type="importResult.success ? 'success' : 'danger'">
+            {{ importResult.success ? '成功' : '失败' }}
+          </el-tag>
+        </div>
+      </template>
+
+      <div class="result-content">
+        <el-alert
+          :title="importResult.message"
+          :type="importResult.success ? 'success' : 'error'"
+          :closable="false"
+          show-icon
+        />
+
+        <div v-if="importResult.success" class="success-details">
+          <el-descriptions :column="2" border>
+            <el-descriptions-item label="模块编码">
+              {{ importResult.moduleCode }}
+            </el-descriptions-item>
+            <el-descriptions-item label="表名">
+              {{ importResult.tableName }}
+            </el-descriptions-item>
+            <el-descriptions-item label="字段数量">
+              {{ importResult.successFields }}/{{ importResult.totalFields }}
+            </el-descriptions-item>
+            <el-descriptions-item label="数据记录">
+              {{ importResult.successRecords }}/{{ importResult.totalRecords }}
+            </el-descriptions-item>
+            <el-descriptions-item label="导入时间">
+              {{ formatTime(importResult.importTime) }}
+            </el-descriptions-item>
+            <el-descriptions-item label="耗时">
+              {{ importResult.costTime }}ms
+            </el-descriptions-item>
+          </el-descriptions>
+        </div>
+
+        <div v-if="importResult.errorMessages && importResult.errorMessages.length > 0" class="error-details">
+          <el-alert
+            title="错误信息"
+            type="warning"
+            :closable="false"
+            class="error-alert"
+          />
+          <el-collapse>
+            <el-collapse-item title="查看详细错误">
+              <ul class="error-list">
+                <li v-for="(error, index) in importResult.errorMessages" :key="index">
+                  {{ error }}
+                </li>
+              </ul>
+            </el-collapse-item>
+          </el-collapse>
+        </div>
+      </div>
+    </el-card>
   </div>
 </template>
 
@@ -128,6 +289,8 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import ModuleEditDialog from './components/ModuleEditDialog.vue'
 import { ModuleConfigApi } from '@/api/queueDB/moduleconfig'
 import { useRoute, useRouter } from 'vue-router'
+import { importApi, type ExcelImportResultVO } from '@/api/dynamic/import'
+import download from '@/utils/download'
 
 // 响应式数据
 const loading = ref(false)
@@ -248,6 +411,126 @@ const getLevelText = (level: number) => {
 onMounted(() => {
   loadModuleTree()
 })
+
+const importFormRef = ref()
+const uploadRef = ref()
+const fileList = ref<any[]>([])
+const importResult = ref<ExcelImportResultVO | null>(null)
+
+const importForm = reactive({
+  file: null as File | null,
+  moduleType: 'survey',
+  groupType: 'general',
+  configMode: 'auto',
+  moduleCode: '',
+  moduleName: '',
+  remark: ''
+})
+
+const rules = {
+  file: [
+    { required: true, message: '请选择Excel文件', trigger: 'change' }
+  ],
+  moduleType: [
+    { required: true, message: '请选择模块类型', trigger: 'change' }
+  ]
+}
+
+// 文件选择处理
+const handleFileChange = (file: any) => {
+  importForm.file = file.raw
+  // 自动生成模块编码和名称
+  if (!importForm.moduleCode) {
+    const fileName = file.name.replace(/\.[^/.]+$/, "") // 移除扩展名
+    importForm.moduleCode = generateModuleCode(fileName)
+  }
+  if (!importForm.moduleName) {
+    importForm.moduleName = file.name.replace(/\.[^/.]+$/, "")
+  }
+}
+
+const handleFileRemove = () => {
+  importForm.file = null
+}
+
+// 生成模块编码
+const generateModuleCode = (fileName: string): string => {
+  return fileName
+    .replace(/[^a-zA-Z0-9\u4e00-\u9fa5]/g, '_')
+    .replace(/_+/g, '_')
+    .toLowerCase() + '_module'
+}
+
+// 下载模板 - 简化版本
+const downloadTemplate = async (type: string) => {
+  try {
+    const data = await importApi.downloadTemplate(type)
+    download.excel(data, '模板.xlsx')
+    ElMessage.success('模板下载成功')
+  } catch (error) {
+    console.error('下载模板错误:', error)
+    ElMessage.error('模板下载失败')
+  }
+}
+
+// 执行导入
+const handleImport = async () => {
+  if (!importFormRef.value) return
+  
+  await importFormRef.value.validate(async (valid: boolean) => {
+    if (!valid) {
+      ElMessage.error('请完善表单信息')
+      return
+    }
+
+    if (!importForm.file) {
+      ElMessage.error('请选择Excel文件')
+      return
+    }
+
+    loading.value = true
+    importResult.value = null
+
+    try {
+      const formData = new FormData()
+      formData.append('file', importForm.file)
+      formData.append('moduleType', importForm.moduleType)
+      formData.append('groupType', importForm.groupType)
+      formData.append('configMode', importForm.configMode)
+      formData.append('moduleCode', importForm.moduleCode)
+      formData.append('moduleName', importForm.moduleName)
+      formData.append('remark', importForm.remark)
+
+      const result = await importApi.importExcel(formData)
+      importResult.value = result.data
+      
+      if (result.data.success) {
+        ElMessage.success('导入成功')
+      } else {
+        ElMessage.error('导入失败: ' + result.data.message)
+      }
+    } catch (error) {
+      console.error('导入错误:', error)
+    } finally {
+      loading.value = false
+    }
+  })
+}
+
+// 重置表单
+const handleReset = () => {
+  importFormRef.value?.resetFields()
+  uploadRef.value?.clearFiles()
+  fileList.value = []
+  importResult.value = null
+  importForm.file = null
+}
+
+// 格式化时间
+const formatTime = (time: string) => {
+  if (!time) return ''
+  return new Date(time).toLocaleString()
+}
 </script>
 
 <style scoped>

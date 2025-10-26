@@ -9,4 +9,54 @@
         文档可见：https://www.iocoder.cn/MyBatis/x-plugins/
      -->
 
+    <!-- 批量插入字段配置 -->
+    <insert id="insertBatchSomeColumn">
+        INSERT INTO field_config (
+        module_code,
+        field_code,
+        field_label,
+        field_type,
+        data_type,
+        options_json,
+        is_required,
+        order_no,
+        status,
+        field_length,
+        is_default,
+        display_order,
+        field_group,
+        field_group_name,
+        creator,
+        create_time,
+        updater,
+        update_time,
+        deleted,
+        tenant_id
+        ) VALUES
+        <foreach collection="list" item="item" separator=",">
+            (
+            #{item.moduleCode},
+            #{item.fieldCode},
+            #{item.fieldLabel},
+            #{item.fieldType},
+            #{item.dataType},
+            #{item.optionsJson},
+            #{item.isRequired},
+            #{item.orderNo},
+            #{item.status},
+            #{item.fieldLength},
+            #{item.isDefault},
+            #{item.displayOrder},
+            #{item.fieldGroup},
+            #{item.fieldGroupName},
+            #{item.creator},
+            #{item.createTime},
+            #{item.updater},
+            #{item.updateTime},
+            #{item.deleted},
+            #{item.tenantId}
+            )
+        </foreach>
+    </insert>
+
 </mapper>

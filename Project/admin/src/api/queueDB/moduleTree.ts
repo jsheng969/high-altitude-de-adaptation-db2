@@ -48,10 +48,3 @@ export const getBaseModules = () => {
     url: '/queueDB/module-config/base-modules'
   })
 }
-
-// 根据模块编码获取模块详情（包含子模块和字段）
-export const getModuleDetail = (moduleCode: string) => {
-  return request.get<ModuleTreeVO>({
-    url: `/queueDB/module-config/detail/${moduleCode}`
-  })
-}

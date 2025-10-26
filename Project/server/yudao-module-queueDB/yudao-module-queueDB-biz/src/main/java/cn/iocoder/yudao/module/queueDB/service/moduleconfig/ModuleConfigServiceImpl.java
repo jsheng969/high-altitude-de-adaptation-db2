@@ -301,4 +301,108 @@ public class ModuleConfigServiceImpl implements ModuleConfigService {
             return vo;
         }).collect(Collectors.toList());
     }
+
+    @Override
+    public List<ModuleConfigRespVO> getModuleTreeWithFields() {
+        // 查询所有启用的模块
+        List<ModuleConfigDO> allModules = moduleConfigMapper.selectList(
+                new LambdaQueryWrapper<ModuleConfigDO>()
+                        .eq(ModuleConfigDO::getStatus, 1)
+                        .orderByAsc(ModuleConfigDO::getOrderNo)
+        );
+
+        // 查询所有启用的字段
+        List<FieldConfigDO> allFields = fieldConfigMapper.selectList(
+                new LambdaQueryWrapper<FieldConfigDO>()
+                        .eq(FieldConfigDO::getStatus, 1)
+                        .orderByAsc(FieldConfigDO::getOrderNo)
+        );
+
+        // 按模块编码分组字段
+        Map<String, List<FieldConfigDO>> fieldMap = allFields.stream()
+                .collect(Collectors.groupingBy(FieldConfigDO::getModuleCode));
+
+        // 按父ID分组模块
+        Map<Long, List<ModuleConfigDO>> groupedByParent = allModules.stream()
+                .filter(module -> module.getParentId() != null)
+                .collect(Collectors.groupingBy(ModuleConfigDO::getParentId));
+
+        // 获取根模块（parent_id为null）
+        List<ModuleConfigDO> rootModules = allModules.stream()
+                .filter(module -> module.getParentId() == null)
+                .sorted(Comparator.comparing(ModuleConfigDO::getOrderNo))
+                .collect(Collectors.toList());
+
+        // 构建包含字段的模块树
+        return buildModuleTreeWithFields(rootModules, groupedByParent, fieldMap);
+    }
+
+    @Override
+    public List<ModuleConfigDO> getBaseModules() {
+        // 查询所有一级模块（parent_id为null）且启用的
+        return moduleConfigMapper.selectList(
+                new LambdaQueryWrapper<ModuleConfigDO>()
+                        .isNull(ModuleConfigDO::getParentId)
+                        .eq(ModuleConfigDO::getStatus, 1)
+                        .orderByAsc(ModuleConfigDO::getOrderNo)
+        );
+    }
+
+    /**
+     * 构建包含字段的模块树
+     */
+    private List<ModuleConfigRespVO> buildModuleTreeWithFields(List<ModuleConfigDO> nodes,
+                                                               Map<Long, List<ModuleConfigDO>> groupedByParent,
+                                                               Map<String, List<FieldConfigDO>> fieldMap) {
+        List<ModuleConfigRespVO> result = new ArrayList<>();
+
+        for (ModuleConfigDO node : nodes) {
+            ModuleConfigRespVO treeNode = BeanUtils.toBean(node, ModuleConfigRespVO.class);
+
+            // 设置字段
+            List<FieldConfigDO> fields = fieldMap.get(node.getModuleCode());
+            if (fields != null && !fields.isEmpty()) {
+                List<FieldConfigRespVO> fieldVOs = BeanUtils.toBean(fields, FieldConfigRespVO.class);
+                treeNode.setFields(fieldVOs);
+            }
+
+            // 递归构建子节点
+            List<ModuleConfigDO> children = groupedByParent.get(node.getId());
+            if (children != null && !children.isEmpty()) {
+                List<ModuleConfigRespVO> childNodes = buildModuleTreeWithFields(children, groupedByParent, fieldMap);
+                treeNode.setChildren(childNodes);
+            }
+
+            result.add(treeNode);
+        }
+
+        return result;
+    }
+
+    @Override
+    public ModuleConfigRespVO getModuleDetailByCode(String moduleCode) {
+        // 查询模块基本信息
+        ModuleConfigDO module = moduleConfigMapper.selectByCode(moduleCode);
+        if (module == null) {
+            throw exception(MODULE_CONFIG_NOT_EXISTS);
+        }
+
+        ModuleConfigRespVO result = BeanUtils.toBean(module, ModuleConfigRespVO.class);
+
+        // 查询模块字段
+        List<FieldConfigDO> fields = fieldConfigMapper.selectByModuleCode(moduleCode);
+        if (fields != null && !fields.isEmpty()) {
+            List<FieldConfigRespVO> fieldVOs = BeanUtils.toBean(fields, FieldConfigRespVO.class);
+            result.setFields(fieldVOs);
+        }
+
+        // 查询子模块
+        List<ModuleConfigDO> children = moduleConfigMapper.selectByParentId(module.getId());
+        if (children != null && !children.isEmpty()) {
+            List<ModuleConfigRespVO> childVOs = BeanUtils.toBean(children, ModuleConfigRespVO.class);
+            result.setChildren(childVOs);
+        }
+
+        return result;
+    }
 }

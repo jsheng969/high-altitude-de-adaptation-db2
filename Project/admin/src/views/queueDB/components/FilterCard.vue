@@ -16,21 +16,23 @@
       <!-- 数据节点 -->
       <DataNodeFilter 
         :query-params="queryParams"
-        @update:query-params="handleQueryParamsUpdate"
+        @update:query-params="$emit('update:queryParams', $event)"
         @change="$emit('query-change')"
       />
       
       <!-- 基础信息 -->
       <BaseInfoFilter 
         :query-params="queryParams"
-        @update:query-params="handleQueryParamsUpdate"
+        :base-modules="baseModules"
+        :loading="loading"
+        @update:query-params="$emit('update:queryParams', $event)"
         @change="$emit('query-change')"
       />
       
       <!-- 实验组和对照组 -->
       <GroupFilters 
         :query-params="queryParams"
-        @update:query-params="handleQueryParamsUpdate"
+        @update:query-params="$emit('update:queryParams', $event)"
         @change="$emit('query-change')"
       />
     </el-form>
@@ -44,6 +46,8 @@ import GroupFilters from './GroupFilters.vue'
 
 interface Props {
   queryParams: any
+  baseModules: any[]
+  loading: boolean
 }
 
 interface Emits {
@@ -51,10 +55,6 @@ interface Emits {
   (e: 'query-change'): void
 }
 
-const props = defineProps<Props>()
-const emit = defineEmits<Emits>()
-
-const handleQueryParamsUpdate = (newQueryParams: any) => {
-  emit('update:queryParams', newQueryParams)
-}
+defineProps<Props>()
+defineEmits<Emits>()
 </script>
