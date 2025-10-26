@@ -2,9 +2,13 @@ package cn.iocoder.yudao.module.queueDB.controller.admin.dynamictable;
 
 import cn.hutool.db.PageResult;
 import cn.iocoder.yudao.framework.common.pojo.CommonResult;
+import cn.iocoder.yudao.module.queueDB.controller.admin.dynamictable.dto.DynamicTableQueryReqDTO;
+import cn.iocoder.yudao.module.queueDB.controller.admin.dynamictable.dto.DynamicTableQueryRespDTO;
 import cn.iocoder.yudao.module.queueDB.controller.admin.dynamictable.dto.ExcelImportReqDTO;
 import cn.iocoder.yudao.module.queueDB.controller.admin.dynamictable.vo.ExcelImportResultVO;
+import cn.iocoder.yudao.module.queueDB.controller.admin.dynamictable.vo.FieldDisplayVO;
 import cn.iocoder.yudao.module.queueDB.controller.admin.dynamictable.vo.ImportHistoryVO;
+import cn.iocoder.yudao.module.queueDB.dal.dataobject.moduleconfig.ModuleConfigDO;
 import cn.iocoder.yudao.module.queueDB.service.dynamic.DynamicTableService;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.extern.slf4j.Slf4j;
@@ -137,5 +141,32 @@ public class DynamicTableController {
             log.error("下载模板失败", e);
             throw new RuntimeException("下载模板失败", e);
         }
+    }
+
+    /**
+     * 查询动态表数据
+     */
+    @PostMapping("/query")
+    public CommonResult<DynamicTableQueryRespDTO> queryDynamicTables(@RequestBody DynamicTableQueryReqDTO reqDTO) {
+        DynamicTableQueryRespDTO result = dynamicTableService.queryDynamicTables(reqDTO);
+        return CommonResult.success(result);
+    }
+
+    /**
+     * 获取可查询的模块列表
+     */
+    @GetMapping("/queryable-modules")
+    public CommonResult<List<ModuleConfigDO>> getQueryableModules() {
+        List<ModuleConfigDO> modules = dynamicTableService.getQueryableModules();
+        return CommonResult.success(modules);
+    }
+
+    /**
+     * 根据模块名称获取字段配置
+     */
+    @PostMapping("/module-fields")
+    public CommonResult<List<FieldDisplayVO>> getModuleFields(@RequestBody List<String> moduleNames) {
+        List<FieldDisplayVO> fields = dynamicTableService.getModuleFields(moduleNames);
+        return CommonResult.success(fields);
     }
 }

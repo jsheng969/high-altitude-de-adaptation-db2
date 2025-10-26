@@ -2,11 +2,16 @@ package cn.iocoder.yudao.module.queueDB.service.dynamic;
 
 import cn.hutool.db.PageResult;
 import cn.iocoder.yudao.framework.common.pojo.CommonResult;
+import cn.iocoder.yudao.module.queueDB.controller.admin.dynamictable.dto.DynamicTableQueryReqDTO;
+import cn.iocoder.yudao.module.queueDB.controller.admin.dynamictable.dto.DynamicTableQueryRespDTO;
 import cn.iocoder.yudao.module.queueDB.controller.admin.dynamictable.dto.ExcelImportReqDTO;
 import cn.iocoder.yudao.module.queueDB.controller.admin.dynamictable.vo.ExcelImportResultVO;
+import cn.iocoder.yudao.module.queueDB.controller.admin.dynamictable.vo.FieldDisplayVO;
 import cn.iocoder.yudao.module.queueDB.controller.admin.dynamictable.vo.ImportHistoryVO;
+import cn.iocoder.yudao.module.queueDB.dal.dataobject.moduleconfig.ModuleConfigDO;
 
 import javax.servlet.http.HttpServletResponse;
+import java.util.List;
 
 /**
  * 动态表建表/同步服务（骨架）
@@ -63,4 +68,19 @@ public interface DynamicTableService {
      * 删除模块及相关数据
      */
     CommonResult<String> deleteModule(String moduleCode);
+
+    /**
+     * 动态表关联查询
+     */
+    DynamicTableQueryRespDTO queryDynamicTables(DynamicTableQueryReqDTO reqDTO);
+
+    /**
+     * 获取所有可查询的模块列表
+     */
+    List<ModuleConfigDO> getQueryableModules();
+
+    /**
+     * 根据模块名称获取字段配置
+     */
+    List<FieldDisplayVO> getModuleFields(List<String> moduleNames);
 }
