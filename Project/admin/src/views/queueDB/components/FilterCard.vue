@@ -30,11 +30,11 @@
       />
       
       <!-- 实验组和对照组 -->
-      <GroupFilters 
+      <!-- <GroupFilters 
         :query-params="queryParams"
         @update:query-params="$emit('update:queryParams', $event)"
         @change="$emit('query-change')"
-      />
+      /> -->
     </el-form>
   </el-card>
 </template>

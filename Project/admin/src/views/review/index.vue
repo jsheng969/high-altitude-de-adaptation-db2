@@ -760,7 +760,7 @@ size="mini" clearable v-model="queryParams.backTime" placeholder="请选择回�
 <script lang="ts" setup>
 import './styles.css'
 import selectAllCheckbox from '../components/selectAllCheckbox/index.vue'
-import { BasicInfoApi } from '@/api/review/basicinfo'
+// import { BasicInfoApi } from '@/api/review/basicinfo'
 import AdvancedSearch from './AdvancedSearch.vue'
 import {
   basicInfoFields,

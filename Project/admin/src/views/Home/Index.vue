@@ -3,7 +3,8 @@
     <div class="container">
       <el-row>
         <el-col :span="12" class="card">
-          <div class="image-container" @click="handleClick('/prospective')">
+          <!-- <div class="image-container" @click="handleClick('/prospective')"> -->
+            <div class="image-container" @click="handleClick('/queueDB')">
             <img src="@/assets/images/new-home-block.png" />
             <div class="image-text">
               <div>前瞻性队列数据库</div>

@@ -89,7 +89,14 @@ const buildTableFields = (module: ModuleTreeVO): Record<string, any> => {
       // 子模块是叶子节点且有字段
       if (child.isLeaf === 1 && child.fields && child.fields.length > 0) {
         const childFields = child.fields
-          .filter(field => field.status === 1)
+          .filter(field => {
+        // 过滤条件：状态为1且不以name结尾
+        if (field.status !== 1) return false
+        
+        // 剔除以name结尾的字段
+        const fieldCode = field.fieldCode || ''
+        return !fieldCode.toLowerCase().endsWith('name')
+      })
           .map(field => {
             const prop = child.tableName ? `${child.tableName}.${field.fieldCode}` : field.fieldCode
             console.log(`字段 ${field.fieldLabel} -> ${prop}`)
@@ -138,7 +145,14 @@ const buildTableFields = (module: ModuleTreeVO): Record<string, any> => {
     console.log(`模块 ${module.moduleName} 既不是叶子节点也没有子模块，但直接有字段`)
     
     const fields = module.fields
-      .filter(field => field.status === 1)
+      .filter(field => {
+        // 过滤条件：状态为1且不以name结尾
+        if (field.status !== 1) return false
+        
+        // 剔除以name结尾的字段
+        const fieldCode = field.fieldCode || ''
+        return !fieldCode.toLowerCase().endsWith('name')
+      })
       .map(field => ({
         label: field.fieldLabel,
         prop: module.tableName ? `${module.tableName}.${field.fieldCode}` : field.fieldCode,
