@@ -165,8 +165,8 @@ const props = defineProps<Props>()
 const emit = defineEmits(['update:show'])
 
 const localShow = ref(false)
-const columns = ref<string[]>(['1', '2', '3', '4', '5', '6', '7', '8', '9'])
-const rows = ref<string[]>(['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I'])
+const columns = ref<string[]>(['1', '2', '3', '4', '5', '6', '7', '8', '9','10'])
+const rows = ref<string[]>(['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I','J'])
 const tubeData = ref<TubeInfo[]>([])
 
 const handleBoxClick = async (boxNo: any) => {
@@ -364,8 +364,8 @@ const refreshData = async () => {
 <style>
 /* 原有样式保持不变 */
 .tube-container {
-  width: 560px;
-  height: 560px;
+  width: 580px;
+  height: 600px;
   border-radius: 4px;
   padding: 18px;
   background: #f2f3f5;

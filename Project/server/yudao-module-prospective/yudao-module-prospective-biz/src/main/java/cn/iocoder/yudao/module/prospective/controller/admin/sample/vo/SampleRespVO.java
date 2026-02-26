@@ -36,7 +36,7 @@ public class SampleRespVO {
 
     @Schema(description = "冰箱编号", requiredMode = Schema.RequiredMode.REQUIRED)
     @ExcelProperty("冰箱编号")
-    @EncryptField
+//    @EncryptField
     private String freezerNo;
 
     @Schema(description = "抽屉号", requiredMode = Schema.RequiredMode.REQUIRED)
@@ -49,7 +49,7 @@ public class SampleRespVO {
 
     @Schema(description = "盒号", requiredMode = Schema.RequiredMode.REQUIRED)
     @ExcelProperty("盒号")
-    @EncryptField
+//    @EncryptField
     private String boxNo;
 
     @Schema(description = "管序号", requiredMode = Schema.RequiredMode.REQUIRED)
@@ -62,7 +62,7 @@ public class SampleRespVO {
 
     @Schema(description = "管号", requiredMode = Schema.RequiredMode.REQUIRED)
     @ExcelProperty("管号")
-    @EncryptField
+//    @EncryptField
     private String tubeNo;
 
     @Schema(description = "样本类型(血液/尿液/组织等)", requiredMode = Schema.RequiredMode.REQUIRED, example = "2")

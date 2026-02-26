@@ -4,7 +4,11 @@
     <div class="drawer-title">{{ title }}</div>
 
     <div class="drawer-group-list">
-      <div v-for="groupIndex in 24" :key="`group-${groupIndex}`" class="drawer-group">
+      <div
+        v-for="groupIndex in layerCount * columnCount"
+        :key="`group-${groupIndex}`"
+        class="drawer-group"
+      >
         <div v-for="itemIndex in 5" :key="`item-${groupIndex}-${itemIndex}`" class="drawer-item">
           <template v-for="box in getBoxesByPosition(groupIndex, itemIndex)">
             <el-tooltip
@@ -15,7 +19,7 @@
             >
               <template #content>
                 <div style="cursor: pointer">
-                  {{ box.layer }}层{{ box.columnNum }}列{{ box.drawerNo }}屉
+                  {{ box.layer }}层{{ box.drawerNo }}架{{ getBoxNumber(box) }}盒
                   {{ box.boxNo }}
                 </div>
               </template>
@@ -61,6 +65,8 @@ const props = defineProps<{
 
 const localValue = ref<BoxData[]>([])
 const loading = ref(true)
+const layerCount = 3
+const columnCount = 5
 
 
 // 颜色映射 - 红色系细分
@@ -77,7 +83,7 @@ const colorMap: Record<string, string> = {
   'blood_other': '#F89898',     // 浅红色 - 血液其他类型
   
   'other': '#ccc',            // 黄色 - 其他
-  'mixed': '#00000B' // 黑色 - 混合
+  'mixed': '#E67E22' // 黑色 - 混合
 }
 
 // 用于记录未知颜色的固定随机色
@@ -87,8 +93,6 @@ function getColor(box: BoxData) {
   if (!box.boxNo) return '#ccc'
 
   const colorKey = box.displayColor || `unknown_${box.boxNo}`
-// 按 sampleType 映射颜色
-// const mappedType = mapSampleType(colorKey)
   // 有固定映射
   if (colorMap[colorKey]) {
     return colorMap[colorKey]
@@ -97,11 +101,15 @@ function getColor(box: BoxData) {
   // 无映射 → 分配固定随机色
   if (!randomColorMap[colorKey]) {
     randomColorMap[colorKey] = '#FF0000'
-    //  +Math.floor(Math.random() * 0xffffff)
-    //   .toString(16)
-    //   .padStart(6, '0')
   }
   return randomColorMap[colorKey]
+}
+
+// 计算盒子编号：(columnNum-1)*5 + drawerNo
+function getBoxNumber(box: BoxData): number {
+  const columnNum = Number(box.columnNum)
+  const boxSeq = Number(box.boxSeq)
+  return (columnNum - 1) * 5 + boxSeq
 }
 
 // 监听 props.value 改变时同步到 localValue
@@ -119,11 +127,11 @@ watch(
 
 // 计算 groupIndex
 function getGroupIndex(layer: string, columnNum: string) {
-  return (Number(layer) - 1) * 6 + Number(columnNum)
+  return (Number(layer) - 1) * columnCount + Number(columnNum)
 }
 
 // 获取某组某抽屉的所有盒子
-function getBoxesByPosition(groupIndex: number, itemIndex: number) {
+function getBoxesByPosition(groupIndex: number, itemIndex: number) {  
   return localValue.value
     .filter((box) => {
       return (
@@ -161,7 +169,7 @@ function handleBoxClick(box: BoxData) {
 
   .drawer-group-list {
     display: grid;
-    grid-template-columns: repeat(6, auto); /* 每行 6 组 */
+    grid-template-columns: repeat(5, auto); /* 每行 5 组 */
     gap: 8px;
     justify-content: center;
 

@@ -163,17 +163,17 @@
           "
         >
           <drawer-view
-            title="超低温冰箱CDWBX-005"
+            title="超低温冰箱"
             color="#ff7d00"
             :value="drawer6ViewData"
             @box-click="handlePickTube"
           />
-          <drawer-view
+          <!-- <drawer-view
             title="超低温冰箱CDWBX-006"
             color="#ff7d00"
             :value="drawer7ViewData"
             @box-click="handlePickTube"
-          />
+          /> -->
           <!-- <drawer-view title="血浆01" color="#ff7d00" />
                     <drawer-view title="大便01" color="#ff7d00" /> -->
         </div>
@@ -320,10 +320,12 @@ const submitTakeOut = async () => {
 
 // 生命周期钩子
 const initData = async () => {
-  const freezer6 = await SampleApi.getBoxesWithSampleTypes({ freezerNo: '超低温冰箱CDWBX-005' })
+  const freezer6 = await SampleApi.getBoxesWithSampleTypes({ freezerNo: '1' })
   drawer6ViewData.value = freezer6
-  const freezer7 = await SampleApi.getBoxesWithSampleTypes({ freezerNo: '超低温冰箱CDWBX-006' })
-  drawer7ViewData.value = freezer7
+  console.log(freezer6,"drawer6ViewData.valuedrawer6ViewData.valuedrawer6ViewData.value");
+  
+  // const freezer7 = await SampleApi.getBoxesWithSampleTypes({ freezerNo: '超低温冰箱CDWBX-006' })
+  // drawer7ViewData.value = freezer7
 }
 
 // 在<script setup>中，代码默认在setup()中运行，相当于created

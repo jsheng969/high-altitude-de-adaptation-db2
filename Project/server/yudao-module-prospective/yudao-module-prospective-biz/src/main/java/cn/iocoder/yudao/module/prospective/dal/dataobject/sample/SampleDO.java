@@ -41,7 +41,7 @@ public class SampleDO extends BaseDO {
     /**
      * 冰箱编号
      */
-    @EncryptField
+//    @EncryptField
     private String freezerNo;
     /**
      * 抽屉号
@@ -54,7 +54,7 @@ public class SampleDO extends BaseDO {
     /**
      * 盒号
      */
-    @EncryptField
+//    @EncryptField
     private String boxNo;
     /**
      * 管序号
@@ -67,7 +67,7 @@ public class SampleDO extends BaseDO {
     /**
      * 管号
      */
-    @EncryptField
+//    @EncryptField
     private String tubeNo;
     /**
      * 样本类型(血液/尿液/组织等)
