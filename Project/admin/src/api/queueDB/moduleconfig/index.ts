@@ -8,11 +8,11 @@ export interface ModuleConfigVO {
   moduleName: string // 模块名称
   tableName: string // 若为叶子节点，对应表名
   moduleLevel: number // 模块层级（1=一级,2=二级,3=三级）
-  groupType: string // 模块归属类型（experiment/control）
-  moduleType: string // survey/exam等
+  mainTableType: string // 主表类型（prospective_cohort/retrospective_cohort/plateau_work_capacity）
   isLeaf: number // 是否叶子模块（1=建表）
   orderNo: number // 排序号
   status: number // 状态（1启用，0停用）
+  remark?: string // 备注
 }
 
 // 动态模块配置表（支持三级结构） API
@@ -48,8 +48,8 @@ export const ModuleConfigApi = {
   },
 
   // 获取模块树（包含字段统计）
-  getModuleTreeWithStats: async () => {
-    return await request.get({ url: '/queueDB/module-config/tree-with-stats' })
+  getModuleTreeWithStats: async (params) => {
+    return await request.get({ url: '/queueDB/module-config/tree-with-stats', params })
   },
 
   // 检查模块代码是否可用
@@ -60,5 +60,10 @@ export const ModuleConfigApi = {
   // 获取模块及字段
   getModulesWithFields: () => {
     return request.get({ url: '/queueDB/module-config/with-fields' })
+  },
+
+  // 根据主表类型获取模块树
+  getModuleTreeByMainType: (mainTableType: string) => {
+    return request.get({ url: '/queueDB/module-config/tree-by-type', params: { mainTableType } })
   }
 }

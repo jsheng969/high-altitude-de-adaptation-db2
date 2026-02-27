@@ -512,13 +512,19 @@ public class DynamicTableServiceImpl implements DynamicTableService {
             // 设置基础信息
             resultVO.setFileName(importReq.getFile().getOriginalFilename());
 
+            // 设置关联字段
+            String joinField = StringUtils.isNotBlank(importReq.getJoinField())
+                    ? importReq.getJoinField() : "tjh";
+            resultVO.setJoinField(joinField);
+
+            log.info("使用关联字段: {}", joinField);
+
             // 1. 读取Excel
             List<Map<Integer, Object>> rawData = EasyExcel.read(importReq.getFile().getInputStream())
                     .sheet(0)
                     .headRowNumber(0)
                     .doReadSync();
 
-            // 转成 List<List<Object>>
             List<List<Object>> excelData = new ArrayList<>();
             for (Map<Integer, Object> rowMap : rawData) {
                 List<Object> row = new ArrayList<>();
@@ -530,241 +536,340 @@ public class DynamicTableServiceImpl implements DynamicTableService {
                 excelData.add(row);
             }
 
-            // 2. 解析字段配置（从第1-5行）
-            List<String> fieldGroupRow = toStringList(excelData.get(0));    // 第1行：字段分组
-            List<String> groupCodeRow = toStringList(excelData.get(1));     // 第2行：分组标识
-            List<String> fieldNameRow = toStringList(excelData.get(2));     // 第3行：字段名称
-            List<String> fieldCodeRow = toStringList(excelData.get(3));     // 第4行：字段标识
-            List<String> fieldTypeRow = toStringList(excelData.get(4));     // 第5行：字段类型
+            // 2. 解析字段配置
+            List<String> fieldGroupRow = toStringList(excelData.get(0));    // 字段分组
+            List<String> groupCodeRow = toStringList(excelData.get(1));     // 分组标识
+            List<String> fieldNameRow = toStringList(excelData.get(2));     // 字段名称
+            List<String> fieldCodeRow = toStringList(excelData.get(3));     // 字段标识
+            List<String> fieldTypeRow = toStringList(excelData.get(4));     // 字段类型
 
-            // 3. 检查并处理顶级模块唯一性 - 增强检查
+            // 3. 检查并处理顶级模块
             String parentModuleCode = importReq.getModuleCode();
 
-            // 双重检查：先检查是否存在，如果存在则删除
+            // 如果模块已存在，先删除所有相关表和数据
             boolean parentModuleExists = moduleConfigMapper.existsByModuleCode(parentModuleCode) > 0;
             if (parentModuleExists) {
-                log.info("顶级模块已存在，执行删除操作: {}", parentModuleCode);
+                log.info("顶级模块已存在，执行物理删除操作: {}", parentModuleCode);
                 deleteModuleAndRelatedData(parentModuleCode);
 
-                // 删除后再次检查确认
+                // 等待数据库操作完成
+                Thread.sleep(100);
+
                 boolean stillExists = moduleConfigMapper.existsByModuleCode(parentModuleCode) > 0;
                 if (stillExists) {
-                    throw new RuntimeException("模块删除后仍然存在，可能存在数据库同步问题: " + parentModuleCode);
+                    throw new RuntimeException("模块删除后仍然存在: " + parentModuleCode);
                 }
+                log.info("成功删除原有模块及相关数据: {}", parentModuleCode);
             }
 
-            // 4. 创建顶级模块（parent_id为null）
+            // 4. 创建顶级模块（主表）- level = 1
+            String mainTableName = "dyn_" + parentModuleCode.toLowerCase();
             ModuleConfigDO parentModule = new ModuleConfigDO();
             parentModule.setModuleCode(parentModuleCode);
             parentModule.setModuleName(importReq.getModuleName());
             parentModule.setModuleLevel(1);
             parentModule.setModuleType(importReq.getModuleType());
             parentModule.setGroupType(importReq.getGroupType());
-            parentModule.setTableName("dyn_" + parentModuleCode.toLowerCase());
-
-            // 插入前再次检查（防止并发问题）
-            if (moduleConfigMapper.existsByModuleCode(parentModuleCode) > 0) {
-                throw new RuntimeException("模块编码冲突，请稍后重试: " + parentModuleCode);
-            }
+            parentModule.setTableName(mainTableName);
+            parentModule.setJoinField(joinField);
 
             moduleConfigMapper.insert(parentModule);
-            log.info("成功创建顶级模块: {}", parentModuleCode);
+            log.info("成功创建主模块: {}, 关联字段: {}", parentModuleCode, joinField);
 
-            // 设置模块信息到结果
-            resultVO.setModuleCode(parentModule.getModuleCode());
-            resultVO.setTableName(parentModule.getTableName());
+            // 5. 创建主表
+            createMainTable(mainTableName, joinField);
+            log.info("成功创建主表: {}, 关联字段: {}", mainTableName, joinField);
 
-            // 5. 按分组整理字段并创建子模块
+            // 6. 按分组整理字段
             Map<String, List<FieldConfigDO>> groupFieldMap = new LinkedHashMap<>();
             Map<String, ModuleConfigDO> groupModuleMap = new HashMap<>();
+            Map<String, String> groupTableNameMap = new HashMap<>();
 
-// 添加默认分组（当分组信息为空时使用）
+            List<FieldConfigDO> mainTableFields = new ArrayList<>();
+
             String defaultGroupCode = "default";
             String defaultGroupName = "默认分组";
-
-// 确定最大列数（以字段标识行为准）
             int maxColumns = fieldCodeRow.size();
 
-            log.info("解析到的列数 - 字段分组: {}, 分组标识: {}, 字段名称: {}, 字段标识: {}, 字段类型: {}",
-                    fieldGroupRow.size(), groupCodeRow.size(), fieldNameRow.size(), fieldCodeRow.size(), fieldTypeRow.size());
+            boolean hasJoinField = false;
 
-            for (int col = 1; col < maxColumns; col++) {  // 从第2列开始（第1列是空列）
-                // 跳过空列
-                if (StringUtils.isBlank(fieldCodeRow.get(col))) {
+            for (int col = 1; col < maxColumns; col++) {
+                String fieldCode = fieldCodeRow.get(col);
+                if (StringUtils.isBlank(fieldCode)) {
                     continue;
                 }
 
-                // 安全处理分组信息 - 防止索引越界
-                String groupCode = defaultGroupCode;
-                String groupName = defaultGroupName;
-
-                // 安全获取分组标识
-                if (groupCodeRow.size() > col && StringUtils.isNotBlank(groupCodeRow.get(col))) {
-                    groupCode = groupCodeRow.get(col);
+                if (joinField.equalsIgnoreCase(fieldCode)) {
+                    hasJoinField = true;
                 }
 
-                // 安全获取字段分组
-                if (fieldGroupRow.size() > col && StringUtils.isNotBlank(fieldGroupRow.get(col))) {
-                    groupName = fieldGroupRow.get(col);
+                String groupCode = "";
+                String groupName = "";
+
+                if (groupCodeRow.size() > col) {
+                    groupCode = StringUtils.trimToEmpty(groupCodeRow.get(col));
+                }
+                if (fieldGroupRow.size() > col) {
+                    groupName = StringUtils.trimToEmpty(fieldGroupRow.get(col));
                 }
 
-                log.info("处理第{}列: 字段标识={}, 分组标识={}, 分组名称={}", col, fieldCodeRow.get(col), groupCode, groupName);
-
-                // 为每个分组创建子模块（如果尚未创建）
-                if (!groupModuleMap.containsKey(groupCode)) {
-                    String groupModuleCode = groupCode.equals(defaultGroupCode) ?
-                            parentModule.getModuleCode() : // 默认分组直接使用父模块code
-                            parentModule.getModuleCode() + "_" + groupCode;
-
-                    // 检查子模块是否已存在（防止并发问题）
-                    if (moduleConfigMapper.existsByModuleCode(groupModuleCode) > 0) {
-                        log.warn("子模块已存在，跳过创建: {}", groupModuleCode);
-                        ModuleConfigDO existingModule = moduleConfigMapper.selectByModuleCode(groupModuleCode);
-                        groupModuleMap.put(groupCode, existingModule);
-                    } else {
-                        ModuleConfigDO groupModule = new ModuleConfigDO();
-                        groupModule.setParentId(parentModule.getId());
-                        groupModule.setModuleCode(groupModuleCode);
-                        groupModule.setModuleName(groupName);
-                        groupModule.setModuleLevel(2);
-                        groupModule.setIsLeaf(1);
-                        groupModule.setTableName(parentModule.getTableName());
-                        groupModule.setGroupType(importReq.getGroupType());
-                        moduleConfigMapper.insert(groupModule);
-                        groupModuleMap.put(groupCode, groupModule);
-                        log.info("创建子模块: {}", groupModuleCode);
-                    }
-                }
-
-                // 创建字段配置
                 FieldConfigDO field = new FieldConfigDO();
-                field.setFieldCode(fieldCodeRow.get(col));
+                field.setFieldCode(fieldCode);
                 field.setFieldLabel(fieldNameRow.get(col));
                 field.setFieldType(fieldTypeRow.get(col));
                 field.setFieldGroup(groupCode);
                 field.setFieldGroupName(groupName);
-                field.setIsRequired(0);
+                field.setIsRequired(joinField.equalsIgnoreCase(fieldCode) ? 1 : 0);
                 field.setDisplayOrder(col);
 
-                // 设置module_code：使用分组对应的模块code
-                field.setModuleCode(groupModuleMap.get(groupCode).getModuleCode());
-
-                // 根据字段类型设置数据类型
                 String dataType = mapExcelFieldTypeToDataType(fieldTypeRow.get(col));
                 field.setDataType(dataType);
 
-                groupFieldMap.computeIfAbsent(groupCode, k -> new ArrayList<>()).add(field);
-            }
+                if (StringUtils.isBlank(groupCode)) {
+                    field.setModuleCode(parentModuleCode);
+                    mainTableFields.add(field);
+                    log.info("字段 [{}] 将放入主表", fieldCode);
+                } else {
+                    if (!groupModuleMap.containsKey(groupCode)) {
+                        String groupModuleCode = parentModuleCode + "_" + groupCode;
+                        String groupTableName = "dyn_" + parentModuleCode + "_" + groupCode.toLowerCase();
 
-            // 6. 插入所有字段配置到数据库（先检查并处理重复字段）
-            int totalFields = 0;
-            int successFields = 0;
-            for (List<FieldConfigDO> fieldList : groupFieldMap.values()) {
-                totalFields += fieldList.size();
-                for (FieldConfigDO field : fieldList) {
-                    try {
-                        // 检查字段是否已存在（包含逻辑删除的记录）
-                        boolean fieldExists = fieldConfigMapper.checkFieldCodeExists(
-                                field.getFieldCode(), field.getModuleCode()) > 0;
+                        ModuleConfigDO groupModule = new ModuleConfigDO();
+                        groupModule.setParentId(parentModule.getId());
+                        groupModule.setModuleCode(groupModuleCode);
+                        groupModule.setModuleName(StringUtils.isNotBlank(groupName) ? groupName : groupCode);
+                        groupModule.setModuleLevel(2);
+                        groupModule.setIsLeaf(1);
+                        groupModule.setTableName(groupTableName);
+                        groupModule.setGroupType(importReq.getGroupType());
+                        groupModule.setJoinField(joinField);
+                        moduleConfigMapper.insert(groupModule);
 
-                        if (fieldExists) {
-                            log.info("字段已存在，执行物理删除: {}.{}", field.getModuleCode(), field.getFieldCode());
-                            // 使用 Mapper 物理删除字段
-                            fieldConfigMapper.physicallyDeleteByModuleCodeAndFieldCode(
-                                    field.getModuleCode(), field.getFieldCode());
-                        }
+                        groupModuleMap.put(groupCode, groupModule);
+                        groupTableNameMap.put(groupCode, groupTableName);
 
-                        // 插入新字段（使用 MyBatis-Plus 的 insert 方法）
-                        fieldConfigMapper.insert(field);
-                        successFields++;
-
-                    } catch (Exception e) {
-                        String error = "字段插入失败: " + field.getFieldCode() + ", 错误: " + e.getMessage();
-                        resultVO.addError(error);
-                        log.error(error, e);
+                        createSubTable(groupTableName, groupCode, joinField);
+                        log.info("成功创建子表: {}, 关联字段: {}", groupTableName, joinField);
                     }
+
+                    field.setModuleCode(groupModuleMap.get(groupCode).getModuleCode());
+                    groupFieldMap.computeIfAbsent(groupCode, k -> new ArrayList<>()).add(field);
+                    log.info("字段 [{}] 将放入子表 [{}]", fieldCode, groupCode);
                 }
             }
-            resultVO.setTotalFields(totalFields);
-            resultVO.setSuccessFields(successFields);
 
-            // 7. 收集所有字段用于创建单张表
-            List<FieldConfigDO> allFieldsForTable = new ArrayList<>();
-            for (List<FieldConfigDO> fieldList : groupFieldMap.values()) {
-                allFieldsForTable.addAll(fieldList);
+            if (!hasJoinField) {
+                throw new RuntimeException(String.format("Excel模板必须包含关联字段 [%s]", joinField));
             }
 
-            // 8. 创建或更新单张表（使用顶级模块的表名）
-            createOrUpdateTable(parentModule.getModuleCode());
-
-            // 9. 插入数据（从第7行开始，跳过表头和数据区域标题行）
-            int dataStartRow = 6;
-            int totalDataRows = 0;
-            int successDataRows = 0;
-
-            for (int rowIndex = dataStartRow; rowIndex < excelData.size(); rowIndex++) {
-                List<Object> row = excelData.get(rowIndex);
-
-                // 跳过空行和说明行
-                if (row.isEmpty() || isDescriptionRow(row) || row.stream().allMatch(Objects::isNull)) {
-                    continue;
-                }
-
-                totalDataRows++;
-                Map<String, Object> rowData = new HashMap<>();
-
-                // 遍历所有字段，从第2列开始（第1列是空列）
-                for (int fieldIndex = 0; fieldIndex < allFieldsForTable.size(); fieldIndex++) {
-                    FieldConfigDO field = allFieldsForTable.get(fieldIndex);
-                    int excelColIndex = fieldIndex + 1;
-
-                    Object value = (excelColIndex < row.size()) ? row.get(excelColIndex) : null;
-                    rowData.put(field.getFieldCode(), convertValueByType(field.getFieldType(), value));
-                }
-
+            // 7. 为主表添加字段
+            for (FieldConfigDO field : mainTableFields) {
                 try {
-                    insertIntoTable(parentModule.getTableName(), rowData);
-                    successDataRows++;
+                    fieldConfigMapper.insert(field);
+                    addColumnToTable(mainTableName, field);
                 } catch (Exception e) {
-                    String error = "第" + (rowIndex + 1) + "行数据插入失败: " + e.getMessage();
+                    String error = "主表字段插入失败: " + field.getFieldCode() + ", 错误: " + e.getMessage();
                     resultVO.addError(error);
                     log.error(error, e);
                 }
             }
 
-            // 设置数据记录数
+            // 8. 为子表添加字段
+            int totalFields = mainTableFields.size();
+            int successFields = mainTableFields.size();
+
+            for (Map.Entry<String, List<FieldConfigDO>> entry : groupFieldMap.entrySet()) {
+                String groupCode = entry.getKey();
+                List<FieldConfigDO> fieldList = entry.getValue();
+                String tableName = groupTableNameMap.get(groupCode);
+
+                totalFields += fieldList.size();
+
+                for (FieldConfigDO field : fieldList) {
+                    try {
+                        fieldConfigMapper.insert(field);
+                        addColumnToTable(tableName, field);
+                        successFields++;
+                    } catch (Exception e) {
+                        String error = "子表字段插入失败: " + field.getFieldCode() + ", 错误: " + e.getMessage();
+                        resultVO.addError(error);
+                        log.error(error, e);
+                    }
+                }
+            }
+
+            resultVO.setTotalFields(totalFields);
+            resultVO.setSuccessFields(successFields);
+
+            // 9. 插入数据
+            int dataStartRow = 6;
+            int totalDataRows = 0;
+            int successDataRows = 0;
+            int systemErrorCount = 0;  // 记录系统级错误数量
+
+            // 用于去重，避免同一关联字段插入多次
+            Set<String> processedJoinFieldValues = new HashSet<>();
+
+            for (int rowIndex = dataStartRow; rowIndex < excelData.size(); rowIndex++) {
+                List<Object> row = excelData.get(rowIndex);
+
+                if (row.isEmpty() || isDescriptionRow(row) || row.stream().allMatch(Objects::isNull)) {
+                    continue;
+                }
+
+                totalDataRows++;
+
+                Map<String, Object> mainData = new HashMap<>();
+                Map<String, Map<String, Object>> subTableDataMap = new HashMap<>();
+
+                String joinFieldValue = null;
+                boolean hasValidData = false;
+
+                // 遍历所有列收集数据
+                for (int col = 1; col < maxColumns; col++) {
+                    if (col >= row.size()) break;
+
+                    String fieldCode = (col < fieldCodeRow.size()) ? fieldCodeRow.get(col) : null;
+                    String groupCode = (col < groupCodeRow.size()) ? StringUtils.trimToEmpty(groupCodeRow.get(col)) : "";
+
+                    if (StringUtils.isBlank(fieldCode)) continue;
+
+                    Object value = row.get(col);
+
+                    if (joinField.equalsIgnoreCase(fieldCode)) {
+                        joinFieldValue = value != null ? value.toString() : null;
+                        if (StringUtils.isNotBlank(joinFieldValue)) {
+                            hasValidData = true;
+                        }
+                    }
+
+                    FieldConfigDO field = findFieldByCode(mainTableFields, groupFieldMap, groupCode, fieldCode);
+                    if (field != null && value != null && StringUtils.isNotBlank(value.toString())) {
+                        Object convertedValue = convertValueByType(field.getFieldType(), value);
+
+                        if (StringUtils.isBlank(groupCode)) {
+                            mainData.put(fieldCode, convertedValue);
+                        } else {
+                            subTableDataMap.computeIfAbsent(groupCode, k -> new HashMap<>())
+                                    .put(fieldCode, convertedValue);
+                        }
+                        hasValidData = true;
+                    }
+                }
+
+                // 关联字段不存在或为空，跳过该行数据（业务错误，不是系统错误）
+                if (StringUtils.isBlank(joinFieldValue)) {
+                    String error = "第" + (rowIndex + 1) + "行数据关联字段 [" + joinField + "] 为空，已跳过";
+                    resultVO.addError(error);
+                    log.warn(error);
+                    continue;
+                }
+
+                // 检查关联字段是否重复（业务错误，不是系统错误）
+                if (processedJoinFieldValues.contains(joinFieldValue)) {
+                    String error = "第" + (rowIndex + 1) + "行数据关联字段 [" + joinField + "] 值重复: " + joinFieldValue + "，已跳过";
+                    resultVO.addError(error);
+                    log.warn(error);
+                    continue;
+                }
+
+                // 检查是否有有效数据（业务错误，不是系统错误）
+                if (!hasValidData) {
+                    String error = "第" + (rowIndex + 1) + "行数据没有有效数据，已跳过";
+                    resultVO.addError(error);
+                    log.warn(error);
+                    continue;
+                }
+
+                try {
+                    // 插入主表数据
+                    if (!mainData.isEmpty() || joinFieldValue != null) {
+                        mainData.put(joinField, joinFieldValue);
+                        insertIntoTable(mainTableName, mainData);
+                    }
+
+                    // 插入子表数据
+                    for (Map.Entry<String, Map<String, Object>> entry : subTableDataMap.entrySet()) {
+                        String groupCode = entry.getKey();
+                        Map<String, Object> subData = entry.getValue();
+                        String tableName = groupTableNameMap.get(groupCode);
+
+                        if (tableName != null && !subData.isEmpty()) {
+                            subData.put(joinField, joinFieldValue);
+                            insertIntoTable(tableName, subData);
+                        }
+                    }
+
+                    // 记录已处理的关联字段值
+                    processedJoinFieldValues.add(joinFieldValue);
+                    successDataRows++;
+
+                } catch (Exception e) {
+                    // 数据库插入异常，属于系统级错误
+                    String error = "第" + (rowIndex + 1) + "行数据插入失败: " + e.getMessage();
+                    resultVO.addError(error);
+                    log.error(error, e);
+                    systemErrorCount++;
+                }
+            }
+
             resultVO.setTotalRecords(totalDataRows);
             resultVO.setSuccessRecords(successDataRows);
+            resultVO.setModuleCode(parentModuleCode);
+            resultVO.setTableName(mainTableName);
+            resultVO.setJoinField(joinField);
 
-            // 10. 设置最终结果
             long costTime = System.currentTimeMillis() - startTime;
             resultVO.setCostTime(costTime);
-            resultVO.setSuccess(!resultVO.hasErrors());
-            resultVO.setMessage(resultVO.getSuccessMessage());
-            resultVO.setConfigMode("SINGLE_TABLE_WITH_GROUPS");
 
-            // 记录导入历史
-            recordImportHistory(importReq, resultVO);
+            // ===== 关键修改：根据实际情况设置 success 状态 =====
 
-            log.info("Excel导入完成: {}", resultVO.getSuccessMessage());
+            // 1. 如果有系统级错误，设置为失败
+            if (systemErrorCount > 0) {
+                resultVO.setSuccess(false);
+                resultVO.setMessage(String.format("导入失败：发生%d个系统错误，请查看详细错误信息", systemErrorCount));
+            }
+            // 2. 如果一条数据都没成功，但有数据行，也设置为失败
+            else if (successDataRows == 0 && totalDataRows > 0) {
+                resultVO.setSuccess(false);
+                resultVO.setMessage(String.format("导入失败：共处理%d行数据，但全部失败。请检查数据格式。", totalDataRows));
+            }
+            // 3. 部分成功或全部成功，都设置为成功
+            else if (successDataRows < totalDataRows) {
+                resultVO.setSuccess(true);
+                resultVO.setMessage(String.format("导入完成：共处理%d行数据，成功%d行，跳过%d行",
+                        totalDataRows, successDataRows, totalDataRows - successDataRows));
+            }
+            // 4. 全部成功
+            else {
+                resultVO.setSuccess(true);
+                resultVO.setMessage(String.format("导入成功：共%d个字段，%d条数据全部导入成功",
+                        totalFields, totalDataRows));
+            }
+
+            log.info("Excel导入完成: {}, success={}, systemErrorCount={}",
+                    resultVO.getMessage(), resultVO.getSuccess(), systemErrorCount);
 
         } catch (Exception e) {
+            // 系统级异常才设置 success=false
             long costTime = System.currentTimeMillis() - startTime;
             resultVO.setCostTime(costTime);
             resultVO.setSuccess(false);
             resultVO.setMessage("导入失败: " + e.getMessage());
             resultVO.addError("系统异常: " + e.getMessage());
-            log.error("Excel导入异常", e);
+            log.error("Excel导入系统异常", e);
         }
 
         return resultVO;
     }
 
     /**
-     * 删除模块及相关数据 - 物理删除（使用 Mapper）
+     * 增强的删除方法 - 确保物理删除所有相关数据
      */
     private void deleteModuleAndRelatedData(String moduleCode) {
         try {
+            log.info("开始物理删除模块及相关数据: {}", moduleCode);
+
             // 1. 查询顶级模块（包含逻辑删除的记录）
             ModuleConfigDO parentModule = moduleConfigMapper.selectByModuleCodeIncludeDeleted(moduleCode);
 
@@ -773,50 +878,66 @@ public class DynamicTableServiceImpl implements DynamicTableService {
                 return;
             }
 
-            log.info("开始物理删除模块及相关数据: {}", moduleCode);
+            // 2. 获取关联字段名
+            String joinField = parentModule.getJoinField();
+            if (StringUtils.isBlank(joinField)) {
+                joinField = "tjh"; // 默认值
+            }
 
-            // 2. 查询所有相关的模块（包括逻辑删除的记录）
+            // 3. 查询所有相关的子模块
             List<ModuleConfigDO> allRelatedModules = new ArrayList<>();
             allRelatedModules.add(parentModule);
 
-            // 查询所有子模块（包含逻辑删除的）
             List<ModuleConfigDO> childModules = moduleConfigMapper.selectByParentIdIncludeDeleted(parentModule.getId());
             allRelatedModules.addAll(childModules);
 
-            // 3. 物理删除所有相关模块的字段配置
+            // 4. 收集所有要删除的表名
+            List<String> tableNames = new ArrayList<>();
+            tableNames.add(parentModule.getTableName());
+            for (ModuleConfigDO child : childModules) {
+                if (StringUtils.isNotBlank(child.getTableName())) {
+                    tableNames.add(child.getTableName());
+                }
+            }
+
+            // 5. 先删除所有相关的动态表
+            for (String tableName : tableNames) {
+                if (StringUtils.isNotBlank(tableName) && tableExists(tableName)) {
+                    try {
+                        // 先禁用外键检查
+                        jdbcTemplate.execute("SET FOREIGN_KEY_CHECKS = 0");
+
+                        // 删除表
+                        String dropSql = "DROP TABLE IF EXISTS " + tableName;
+                        jdbcTemplate.execute(dropSql);
+                        log.info("物理删除动态表: {}", tableName);
+
+                        // 恢复外键检查
+                        jdbcTemplate.execute("SET FOREIGN_KEY_CHECKS = 1");
+                    } catch (Exception e) {
+                        log.warn("物理删除动态表失败: {}，错误: {}", tableName, e.getMessage());
+                    }
+                }
+            }
+
+            // 6. 物理删除所有相关模块的字段配置
             for (ModuleConfigDO module : allRelatedModules) {
                 int deletedFields = fieldConfigMapper.physicallyDeleteByModuleCode(module.getModuleCode());
                 log.info("物理删除模块 [{}] 的 {} 个字段配置", module.getModuleCode(), deletedFields);
             }
 
-            // 4. 物理删除所有子模块
+            // 7. 物理删除所有子模块
             if (!childModules.isEmpty()) {
-                // 收集子模块ID
                 List<Long> childModuleIds = childModules.stream()
                         .map(ModuleConfigDO::getId)
                         .collect(Collectors.toList());
-
-                // 使用批量删除
                 int deletedChildModules = moduleConfigMapper.physicallyDeleteByIds(childModuleIds);
                 log.info("物理删除 {} 个子模块", deletedChildModules);
             }
 
-            // 5. 物理删除父级模块
+            // 8. 物理删除父级模块
             int deletedParent = moduleConfigMapper.physicallyDeleteById(parentModule.getId());
             log.info("物理删除父级模块: {} (影响行数: {})", parentModule.getModuleCode(), deletedParent);
-
-            // 6. 物理删除对应的动态表（使用 JdbcTemplate，因为这是 DDL 操作）
-            String tableName = "dyn_" + moduleCode.toLowerCase();
-            if (tableExists(tableName)) {
-                try {
-                    jdbcTemplate.execute("DROP TABLE IF EXISTS " + tableName);
-                    log.info("物理删除动态表: {}", tableName);
-                } catch (Exception e) {
-                    log.warn("物理删除动态表失败: {}，错误: {}", tableName, e.getMessage());
-                }
-            } else {
-                log.info("动态表不存在，无需删除: {}", tableName);
-            }
 
             log.info("成功物理删除模块及相关数据: {}", moduleCode);
 
@@ -827,14 +948,149 @@ public class DynamicTableServiceImpl implements DynamicTableService {
     }
 
     /**
-     * 判断是否是说明行
+     * 插入数据到表（增强版）
+     */
+    private void insertIntoTable(String tableName, Map<String, Object> data) {
+        if (data == null || data.isEmpty()) {
+            log.warn("表 {} 没有数据可插入", tableName);
+            return;
+        }
+
+        // 过滤掉值为null的字段
+        Map<String, Object> filteredData = data.entrySet().stream()
+                .filter(entry -> entry.getValue() != null)
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
+        if (filteredData.isEmpty()) {
+            log.warn("表 {} 过滤后没有有效数据", tableName);
+            return;
+        }
+
+        StringBuilder sql = new StringBuilder("INSERT INTO ").append(tableName).append(" (");
+        sql.append(String.join(",", filteredData.keySet())).append(") VALUES (");
+        sql.append(filteredData.keySet().stream().map(k -> "?").collect(Collectors.joining(","))).append(")");
+
+        try {
+            jdbcTemplate.update(sql.toString(), filteredData.values().toArray());
+            log.debug("成功插入数据到表: {}, 字段数: {}", tableName, filteredData.size());
+        } catch (Exception e) {
+            log.error("插入数据失败, 表: {}, 数据: {}, SQL: {}", tableName, filteredData, sql, e);
+            throw new RuntimeException("数据插入失败: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * 添加列到表（检查列是否存在）
+     */
+    private void addColumnToTable(String tableName, FieldConfigDO field) {
+        // 检查表是否存在
+        if (!tableExists(tableName)) {
+            log.error("表不存在: {}", tableName);
+            throw new RuntimeException("表不存在: " + tableName);
+        }
+
+        // 检查列是否存在
+        String checkSql = "SELECT COUNT(*) FROM information_schema.columns " +
+                "WHERE table_name = ? AND column_name = ? AND table_schema = DATABASE()";
+        Integer count = jdbcTemplate.queryForObject(checkSql, Integer.class, tableName, field.getFieldCode());
+
+        if (count == null || count == 0) {
+            String sql = String.format(
+                    "ALTER TABLE `%s` ADD COLUMN `%s` %s DEFAULT NULL COMMENT '%s'",
+                    tableName,
+                    field.getFieldCode(),
+                    field.getDataType() != null ? field.getDataType() : "VARCHAR(255)",
+                    field.getFieldLabel().replace("'", "\\'")
+            );
+
+            try {
+                jdbcTemplate.execute(sql);
+                log.debug("成功添加列 {}.{}", tableName, field.getFieldCode());
+            } catch (Exception e) {
+                log.error("添加列失败 {}.{}: {}", tableName, field.getFieldCode(), e.getMessage());
+                throw new RuntimeException("添加列失败: " + e.getMessage());
+            }
+        } else {
+            log.debug("列已存在，跳过添加: {}.{}", tableName, field.getFieldCode());
+        }
+    }
+
+    /**
+     * 判断是否是说明行（增强版）
      */
     private boolean isDescriptionRow(List<Object> row) {
-        if (row.isEmpty() || row.get(0) == null) {
+        if (row == null || row.isEmpty() || row.get(0) == null) {
             return false;
         }
         String firstCell = row.get(0).toString();
-        return firstCell.contains("↓↓↓") || firstCell.contains("使用说明");
+        return firstCell.contains("↓↓↓") ||
+                firstCell.contains("使用说明") ||
+                firstCell.contains("说明") ||
+                firstCell.startsWith("#") ||
+                firstCell.startsWith("//");
+    }
+
+    /**
+     * 创建主表（包含自定义关联字段）
+     */
+    private void createMainTable(String tableName, String joinField) {
+        String sql = "CREATE TABLE IF NOT EXISTS `" + tableName + "` (" +
+                "`id` BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY COMMENT '主键'," +
+                "`" + joinField + "` VARCHAR(64) NOT NULL COMMENT '" + joinField + "（关联字段）'," +
+                "`creator` VARCHAR(64) DEFAULT '' COMMENT '创建者'," +
+                "`create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间'," +
+                "`updater` VARCHAR(64) DEFAULT '' COMMENT '更新者'," +
+                "`update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间'," +
+                "`deleted` BIT(1) NOT NULL DEFAULT b'0' COMMENT '是否删除'," +
+                "`tenant_id` BIGINT NOT NULL DEFAULT '0' COMMENT '租户编号'," +
+                "UNIQUE KEY `uk_" + joinField + "` (`" + joinField + "`)" +
+                ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='主表'";
+
+        jdbcTemplate.execute(sql);
+    }
+
+    /**
+     * 创建子表基础结构（包含自定义关联字段）
+     */
+    private void createSubTable(String tableName, String groupCode, String joinField) {
+        String sql = "CREATE TABLE IF NOT EXISTS `" + tableName + "` (" +
+                "`id` BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY COMMENT '主键'," +
+                "`" + joinField + "` VARCHAR(64) NOT NULL COMMENT '" + joinField + "（关联字段）'," +
+                "`creator` VARCHAR(64) DEFAULT '' COMMENT '创建者'," +
+                "`create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间'," +
+                "`updater` VARCHAR(64) DEFAULT '' COMMENT '更新者'," +
+                "`update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间'," +
+                "`deleted` BIT(1) NOT NULL DEFAULT b'0' COMMENT '是否删除'," +
+                "`tenant_id` BIGINT NOT NULL DEFAULT '0' COMMENT '租户编号'," +
+                "INDEX `idx_" + joinField + "` (`" + joinField + "`)" +
+                ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='子表_" + groupCode + "'";
+
+        jdbcTemplate.execute(sql);
+    }
+
+    /**
+     * 查找字段（增强版，支持主表和子表）
+     */
+    private FieldConfigDO findFieldByCode(List<FieldConfigDO> mainTableFields,
+                                          Map<String, List<FieldConfigDO>> groupFieldMap,
+                                          String groupCode, String fieldCode) {
+        if (StringUtils.isBlank(groupCode)) {
+            // 在主表中查找
+            return mainTableFields.stream()
+                    .filter(f -> f.getFieldCode().equals(fieldCode))
+                    .findFirst()
+                    .orElse(null);
+        } else {
+            // 在子表中查找
+            List<FieldConfigDO> fields = groupFieldMap.get(groupCode);
+            if (fields != null) {
+                return fields.stream()
+                        .filter(f -> f.getFieldCode().equals(fieldCode))
+                        .findFirst()
+                        .orElse(null);
+            }
+        }
+        return null;
     }
 
     /**
@@ -953,13 +1209,6 @@ public class DynamicTableServiceImpl implements DynamicTableService {
 
     private List<String> toStringList(List<Object> row) {
         return row.stream().map(o -> o == null ? "" : o.toString()).collect(Collectors.toList());
-    }
-
-    private void insertIntoTable(String tableName, Map<String, Object> data) {
-        StringBuilder sql = new StringBuilder("INSERT INTO ").append(tableName).append(" (");
-        sql.append(String.join(",", data.keySet())).append(") VALUES (");
-        sql.append(data.keySet().stream().map(k -> "?").collect(Collectors.joining(","))).append(")");
-        jdbcTemplate.update(sql.toString(), data.values().toArray());
     }
 
     private void createNewTable(String tableName, List<FieldConfigDO> fields) {
@@ -1325,48 +1574,123 @@ public class DynamicTableServiceImpl implements DynamicTableService {
 
     /**
      * 创建模板数据 - 横向结构，只用data
+     * 分组标识为空的字段（包括tjh、patient_name、patient_age）放入主表
+     * 分组标识不为空的字段（result、status）放入对应的子表
      */
     private List<List<Object>> createTemplateData() {
         List<List<Object>> data = new ArrayList<>();
 
         // 字段配置区域 - 横向结构
-        data.add(Arrays.asList("字段分组", "患者基本信息", "患者基本信息", "检查结果", "检查结果", "状态信息"));
-        data.add(Arrays.asList("分组标识", "info", "info", "result", "result", "status"));
-        data.add(Arrays.asList("字段名称", "患者姓名", "患者年龄", "心脏检查", "肝脏检查", "检查状态"));
-        data.add(Arrays.asList("字段标识", "patient_name", "patient_age", "heart_check", "liver_check", "check_status"));
-        data.add(Arrays.asList("字段类型", "varchar", "int", "varchar", "varchar", "varchar"));
+        // 第1行：字段分组（分组标识为空的单元格留空）
+        data.add(Arrays.asList(
+                "字段分组",                    // 第1列空
+                "",                    // tjh 的分组为空
+                "",                    // patient_name 的分组为空
+                "",                    // patient_age 的分组为空
+                "检查结果",             // heart_check 的分组
+                "检查结果",             // liver_check 的分组
+                "状态信息"              // check_status 的分组
+        ));
 
-        // 空行分隔
-        data.add(Arrays.asList("", "", "", "", "", ""));
+        // 第2行：分组标识（分组标识为空的单元格留空）
+        data.add(Arrays.asList(
+                "分组标识",                    // 第1列空
+                "",                    // tjh 的分组标识为空
+                "",                    // patient_name 的分组标识为空
+                "",                    // patient_age 的分组标识为空
+                "result",              // heart_check 的分组标识
+                "result",              // liver_check 的分组标识
+                "status"               // check_status 的分组标识
+        ));
 
-        // 数据区域标题
-        data.add(Arrays.asList("↓↓↓ 数据区域（从此行开始填写实际数据）↓↓↓", "", "", "", "", ""));
+        // 第3行：字段名称
+        data.add(Arrays.asList(
+                "字段名称",                    // 第1列空
+                "体检号",               // tjh
+                "患者姓名",             // patient_name
+                "患者年龄",             // patient_age
+                "心脏检查",             // heart_check
+                "肝脏检查",             // liver_check
+                "检查状态"              // check_status
+        ));
 
-        // 数据示例
-        data.add(Arrays.asList("", "张三", 35, "正常", "脂肪肝", "已完成"));
-        data.add(Arrays.asList("", "李四", 28, "心律不齐", "正常", "进行中"));
-        data.add(Arrays.asList("", "王五", 42, "正常", "正常", "已完成"));
-        data.add(Arrays.asList("", "赵六", 50, "正常", "肝硬化", "已完成"));
+        // 第4行：字段标识
+        data.add(Arrays.asList(
+                "字段标识",                    // 第1列空
+                "tjh",                 // 体检号
+                "patient_name",        // 患者姓名
+                "patient_age",         // 患者年龄
+                "heart_check",         // 心脏检查
+                "liver_check",         // 肝脏检查
+                "check_status"         // 检查状态
+        ));
 
-        // 空行
-        data.add(Arrays.asList("", "", "", "", "", ""));
+        // 第5行：字段类型
+        data.add(Arrays.asList(
+                "字段类型",                    // 第1列空
+                "varchar",             // tjh
+                "varchar",             // patient_name
+                "int",                 // patient_age
+                "varchar",             // heart_check
+                "varchar",             // liver_check
+                "varchar"              // check_status
+        ));
 
-        // 使用说明
-        data.add(Arrays.asList("↓↓↓ 使用说明 ↓↓↓", "", "", "", "", ""));
-        data.add(Arrays.asList("1. 第1-5行：字段配置表头，请勿修改结构", "", "", "", "", ""));
-        data.add(Arrays.asList("2. 字段分组：字段所属分组（中文）", "", "", "", "", ""));
-        data.add(Arrays.asList("3. 分组标识：分组英文标识", "", "", "", "", ""));
-        data.add(Arrays.asList("4. 字段名称：字段显示名称（中文）", "", "", "", "", ""));
-        data.add(Arrays.asList("5. 字段标识：数据库字段名（英文）", "", "", "", "", ""));
-        data.add(Arrays.asList("6. 字段类型：varchar/int/decimal/date等", "", "", "", "", ""));
-        data.add(Arrays.asList("7. 第7行开始：填写实际数据", "", "", "", "", ""));
-        data.add(Arrays.asList("8. 数据列必须与表头列对应", "", "", "", "", ""));
+        // 第6行：空行分隔
+        data.add(Arrays.asList("", "", "", "", "", "", ""));
+
+        // 第7行：数据区域标题
+        data.add(Arrays.asList(
+                "↓↓↓ 数据区域（从此行开始填写实际数据）↓↓↓",
+                "", "", "", "", "", ""
+        ));
+
+        // 数据示例行（从第8行开始）
+        // 第1列保持为空，数据从第2列开始对应各个字段
+        data.add(Arrays.asList(
+                "",                    // 第1列空
+                "TJH001",              // tjh
+                "张三",                // patient_name
+                35,                    // patient_age
+                "正常",                // heart_check
+                "脂肪肝",              // liver_check
+                "已完成"               // check_status
+        ));
+
+        data.add(Arrays.asList(
+                "",                    // 第1列空
+                "TJH002",              // tjh
+                "李四",                // patient_name
+                28,                    // patient_age
+                "心律不齐",            // heart_check
+                "正常",                // liver_check
+                "进行中"               // check_status
+        ));
+
+        data.add(Arrays.asList(
+                "",                    // 第1列空
+                "TJH003",              // tjh
+                "王五",                // patient_name
+                42,                    // patient_age
+                "正常",                // heart_check
+                "正常",                // liver_check
+                "已完成"               // check_status
+        ));
+
+        data.add(Arrays.asList(
+                "",                    // 第1列空
+                "TJH004",              // tjh
+                "赵六",                // patient_name
+                50,                    // patient_age
+                "正常",                // heart_check
+                "肝硬化",              // liver_check
+                "已完成"               // check_status
+        ));
 
         return data;
     }
 
     // ================= 查询 =================
-    // 在 DynamicTableServiceImpl.java 中添加以下方法
 
     @Override
     public DynamicTableQueryRespDTO queryDynamicTables(DynamicTableQueryReqDTO reqDTO) {

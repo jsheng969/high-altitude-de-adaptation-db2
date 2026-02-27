@@ -1,4 +1,4 @@
-// src/api/dynamic.ts
+// src/api/dynamic/import.ts
 import request from '@/config/axios'
 
 export interface ModuleTreeVO {
@@ -8,13 +8,13 @@ export interface ModuleTreeVO {
   moduleName: string
   tableName: string | null
   moduleLevel: number
-  groupType: string | null
-  moduleType: string | null
+  mainTableType: string | null
   isLeaf: number
   orderNo: number
   status: number
   children?: ModuleTreeVO[]
   fields?: FieldConfigVO[]
+  fieldCount?: number
 }
 
 export interface FieldConfigVO {
@@ -38,12 +38,10 @@ export interface FieldConfigVO {
 
 export interface ExcelImportReqDTO {
   file: File
-  moduleType?: string
-  groupType?: string
+  mainTableType?: string
   remark?: string
   moduleCode?: string
   moduleName?: string
-  configMode?: string
   importData?: boolean
   overwrite?: boolean
 }
@@ -59,9 +57,9 @@ export interface ExcelImportResultVO {
   successRecords: number
   errorMessages: string[]
   costTime: number
-  configMode: string
   importTime: string
   fileName: string
+  mainTableType?: string
 }
 
 export interface ImportHistoryVO {
@@ -69,6 +67,7 @@ export interface ImportHistoryVO {
   fileName: string
   moduleCode: string
   moduleName: string
+  mainTableType: string
   fieldCount: number
   dataCount: number
   success: boolean
@@ -98,13 +97,12 @@ export const importApi = {
   },
 
   // 批量导入
-  batchImport: (files: File[], moduleType: string = 'survey', groupType: string = 'general') => {
+  batchImport: (files: File[], mainTableType: string = 'prospective_cohort') => {
     const formData = new FormData()
     files.forEach(file => {
       formData.append('files', file)
     })
-    formData.append('moduleType', moduleType)
-    formData.append('groupType', groupType)
+    formData.append('mainTableType', mainTableType)
     
     return request.post({
       url: '/dynamic/batch',
@@ -182,14 +180,15 @@ export const moduleApi = {
     })
   },
 
-  // 获取基础信息模块（parent_id为null的模块）
-  getBaseModules: () => {
+  // 根据主表类型获取基础模块
+  getBaseModulesByType: (mainTableType: string) => {
     return request.get({
-      url: '/queueDB/module-config/base-modules'
+      url: '/queueDB/module-config/base-modules',
+      params: { mainTableType }
     })
   }
 }
 
 // 导出模块配置相关函数
 export const getModuleTree = moduleApi.getModuleTree
-export const getBaseModules = moduleApi.getBaseModules
+export const getBaseModulesByType = moduleApi.getBaseModulesByType

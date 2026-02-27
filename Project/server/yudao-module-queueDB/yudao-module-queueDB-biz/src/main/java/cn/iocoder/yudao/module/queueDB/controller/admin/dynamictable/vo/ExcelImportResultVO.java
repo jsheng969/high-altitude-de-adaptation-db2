@@ -115,4 +115,9 @@ public class ExcelImportResultVO {
 
         return sb.toString();
     }
+
+    /**
+     * 关联字段名
+     */
+    private String joinField;
 }

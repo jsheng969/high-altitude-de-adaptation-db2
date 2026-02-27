@@ -63,4 +63,9 @@ public class ExcelImportReqDTO {
      */
     private Integer headerRows;
 
+    /**
+     * 关联字段名（如：tjh）
+     */
+    private String joinField;
+
 }

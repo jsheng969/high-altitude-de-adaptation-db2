@@ -16,6 +16,16 @@
         <div class="form-tip">当前为 {{ getLevelText(parentModule.moduleLevel) }} 模块</div>
       </el-form-item>
 
+      <!-- 主表类型 - 只有一级模块可以设置 -->
+      <el-form-item label="主表类型" prop="mainTableType" v-if="!parentModule">
+        <el-select v-model="formData.mainTableType" placeholder="请选择主表类型">
+          <el-option label="前瞻性队列" value="prospective" />
+          <el-option label="回顾性队列" value="retrospective" />
+          <el-option label="高原作业能力" value="plateau_ability" />
+        </el-select>
+        <div class="form-tip">子模块将继承主表类型</div>
+      </el-form-item>
+
       <el-form-item label="模块代码" prop="moduleCode">
         <el-input
           v-model="formData.moduleCode"
@@ -49,20 +59,12 @@
         </el-select>
       </el-form-item>
 
-      <el-form-item label="分组类型" prop="groupType">
-        <el-select v-model="formData.groupType" placeholder="请选择分组类型">
-          <el-option label="基础信息" value="base" />
-          <el-option label="实验组" value="experiment" />
-          <el-option label="对照组" value="control" />
-        </el-select>
-      </el-form-item>
-
-      <el-form-item label="模块类型" prop="moduleType">
-        <el-select v-model="formData.moduleType" placeholder="请选择模块类型">
-          <el-option label="流调" value="survey" />
-          <el-option label="体检" value="exam" />
-          <el-option label="基础" value="base" />
-        </el-select>
+      <el-form-item label="关联字段" prop="joinField">
+        <el-input
+          v-model="formData.joinField"
+          placeholder="请输入关联字段，默认为tjh"
+        />
+        <div class="form-tip">用于关联各子表的主键字段名</div>
       </el-form-item>
 
       <el-form-item label="是否叶子节点" prop="isLeaf">
@@ -78,7 +80,7 @@
           v-model="formData.tableName"
           placeholder="请输入表名"
         />
-        <div class="form-tip">动态生成的表名，如: dyn_survey_basic</div>
+        <div class="form-tip">动态生成的表名，如: dyn_pro_basic</div>
       </el-form-item>
 
       <el-form-item label="排序号" prop="orderNo">
@@ -116,7 +118,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, watch, nextTick } from 'vue'
+import { ref, reactive, computed, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { debounce } from 'lodash-es'
 import { ModuleConfigApi } from '@/api/queueDB/moduleconfig'
@@ -137,15 +139,15 @@ const moduleCodeValidating = ref(false)
 const moduleCodeValid = ref(false)
 const moduleCodeError = ref('')
 
-// 表单数据
+// 表单数据 - 删除了moduleType和groupType
 const formData = reactive({
   id: undefined,
   parentId: undefined,
   moduleCode: '',
   moduleName: '',
   moduleLevel: 1,
-  groupType: 'base',
-  moduleType: 'base',
+  mainTableType: 'prospective',  // 主表类型
+  joinField: 'tjh',               // 关联字段
   isLeaf: 0,
   tableName: '',
   orderNo: 0,
@@ -157,13 +159,16 @@ const formData = reactive({
 const formRules = {
   moduleCode: [
     { required: true, message: '请输入模块代码', trigger: 'blur' },
-    { pattern: /^[a-zA-Z_][a-zA-Z0-9_]*$/, message: '模块代码只能包含字母、数字、下划线', trigger: 'blur' }
+    { pattern: /^[a-zA-Z_][a-zA-Z0-9_]*$/, message: '模块代码只能包含字母、数字、下划线，且不能以数字开头', trigger: 'blur' }
   ],
   moduleName: [
     { required: true, message: '请输入模块名称', trigger: 'blur' }
   ],
   moduleLevel: [
     { required: true, message: '请选择模块层级', trigger: 'change' }
+  ],
+  mainTableType: [
+    { required: true, message: '请选择主表类型', trigger: 'change' }
   ]
 }
 
@@ -182,7 +187,6 @@ const validateModuleCode = debounce(async () => {
     return
   }
 
-  // 验证格式
   const codeRegex = /^[a-zA-Z_][a-zA-Z0-9_]*$/
   if (!codeRegex.test(formData.moduleCode)) {
     moduleCodeError.value = '模块代码只能包含字母、数字、下划线，且不能以数字开头'
@@ -190,21 +194,24 @@ const validateModuleCode = debounce(async () => {
     return
   }
 
-  // 如果是编辑模式，不验证唯一性
   if (formData.id) {
     moduleCodeError.value = ''
     moduleCodeValid.value = true
     return
   }
 
-  // 验证唯一性
   try {
     moduleCodeValidating.value = true
     const response = await ModuleConfigApi.checkModuleCode(formData.moduleCode)
-    moduleCodeError.value = ''
-    moduleCodeValid.value = true
+    if (response === true) {
+      moduleCodeError.value = '模块代码已存在'
+      moduleCodeValid.value = false
+    } else {
+      moduleCodeError.value = ''
+      moduleCodeValid.value = true
+    }
   } catch (error: any) {
-    moduleCodeError.value = error.message || '模块代码已存在'
+    moduleCodeError.value = error.message || '验证失败'
     moduleCodeValid.value = false
   } finally {
     moduleCodeValidating.value = false
@@ -217,7 +224,6 @@ const handleSubmit = async () => {
   try {
     await formRef.value.validate()
     
-    // 验证模块代码
     if (!formData.id && !moduleCodeValid.value) {
       ElMessage.warning('请先验证模块代码')
       return
@@ -225,10 +231,13 @@ const handleSubmit = async () => {
     
     loading.value = true
     
-    // 设置父模块ID和层级
     if (props.parentModule) {
       formData.parentId = props.parentModule.id
       formData.moduleLevel = props.parentModule.moduleLevel + 1
+      // 子模块继承父模块的主表类型
+      if (props.parentModule.mainTableType) {
+        formData.mainTableType = props.parentModule.mainTableType
+      }
     }
     
     const api = formData.id 
@@ -269,9 +278,8 @@ watch(() => props.modelValue, (val) => {
 watch(() => props.data, (val) => {
   if (val) {
     Object.assign(formData, val)
-    moduleCodeValid.value = true // 编辑模式下默认验证通过
+    moduleCodeValid.value = true
   } else {
-    // 重置表单
     Object.keys(formData).forEach(key => {
       if (key === 'moduleLevel') {
         formData[key] = props.parentModule ? props.parentModule.moduleLevel + 1 : 1
@@ -281,10 +289,14 @@ watch(() => props.data, (val) => {
         formData[key] = 1
       } else if (key === 'isLeaf') {
         formData[key] = 0
-      } else if (key === 'groupType') {
-        formData[key] = 'base'
-      } else if (key === 'moduleType') {
-        formData[key] = 'base'
+      } else if (key === 'mainTableType') {
+        if (props.parentModule?.mainTableType) {
+          formData[key] = props.parentModule.mainTableType
+        } else {
+          formData[key] = 'prospective'
+        }
+      } else if (key === 'joinField') {
+        formData[key] = 'tjh'
       } else {
         (formData as any)[key] = ''
       }
@@ -292,7 +304,6 @@ watch(() => props.data, (val) => {
     formData.id = undefined
     formData.parentId = props.parentModule?.id
     
-    // 重置验证状态
     moduleCodeValid.value = false
     moduleCodeError.value = ''
   }

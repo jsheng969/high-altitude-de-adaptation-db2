@@ -76,4 +76,8 @@ public class ModuleConfigDO extends BaseDO {
     @TableField(exist = false)
     private List<ModuleConfigDO> children;
 
+    /**
+     * 关联字段名
+     */
+    private String joinField;
 }

@@ -18,6 +18,13 @@
             <el-option label="三级模块" :value="3" />
           </el-select>
         </el-form-item>
+        <el-form-item label="主表类型">
+          <el-select v-model="queryParams.moduleCode" placeholder="请选择主表类型" clearable>
+            <el-option label="前瞻性队列" value="prospective" />
+            <el-option label="回顾性队列" value="retrospective" />
+            <el-option label="高原作业能力" value="plateau_ability" />
+          </el-select>
+        </el-form-item>
         <el-form-item>
           <el-button type="primary" @click="handleQuery">
             <Icon icon="ep:search" />搜索
@@ -49,6 +56,13 @@
       >
         <el-table-column prop="moduleCode" label="模块代码" width="200" />
         <el-table-column prop="moduleName" label="模块名称" width="200" />
+        <el-table-column prop="moduleCode" label="主表类型" width="150">
+          <template #default="{ row }">
+            <el-tag :type="getMainTableTypeTagType(row.moduleCode)">
+              {{ getMainTableTypeText(row.moduleCode) }}
+            </el-tag>
+          </template>
+        </el-table-column>
         <el-table-column prop="moduleLevel" label="层级" width="100">
           <template #default="{ row }">
             <el-tag :type="getLevelTagType(row.moduleLevel)">
@@ -64,7 +78,12 @@
             <span v-else>-</span>
           </template>
         </el-table-column>
-        <el-table-column prop="tableName" label="对应表名" width="180" />
+        <el-table-column prop="tableName" label="对应表名" width="200" />
+        <el-table-column prop="joinField" label="关联字段" width="100">
+          <template #default="{ row }">
+            {{ row.joinField || 'tjh' }}
+          </template>
+        </el-table-column>
         <el-table-column prop="isLeaf" label="叶子节点" width="100">
           <template #default="{ row }">
             <el-tag :type="row.isLeaf ? 'success' : 'info'">
@@ -127,9 +146,6 @@
           <el-button type="primary" link @click="downloadTemplate('simple')">
             下载模板
           </el-button>
-          <!-- <el-button type="primary" link @click="downloadTemplate('full')">
-            下载完整模板
-          </el-button> -->
         </div>
       </template>
 
@@ -155,56 +171,77 @@
           </el-upload>
         </el-form-item>
 
-        <el-form-item label="模块类型" prop="moduleType">
-          <el-select v-model="importForm.moduleType" placeholder="请选择模块类型">
-            <el-option label="调查问卷" value="survey" />
-            <el-option label="考试测评" value="exam" />
-            <el-option label="数据采集" value="data_collection" />
-            <el-option label="其他" value="other" />
-          </el-select>
-        </el-form-item>
+        <!-- 主表配置卡片 -->
+        <el-card class="main-table-config" shadow="never" style="margin-bottom: 20px;">
+          <template #header>
+            <div class="card-header">
+              <span>主表配置</span>
+              <el-tag type="info">可自定义主表类型</el-tag>
+            </div>
+          </template>
 
-        <el-form-item label="分组类型" prop="groupType">
-          <el-select v-model="importForm.groupType" placeholder="请选择分组类型">
-            <el-option label="通用" value="general" />
-            <el-option label="医疗" value="medical" />
-            <el-option label="教育" value="education" />
-            <el-option label="企业" value="enterprise" />
-          </el-select>
-        </el-form-item>
+          <el-row :gutter="20">
+            <el-col :span="12">
+              <el-form-item 
+                label="类型" 
+                prop="presetType"
+              >
+                <el-select 
+                  v-model="importForm.presetType" 
+                  placeholder="请选择预设类型"
+                  @change="handlePresetTypeChange"
+                  style="width: 100%"
+                >
+                  <el-option label="前瞻性队列" value="prospective" />
+                  <el-option label="回顾性队列" value="retrospective" />
+                  <el-option label="高原作业能力" value="plateau_ability" />
+                </el-select>
+                <div class="form-tip">选择预设类型将自动填充下方字段</div>
+              </el-form-item>
+            </el-col>
+          </el-row>
 
-        <el-form-item label="配置模式" prop="configMode">
-          <el-radio-group v-model="importForm.configMode">
-            <el-radio label="auto">自动检测</el-radio>
-            <el-radio label="simple">简单模式</el-radio>
-            <el-radio label="full">完整模式</el-radio>
-          </el-radio-group>
-        </el-form-item>
+          <el-row :gutter="20">
+            <el-col :span="12">
+              <el-form-item label="主表类型标识" prop="moduleCode">
+                <el-input 
+                  v-model="importForm.moduleCode" 
+                  placeholder="请输入主表类型标识，如：prospective"
+                  clearable
+                >
+                  <template #append>
+                    <el-tooltip content="将用于生成表名 dyn_xxx" placement="top">
+                      <el-icon><InfoFilled /></el-icon>
+                    </el-tooltip>
+                  </template>
+                </el-input>
+                <div class="form-tip">表名将自动生成为：dyn_{{ importForm.moduleCode || '类型标识' }}</div>
+              </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item label="主表显示名称" prop="moduleName">
+                <el-input 
+                  v-model="importForm.moduleName" 
+                  placeholder="请输入主表显示名称，如：前瞻性队列数据库"
+                  clearable
+                />
+              </el-form-item>
+            </el-col>
+          </el-row>
 
-        <el-form-item label="模块编码" prop="moduleCode">
-          <el-input 
-            v-model="importForm.moduleCode" 
-            placeholder="留空则根据文件名自动生成"
-            clearable
-          />
-        </el-form-item>
-
-        <el-form-item label="模块名称" prop="moduleName">
-          <el-input 
-            v-model="importForm.moduleName" 
-            placeholder="留空则根据文件名自动生成"
-            clearable
-          />
-        </el-form-item>
-
-        <el-form-item label="备注">
-          <el-input
-            v-model="importForm.remark"
-            type="textarea"
-            :rows="2"
-            placeholder="请输入备注信息"
-          />
-        </el-form-item>
+          <el-row :gutter="20">
+            <el-col :span="12">
+              <el-form-item label="关联字段" prop="joinField">
+                <el-input 
+                  v-model="importForm.joinField" 
+                  placeholder="请输入关联字段，如：tjh"
+                  clearable
+                />
+                <div class="form-tip">用于关联各子表的主键字段名</div>
+              </el-form-item>
+            </el-col>
+          </el-row>
+        </el-card>
 
         <el-form-item>
           <el-button 
@@ -243,8 +280,14 @@
             <el-descriptions-item label="模块编码">
               {{ importResult.moduleCode }}
             </el-descriptions-item>
+            <el-descriptions-item label="主表类型">
+              {{ getMainTableTypeText(importResult.moduleCode) }}
+            </el-descriptions-item>
             <el-descriptions-item label="表名">
               {{ importResult.tableName }}
+            </el-descriptions-item>
+            <el-descriptions-item label="关联字段">
+              {{ importResult.joinField || 'tjh' }}
             </el-descriptions-item>
             <el-descriptions-item label="字段数量">
               {{ importResult.successFields }}/{{ importResult.totalFields }}
@@ -286,9 +329,10 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { InfoFilled } from '@element-plus/icons-vue'
 import ModuleEditDialog from './components/ModuleEditDialog.vue'
 import { ModuleConfigApi } from '@/api/queueDB/moduleconfig'
-import { useRoute, useRouter } from 'vue-router'
+import { useRouter } from 'vue-router'
 import { importApi, type ExcelImportResultVO } from '@/api/dynamic/import'
 import download from '@/utils/download'
 
@@ -297,7 +341,8 @@ const loading = ref(false)
 const moduleTree = ref<any[]>([])
 const queryParams = reactive({
   moduleName: '',
-  moduleLevel: undefined
+  moduleLevel: undefined,
+  moduleCode: undefined
 })
 
 const editDialog = reactive({
@@ -306,11 +351,45 @@ const editDialog = reactive({
   parentModule: null
 })
 
+// 导入表单
+const importFormRef = ref()
+const uploadRef = ref()
+const fileList = ref<any[]>([])
+const importResult = ref<ExcelImportResultVO | null>(null)
+
+const importForm = reactive({
+  file: null as File | null,
+  // 主表类型相关字段
+  presetType: 'prospective', // 添加presetType字段，默认选择前瞻性队列
+  moduleCode: 'prospective',
+  moduleName: '前瞻性队列数据库',
+  joinField: 'tjh',
+  autoCreateMainTable: true
+})
+
+const rules = {
+  file: [
+    { required: true, message: '请选择Excel文件', trigger: 'change' }
+  ],
+  presetType: [ // 常用类型必填验证
+    { required: true, message: '请选择常用类型', trigger: 'change' }
+  ],
+  moduleCode: [
+    { required: true, message: '请输入主表类型标识', trigger: 'blur' }
+  ],
+  moduleName: [
+    { required: true, message: '请输入主表显示名称', trigger: 'blur' }
+  ],
+  joinField: [ // 关联字段必填验证
+    { required: true, message: '请输入关联字段', trigger: 'blur' }
+  ]
+}
+
 // 方法
 const loadModuleTree = async () => {
   try {
     loading.value = true
-    const response = await ModuleConfigApi.getModuleTreeWithStats('/queueDB/module-config/tree-with-stats', {
+    const response = await ModuleConfigApi.getModuleTreeWithStats({
       params: queryParams
     })    
     moduleTree.value = response
@@ -339,10 +418,9 @@ const handleEdit = (module: any) => {
   editDialog.parentModule = null
   editDialog.visible = true
 }
-const router = useRouter() // 路由对象
+
+const router = useRouter()
 const handleViewFields = (module: any) => {
-  // 跳转到字段管理页面，带上模块ID
-//   const route = useRouter()
   router.push(`/field?moduleId=${module.id}`)
 }
 
@@ -354,7 +432,6 @@ const handleStatusChange = async (module: any) => {
     })
     ElMessage.success(module.status === 1 ? '启用成功' : '停用成功')
   } catch (error) {
-    // 回滚状态
     module.status = module.status === 1 ? 0 : 1
     ElMessage.error('状态更新失败')
   }
@@ -387,7 +464,8 @@ const handleQuery = () => {
 const resetQuery = () => {
   Object.assign(queryParams, {
     moduleName: '',
-    moduleLevel: undefined
+    moduleLevel: undefined,
+    moduleCode: undefined
   })
   loadModuleTree()
 }
@@ -397,71 +475,33 @@ const handleEditSuccess = () => {
   loadModuleTree()
 }
 
-const getLevelTagType = (level: number) => {
-  const types: any = { 1: 'danger', 2: 'warning', 3: 'success' }
-  return types[level] || 'info'
-}
-
-const getLevelText = (level: number) => {
-  const texts: any = { 1: '一级', 2: '二级', 3: '三级' }
-  return texts[level] || '未知'
-}
-
-// 生命周期
-onMounted(() => {
-  loadModuleTree()
-})
-
-const importFormRef = ref()
-const uploadRef = ref()
-const fileList = ref<any[]>([])
-const importResult = ref<ExcelImportResultVO | null>(null)
-
-const importForm = reactive({
-  file: null as File | null,
-  moduleType: 'survey',
-  groupType: 'general',
-  configMode: 'auto',
-  moduleCode: '',
-  moduleName: '',
-  remark: ''
-})
-
-const rules = {
-  file: [
-    { required: true, message: '请选择Excel文件', trigger: 'change' }
-  ],
-  moduleType: [
-    { required: true, message: '请选择模块类型', trigger: 'change' }
-  ]
+// 预设类型变化处理
+const handlePresetTypeChange = (val: string) => {
+  if (val === 'prospective') {
+    importForm.moduleCode = 'prospective'
+    importForm.moduleName = '前瞻性队列数据库'
+    importForm.joinField = 'tjh'
+  } else if (val === 'retrospective') {
+    importForm.moduleCode = 'retrospective'
+    importForm.moduleName = '回顾性队列数据库'
+    importForm.joinField = 'tjh'
+  } else if (val === 'plateau_ability') {
+    importForm.moduleCode = 'plateau_ability'
+    importForm.moduleName = '高原作业能力分析'
+    importForm.joinField = 'tjh'
+  }
 }
 
 // 文件选择处理
 const handleFileChange = (file: any) => {
   importForm.file = file.raw
-  // 自动生成模块编码和名称
-  if (!importForm.moduleCode) {
-    const fileName = file.name.replace(/\.[^/.]+$/, "") // 移除扩展名
-    importForm.moduleCode = generateModuleCode(fileName)
-  }
-  if (!importForm.moduleName) {
-    importForm.moduleName = file.name.replace(/\.[^/.]+$/, "")
-  }
 }
 
 const handleFileRemove = () => {
   importForm.file = null
 }
 
-// 生成模块编码
-const generateModuleCode = (fileName: string): string => {
-  return fileName
-    .replace(/[^a-zA-Z0-9\u4e00-\u9fa5]/g, '_')
-    .replace(/_+/g, '_')
-    .toLowerCase() + '_module'
-}
-
-// 下载模板 - 简化版本
+// 下载模板
 const downloadTemplate = async (type: string) => {
   try {
     const data = await importApi.downloadTemplate(type)
@@ -494,23 +534,45 @@ const handleImport = async () => {
     try {
       const formData = new FormData()
       formData.append('file', importForm.file)
-      formData.append('moduleType', importForm.moduleType)
-      formData.append('groupType', importForm.groupType)
-      formData.append('configMode', importForm.configMode)
+      
+      // 主表类型相关
       formData.append('moduleCode', importForm.moduleCode)
       formData.append('moduleName', importForm.moduleName)
-      formData.append('remark', importForm.remark)
+      formData.append('joinField', importForm.joinField)
+      formData.append('autoCreateMainTable', String(importForm.autoCreateMainTable))
 
-      const result = await importApi.importExcel(formData)
-      importResult.value = result.data
+      const response = await importApi.importExcel(formData)
+      const result = response
+      importResult.value = result
       
-      if (result.data.success) {
-        ElMessage.success('导入成功')
+      // 根据成功记录数显示不同的提示
+      if (result.success) {
+        // 后端返回success=true的情况
+        if (result.successRecords === result.totalRecords) {
+          // 全部成功
+          ElMessage.success(`导入成功：全部${result.totalRecords}条数据导入成功`)
+        } else if (result.successRecords > 0) {
+          // 部分成功
+          ElMessage.warning(`导入完成：成功${result.successRecords}条，跳过${result.totalRecords - result.successRecords}条`)
+        } else {
+          // 0条成功（虽然success=true，但没有成功数据）
+          ElMessage.info(`导入完成：没有数据被导入，请检查数据格式`)
+        }
+        // 无论部分成功还是全部成功，都刷新模块列表
+        loadModuleTree()
       } else {
-        ElMessage.error('导入失败: ' + result.data.message)
+        // 后端返回success=false的情况（系统错误或全部失败）
+        if (result.errorMessages && result.errorMessages.length > 0) {
+          // 显示前3条错误信息
+          const errors = result.errorMessages.slice(0, 3).join('；')
+          ElMessage.error(`导入失败：${errors}${result.errorMessages.length > 3 ? '...' : ''}`)
+        } else {
+          ElMessage.error('导入失败：' + (result.message || '未知错误'))
+        }
       }
     } catch (error) {
       console.error('导入错误:', error)
+      ElMessage.error('导入失败：网络错误或服务器异常')
     } finally {
       loading.value = false
     }
@@ -524,6 +586,41 @@ const handleReset = () => {
   fileList.value = []
   importResult.value = null
   importForm.file = null
+  importForm.presetType = 'prospective' // 重置为默认值
+  importForm.moduleCode = 'prospective'
+  importForm.moduleName = '前瞻性队列数据库'
+  importForm.joinField = 'tjh'
+  importForm.autoCreateMainTable = true
+}
+
+// 标签样式函数
+const getLevelTagType = (level: number) => {
+  const types: any = { 1: 'danger', 2: 'warning', 3: 'success' }
+  return types[level] || 'info'
+}
+
+const getLevelText = (level: number) => {
+  const texts: any = { 1: '一级', 2: '二级', 3: '三级' }
+  return texts[level] || '未知'
+}
+
+const getMainTableTypeTagType = (type: string) => {
+  const types: any = {
+    'prospective': 'primary',
+    'retrospective': 'success',
+    'plateau_ability': 'warning'
+  }
+  return types[type] || 'info'
+}
+
+const getMainTableTypeText = (type: string) => {
+  if (!type) return '未知'
+  const texts: any = {
+    'prospective': '前瞻性队列',
+    'retrospective': '回顾性队列',
+    'plateau_ability': '高原作业能力'
+  }
+  return texts[type] || type
 }
 
 // 格式化时间
@@ -531,6 +628,11 @@ const formatTime = (time: string) => {
   if (!time) return ''
   return new Date(time).toLocaleString()
 }
+
+// 生命周期
+onMounted(() => {
+  loadModuleTree()
+})
 </script>
 
 <style scoped>
@@ -548,5 +650,64 @@ const formatTime = (time: string) => {
 .right-buttons {
   display: flex;
   gap: 8px;
+}
+
+.form-tip {
+  font-size: 12px;
+  color: #909399;
+  margin-top: 4px;
+}
+
+.import-card,
+.result-card {
+  margin-top: 20px;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.main-table-config {
+  margin-bottom: 20px;
+  border: 1px solid #ebeef5;
+}
+
+.main-table-config :deep(.el-card__header) {
+  padding: 12px 20px;
+  background-color: #f5f7fa;
+}
+
+.ml-2 {
+  margin-left: 8px;
+}
+
+.result-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.success-details {
+  margin-top: 16px;
+}
+
+.error-details {
+  margin-top: 16px;
+}
+
+.error-alert {
+  margin-bottom: 8px;
+}
+
+.error-list {
+  margin: 0;
+  padding-left: 20px;
+  color: #f56c6c;
+}
+
+.error-list li {
+  margin: 4px 0;
 }
 </style>
