@@ -118,10 +118,18 @@ public class ModuleConfigController {
         return CommonResult.success(moduleConfigService.getModulesWithFields());
     }
 
+//    @GetMapping("/tree-with-fields")
+//    @Operation(summary = "获取模块树（包含字段）")
+//    public CommonResult<List<ModuleConfigRespVO>> getModuleTreeWithFields() {
+//        List<ModuleConfigRespVO> tree = moduleConfigService.getModuleTreeWithFields();
+//        return success(tree);
+//    }
+
     @GetMapping("/tree-with-fields")
     @Operation(summary = "获取模块树（包含字段）")
-    public CommonResult<List<ModuleConfigRespVO>> getModuleTreeWithFields() {
-        List<ModuleConfigRespVO> tree = moduleConfigService.getModuleTreeWithFields();
+    public CommonResult<List<ModuleConfigRespVO>> getModuleTreeWithFields(
+            @RequestParam(required = false) String moduleCode) {
+        List<ModuleConfigRespVO> tree = moduleConfigService.getModuleTreeWithFields(moduleCode);
         return success(tree);
     }
 

@@ -1697,28 +1697,68 @@ public class DynamicTableServiceImpl implements DynamicTableService {
         DynamicTableQueryRespDTO resp = new DynamicTableQueryRespDTO();
 
         try {
-            // 1. 构建查询SQL
-            String sql = buildDynamicQuerySql(reqDTO);
+            // 1. 获取主表模块（parent_id为null的模块）- 使用selectOne，但如果有多条会报错
+            ModuleConfigDO mainModule = moduleConfigMapper.selectOne(
+                    new LambdaQueryWrapperX<ModuleConfigDO>()
+                            .isNull(ModuleConfigDO::getParentId)
+                            .eq(ModuleConfigDO::getModuleCode, "prospective")
+                            .last("LIMIT 1") // 添加LIMIT 1确保只返回一条
+            );
+
+            if (mainModule == null) {
+                throw new RuntimeException("未找到主表模块配置");
+            }
+
+            String mainModuleCode = mainModule.getModuleCode();
+            String mainTableName = mainModule.getTableName();
+            String mainAlias = "main";
+            String joinField = mainModule.getJoinField() != null ? mainModule.getJoinField() : "tjh";
+
+            log.info("主表信息: code={}, table={}, joinField={}",
+                    mainModuleCode, mainTableName, joinField);
+
+            // 2. 获取所有选中的子模块
+            List<String> selectedModules = reqDTO.getSelectedModules();
+            if (selectedModules == null || selectedModules.isEmpty()) {
+                throw new RuntimeException("请选择要查询的模块");
+            }
+
+            // 3. 构建查询SQL
+            String sql = buildDynamicQuerySql(mainModule, selectedModules, reqDTO);
             String countSql = buildCountSql(sql);
 
-            // 2. 执行查询获取数据
-            List<Map<String, Object>> dataList = executeDynamicQuery(sql, reqDTO);
+            log.debug("执行查询SQL: {}", sql);
+            log.debug("计数SQL: {}", countSql);
 
-            // 3. 获取总记录数
-            Long total = getTotalCount(countSql);
+            // 4. 执行查询获取数据
+            List<Map<String, Object>> dataList = jdbcTemplate.queryForList(sql);
 
-            // 4. 获取字段显示配置
-            List<FieldDisplayVO> displayedFields = getDisplayFieldsForModules(reqDTO.getSelectedModules());
+            // 5. 获取总记录数
+            Long total = 0L;
+            try {
+                Map<String, Object> countResult = jdbcTemplate.queryForMap(countSql);
+                total = ((Number) countResult.get("total")).longValue();
+            } catch (Exception e) {
+                log.error("获取总记录数失败", e);
+            }
 
-            // 5. 设置返回结果
-            resp.setList(dataList);
+            // 6. 处理查询结果，将字段名转换为前端需要的格式
+            List<Map<String, Object>> processedList = processQueryResult(dataList, selectedModules);
+
+            // 7. 获取字段显示配置
+            List<FieldDisplayVO> displayedFields = getDisplayFieldsForModules(mainModule, selectedModules);
+
+            // 8. 设置返回结果
+            resp.setList(processedList);
             resp.setTotal(total);
             resp.setDisplayedFields(displayedFields);
-            resp.setStatistics(calculateStatistics(dataList));
+            resp.setStatistics(calculateStatistics(processedList));
+
+            log.info("查询完成: 共{}条记录, 字段配置{}个", total, displayedFields.size());
 
         } catch (Exception e) {
             log.error("动态表查询失败", e);
-            throw new RuntimeException("查询失败: " + e.getMessage());
+            throw new RuntimeException("查询失败: " + e.getMessage(), e);
         }
 
         return resp;
@@ -1727,72 +1767,156 @@ public class DynamicTableServiceImpl implements DynamicTableService {
     /**
      * 构建动态查询SQL
      */
-    private String buildDynamicQuerySql(DynamicTableQueryReqDTO reqDTO) {
+    private String buildDynamicQuerySql(ModuleConfigDO mainModule, List<String> selectedModules,
+                                        DynamicTableQueryReqDTO reqDTO) {
         StringBuilder sql = new StringBuilder();
-        List<String> selectedModules = reqDTO.getSelectedModules();
 
-        if (selectedModules == null || selectedModules.isEmpty()) {
-            throw new RuntimeException("请选择要查询的模块");
-        }
+        String mainTable = mainModule.getTableName();
+        String mainAlias = "main";
+        String joinField = mainModule.getJoinField() != null ? mainModule.getJoinField() : "tjh";
 
-        // 1. 确定主表（dyn_basic_info）
-        String mainTable = "dyn_basic_info";
-
-        // 2. 构建SELECT字段
+        // 1. 构建SELECT字段
         sql.append("SELECT ");
-        sql.append(buildSelectFields(selectedModules));
-        sql.append(" FROM ").append(mainTable).append(" main ");
 
-        // 3. 构建LEFT JOIN
-        sql.append(buildJoinClauses(selectedModules, mainTable, reqDTO.getJoinField()));
-
-        // 4. 构建WHERE条件
-        String whereClause = buildWhereClause(reqDTO.getConditions());
-        if (StringUtils.isNotBlank(whereClause)) {
-            sql.append(" WHERE ").append(whereClause);
-        }
-
-        // 5. 构建ORDER BY
-        if (StringUtils.isNotBlank(reqDTO.getOrderBy())) {
-            sql.append(" ORDER BY ").append(reqDTO.getOrderBy());
-            if (StringUtils.isNotBlank(reqDTO.getOrderDirection())) {
-                sql.append(" ").append(reqDTO.getOrderDirection());
+        // 添加主表所有字段
+        List<FieldConfigDO> mainFields = fieldConfigMapper.selectListByModuleCode(mainModule.getModuleCode());
+        for (FieldConfigDO field : mainFields) {
+            if (field.getStatus() == 1) { // 只取启用状态的字段
+                sql.append(mainAlias).append(".").append(field.getFieldCode())
+                        .append(" AS ").append(field.getFieldCode()).append(", ");
             }
         }
 
-        // 6. 构建分页
-        if (reqDTO.getPageNo() != null && reqDTO.getPageSize() != null) {
-            sql.append(" LIMIT ").append((reqDTO.getPageNo() - 1) * reqDTO.getPageSize())
-                    .append(", ").append(reqDTO.getPageSize());
+        // 添加子表字段
+        for (String moduleName : selectedModules) {
+            if (moduleName.equals(mainModule.getModuleName())) {
+                continue; // 跳过主表
+            }
+
+            ModuleConfigDO subModule = getModuleByName(moduleName);
+            if (subModule == null || subModule.getTableName() == null) {
+                log.warn("未找到子模块配置或表名为空: {}", moduleName);
+                continue;
+            }
+
+            // 检查是否有子模块（多级表头情况）
+            List<ModuleConfigDO> subSubModules = getSubModulesByParentId(subModule.getId());
+
+            if (subSubModules != null && !subSubModules.isEmpty()) {
+                // 多级表头情况，使用子子模块
+                for (ModuleConfigDO subSubModule : subSubModules) {
+                    List<FieldConfigDO> subFields = fieldConfigMapper.selectListByModuleCode(subSubModule.getModuleCode());
+                    for (FieldConfigDO field : subFields) {
+                        if (field.getStatus() == 1) {
+                            String alias = subSubModule.getTableName() + "_" + field.getFieldCode();
+                            sql.append(subSubModule.getTableName()).append(".").append(field.getFieldCode())
+                                    .append(" AS ").append(alias).append(", ");
+                        }
+                    }
+                }
+            } else {
+                // 普通子模块
+                List<FieldConfigDO> subFields = fieldConfigMapper.selectListByModuleCode(subModule.getModuleCode());
+                for (FieldConfigDO field : subFields) {
+                    if (field.getStatus() == 1) {
+                        String alias = subModule.getTableName() + "_" + field.getFieldCode();
+                        sql.append(subModule.getTableName()).append(".").append(field.getFieldCode())
+                                .append(" AS ").append(alias).append(", ");
+                    }
+                }
+            }
         }
 
-        log.debug("动态查询SQL: {}", sql);
+        // 移除最后一个逗号和空格
+        if (sql.length() > 7) { // "SELECT ".length() = 7
+            sql.setLength(sql.length() - 2);
+        }
+
+        // 2. FROM主表
+        sql.append(" FROM ").append(mainTable).append(" ").append(mainAlias);
+
+        // 3. 构建LEFT JOIN子句
+        for (String moduleName : selectedModules) {
+            if (moduleName.equals(mainModule.getModuleName())) {
+                continue;
+            }
+
+            ModuleConfigDO subModule = getModuleByName(moduleName);
+            if (subModule == null || subModule.getTableName() == null) {
+                continue;
+            }
+
+            // 检查是否有子模块（多级表头情况）
+            List<ModuleConfigDO> subSubModules = getSubModulesByParentId(subModule.getId());
+
+            if (subSubModules != null && !subSubModules.isEmpty()) {
+                // 多级表头情况，分别JOIN每个子子模块
+                for (ModuleConfigDO subSubModule : subSubModules) {
+                    sql.append(" LEFT JOIN ").append(subSubModule.getTableName())
+                            .append(" ON ").append(mainAlias).append(".").append(joinField)
+                            .append(" = ").append(subSubModule.getTableName()).append(".").append(joinField);
+                }
+            } else {
+                // 普通子模块
+                sql.append(" LEFT JOIN ").append(subModule.getTableName())
+                        .append(" ON ").append(mainAlias).append(".").append(joinField)
+                        .append(" = ").append(subModule.getTableName()).append(".").append(joinField);
+            }
+        }
+
+        // 4. 构建WHERE条件 - 只查询未删除的数据
+        sql.append(" WHERE ").append(mainAlias).append(".deleted = 0");
+
+        // 5. 添加额外的WHERE条件
+        String whereClause = buildWhereClause(reqDTO.getConditions(), mainAlias, joinField);
+        if (StringUtils.isNotBlank(whereClause)) {
+            sql.append(" AND ").append(whereClause);
+        }
+
+        // 6. 添加ORDER BY（默认按主表ID排序）
+        sql.append(" ORDER BY ").append(mainAlias).append(".id DESC");
+
+        // 7. 添加分页
+        if (reqDTO.getPageNo() != null && reqDTO.getPageSize() != null) {
+            int offset = (reqDTO.getPageNo() - 1) * reqDTO.getPageSize();
+            sql.append(" LIMIT ").append(offset).append(", ").append(reqDTO.getPageSize());
+        }
+
         return sql.toString();
     }
 
+
     /**
-     * 构建SELECT字段部分
+     * 构建SELECT字段部分 - 从field_config获取字段配置
      */
-    private String buildSelectFields(List<String> selectedModules) {
+    private String buildSelectFields(ModuleConfigDO mainModule, List<String> selectedModules, String mainAlias) {
         List<String> fields = new ArrayList<>();
 
-        // 基础信息表字段
-        fields.add("main.tjh");
-        fields.add("main.name");
-        fields.add("main.id_number");
+        // 1. 添加主表的所有字段（排除关联字段）
+        List<FieldConfigDO> mainFields = fieldConfigMapper.selectListByModuleCode(mainModule.getModuleCode());
+        for (FieldConfigDO field : mainFields) {
+//            if (!"tjh".equals(field.getFieldCode())) { // 排除关联字段，可根据需要调整
+                fields.add(mainAlias + "." + field.getFieldCode() + " AS " + field.getFieldCode());
+//            }
+        }
 
-        // 动态添加其他表的字段
-        for (String moduleName : selectedModules) {
-            ModuleConfigDO module = getModuleByName(moduleName);
-            if (module == null || "基础信息".equals(moduleName)) {
-                continue; // 跳过基础信息表，已经在main表中
+        // 2. 添加子表字段
+        for (String moduleCode : selectedModules) {
+            if (moduleCode.equals(mainModule.getModuleCode())) {
+                continue; // 跳过主表，已经添加过了
             }
 
-            List<FieldConfigDO> moduleFields = fieldConfigMapper.selectListByModuleCode(module.getModuleCode());
+            ModuleConfigDO subModule = getModuleByCode(moduleCode);
+            if (subModule == null) {
+                log.warn("未找到子模块配置: {}", moduleCode);
+                continue;
+            }
+
+            List<FieldConfigDO> moduleFields = fieldConfigMapper.selectListByModuleCode(subModule.getModuleCode());
             for (FieldConfigDO field : moduleFields) {
-                // 使用表别名避免字段冲突
-                String fieldAlias = module.getTableName() + "_" + field.getFieldCode();
-                fields.add(module.getTableName() + "." + field.getFieldCode() + " AS " + fieldAlias);
+                // 使用表名_字段名作为别名，避免字段冲突
+                String fieldAlias = subModule.getTableName() + "_" + field.getFieldCode();
+                fields.add(subModule.getTableName() + "." + field.getFieldCode() + " AS " + fieldAlias);
             }
         }
 
@@ -1802,18 +1926,21 @@ public class DynamicTableServiceImpl implements DynamicTableService {
     /**
      * 构建JOIN子句
      */
-    private String buildJoinClauses(List<String> selectedModules, String mainTable, String joinField) {
+    private String buildJoinClauses(List<String> selectedModules, String mainAlias, String joinField) {
         StringBuilder joins = new StringBuilder();
 
-        for (String moduleName : selectedModules) {
-            ModuleConfigDO module = getModuleByName(moduleName);
-            if (module == null || "基础信息".equals(moduleName)) {
-                continue; // 跳过基础信息表
+        for (String moduleCode : selectedModules) {
+            ModuleConfigDO module = getModuleByCode(moduleCode);
+            if (module == null) {
+                continue;
             }
 
+            // 默认关联字段，如果没有指定则使用"tjh"
+            String actualJoinField = StringUtils.isNotBlank(joinField) ? joinField : "tjh";
+
             joins.append(" LEFT JOIN ").append(module.getTableName())
-                    .append(" ON main.").append(joinField)
-                    .append(" = ").append(module.getTableName()).append(".").append(joinField);
+                    .append(" ON ").append(mainAlias).append(".").append(actualJoinField)
+                    .append(" = ").append(module.getTableName()).append(".").append(actualJoinField);
         }
 
         return joins.toString();
@@ -1822,39 +1949,44 @@ public class DynamicTableServiceImpl implements DynamicTableService {
     /**
      * 构建WHERE条件
      */
-    private String buildWhereClause(Map<String, Object> conditions) {
+    private String buildWhereClause(Map<String, Object> conditions, String mainAlias, String joinField) {
         if (conditions == null || conditions.isEmpty()) {
             return "";
         }
 
         List<String> whereConditions = new ArrayList<>();
 
-        // 定义要排除的字段（分页字段和其他非表字段）
-        Set<String> excludedFields = new HashSet<>(Arrays.asList(
-                "pageNo", "pageSize","group", "selectedModules", "orderBy",
-                "orderDirection", "joinAllTables", "joinField"
-        ));
-
         for (Map.Entry<String, Object> entry : conditions.entrySet()) {
             String field = entry.getKey();
             Object value = entry.getValue();
 
-            // 跳过排除的字段
-            if (excludedFields.contains(field)) {
+            // 跳过分页参数和特殊字段
+            if (field.equals("pageNo") || field.equals("pageSize") ||
+                    field.equals("selectedModules") || field.equals("orderBy") ||
+                    field.equals("orderDirection") || field.equals("joinAllTables") ||
+                    field.equals("joinField")) {
                 continue;
             }
 
-            if (value == null || StringUtils.isBlank(value.toString())) {
+            if (value == null || (value instanceof String && StringUtils.isBlank((String) value))) {
                 continue;
             }
 
-            // 根据字段名确定表别名
-            String tableAlias = getTableAliasForField(field);
-            String condition = buildSingleCondition(tableAlias, field, value);
-            if (StringUtils.isNotBlank(condition)) {
-                whereConditions.add(condition);
+            // 处理主表字段（使用mainAlias）
+            if (field.startsWith("main_")) {
+                String actualField = field.substring(5); // 去掉"main_"前缀
+                String condition = buildSingleCondition(mainAlias, actualField, value);
+                if (condition != null) {
+                    whereConditions.add(condition);
+                }
+            } else {
+                // 暂时不支持子表字段的条件查询
+                log.debug("暂不支持子表字段的条件查询: {}", field);
             }
         }
+
+        // 默认只查询未删除的数据
+        whereConditions.add(mainAlias + ".deleted = 0");
 
         return String.join(" AND ", whereConditions);
     }
@@ -1863,18 +1995,8 @@ public class DynamicTableServiceImpl implements DynamicTableService {
      * 构建计数SQL
      */
     private String buildCountSql(String originalSql) {
-        // 从原始SQL中移除ORDER BY和LIMIT子句，然后包装成COUNT查询
-        String countSql = originalSql
-                .replaceAll("ORDER BY.*?(?=LIMIT|$)", "") // 移除ORDER BY
-                .replaceAll("LIMIT.*", ""); // 移除LIMIT
-
-        // 如果包含GROUP BY，需要特殊处理
-        if (countSql.toUpperCase().contains("GROUP BY")) {
-            return "SELECT COUNT(*) as total FROM (" + countSql + ") as count_table";
-        } else {
-            // 简单的COUNT查询
-            return "SELECT COUNT(*) as total FROM (" + countSql + ") as count_table";
-        }
+        // 简单的COUNT查询
+        return "SELECT COUNT(*) as total FROM (" + originalSql + ") as count_table";
     }
 
     /**
@@ -1905,39 +2027,206 @@ public class DynamicTableServiceImpl implements DynamicTableService {
     }
 
     /**
-     * 根据模块名称获取字段显示配置
+     * 处理查询结果，将字段名转换为前端需要的格式
      */
-    private List<FieldDisplayVO> getDisplayFieldsForModules(List<String> moduleNames) {
-        if (moduleNames == null || moduleNames.isEmpty()) {
+    private List<Map<String, Object>> processQueryResult(List<Map<String, Object>> dataList,
+                                                         List<String> selectedModules) {
+        if (dataList == null || dataList.isEmpty()) {
             return new ArrayList<>();
         }
 
-        List<FieldDisplayVO> result = new ArrayList<>();
+        List<Map<String, Object>> result = new ArrayList<>();
 
-        for (String moduleName : moduleNames) {
-            // 根据模块名称获取模块配置
-            ModuleConfigDO module = getModuleByName(moduleName);
-            if (module == null) {
-                continue;
+        for (Map<String, Object> row : dataList) {
+            Map<String, Object> processedRow = new LinkedHashMap<>();
+
+            for (Map.Entry<String, Object> entry : row.entrySet()) {
+                String key = entry.getKey();
+                Object value = entry.getValue();
+
+                // 如果key包含下划线，可能需要转换格式
+                if (key.contains("_")) {
+                    // 保持原样，因为前端期望的是表名_字段名的格式
+                    processedRow.put(key, value);
+                } else {
+                    // 主表字段保持原样
+                    processedRow.put(key, value);
+                }
             }
 
-            // 获取该模块的所有字段
-            List<FieldConfigDO> fields = fieldConfigMapper.selectListByModuleCode(module.getModuleCode());
-
-            FieldDisplayVO displayVO = new FieldDisplayVO();
-            displayVO.setGroupName(module.getModuleName());
-            displayVO.setFields(convertToFieldInfo(fields, module.getTableName()));
-
-            result.add(displayVO);
+            result.add(processedRow);
         }
 
         return result;
     }
 
     /**
+     * 获取字段显示配置 - 适配前端多级表头
+     */
+    private List<FieldDisplayVO> getDisplayFieldsForModules(ModuleConfigDO mainModule,
+                                                            List<String> selectedModules) {
+        List<FieldDisplayVO> result = new ArrayList<>();
+
+        // 1. 添加主表字段作为"基础信息"组
+        FieldDisplayVO mainDisplayVO = new FieldDisplayVO();
+        mainDisplayVO.setGroupName("基础信息");
+
+        List<FieldConfigDO> mainFields = fieldConfigMapper.selectListByModuleCode(mainModule.getModuleCode());
+        List<FieldDisplayVO.FieldInfo> mainFieldInfos = mainFields.stream()
+                .filter(field -> field.getStatus() == 1) // 只取启用状态的字段
+                .map(field -> {
+                    FieldDisplayVO.FieldInfo fieldInfo = new FieldDisplayVO.FieldInfo();
+                    fieldInfo.setFieldCode(field.getFieldCode());
+                    fieldInfo.setFieldLabel(field.getFieldLabel());
+                    fieldInfo.setFieldType(field.getFieldType());
+                    fieldInfo.setTableName(mainModule.getTableName());
+                    fieldInfo.setProp("main_" + field.getFieldCode()); // 使用main_前缀
+                    return fieldInfo;
+                })
+                .collect(Collectors.toList());
+
+        mainDisplayVO.setFields(mainFieldInfos);
+        result.add(mainDisplayVO);
+
+        // 2. 添加选中的子模块字段
+        for (String moduleName : selectedModules) {
+            if (moduleName.equals(mainModule.getModuleName())) {
+                continue;
+            }
+
+            ModuleConfigDO subModule = getModuleByName(moduleName);
+            if (subModule == null) {
+                continue;
+            }
+
+            // 检查是否有子模块（多级表头情况）
+            List<ModuleConfigDO> subSubModules = getSubModulesByParentId(subModule.getId());
+
+            if (subSubModules != null && !subSubModules.isEmpty()) {
+                // 多级表头情况（如吸烟情况 -> 现在吸烟情况、过去吸烟情况）
+                for (ModuleConfigDO subSubModule : subSubModules) {
+                    FieldDisplayVO subDisplayVO = new FieldDisplayVO();
+                    subDisplayVO.setGroupName(subSubModule.getModuleName());
+
+                    List<FieldConfigDO> subFields = fieldConfigMapper.selectListByModuleCode(subSubModule.getModuleCode());
+                    List<FieldDisplayVO.FieldInfo> fieldInfos = subFields.stream()
+                            .filter(field -> field.getStatus() == 1)
+                            .map(field -> {
+                                FieldDisplayVO.FieldInfo fieldInfo = new FieldDisplayVO.FieldInfo();
+                                fieldInfo.setFieldCode(field.getFieldCode());
+                                fieldInfo.setFieldLabel(field.getFieldLabel());
+                                fieldInfo.setFieldType(field.getFieldType());
+                                fieldInfo.setTableName(subSubModule.getTableName());
+                                // 使用子表名_字段名作为prop
+                                fieldInfo.setProp(subSubModule.getTableName() + "_" + field.getFieldCode());
+                                return fieldInfo;
+                            })
+                            .collect(Collectors.toList());
+
+                    subDisplayVO.setFields(fieldInfos);
+                    result.add(subDisplayVO);
+                }
+            } else {
+                // 普通子模块
+                FieldDisplayVO subDisplayVO = new FieldDisplayVO();
+                subDisplayVO.setGroupName(subModule.getModuleName());
+
+                List<FieldConfigDO> subFields = fieldConfigMapper.selectListByModuleCode(subModule.getModuleCode());
+                List<FieldDisplayVO.FieldInfo> fieldInfos = subFields.stream()
+                        .filter(field -> field.getStatus() == 1)
+                        .map(field -> {
+                            FieldDisplayVO.FieldInfo fieldInfo = new FieldDisplayVO.FieldInfo();
+                            fieldInfo.setFieldCode(field.getFieldCode());
+                            fieldInfo.setFieldLabel(field.getFieldLabel());
+                            fieldInfo.setFieldType(field.getFieldType());
+                            fieldInfo.setTableName(subModule.getTableName());
+                            // 使用表名_字段名作为prop
+                            fieldInfo.setProp(subModule.getTableName() + "_" + field.getFieldCode());
+                            return fieldInfo;
+                        })
+                        .collect(Collectors.toList());
+
+                subDisplayVO.setFields(fieldInfos);
+                result.add(subDisplayVO);
+            }
+        }
+
+        return result;
+    }
+
+    /**
+     * 根据父模块ID获取子模块列表
+     */
+    private List<ModuleConfigDO> getSubModulesByParentId(Long parentId) {
+        if (parentId == null) {
+            return null;
+        }
+        return moduleConfigMapper.selectList(
+                new LambdaQueryWrapperX<ModuleConfigDO>()
+                        .eq(ModuleConfigDO::getParentId, parentId)
+                        .eq(ModuleConfigDO::getIsLeaf, 1));
+        // 如果有sortOrder字段，可以加上排序
+        // .orderByAsc(ModuleConfigDO::getSortOrder));
+    }
+
+    /**
+     * 根据模块名称获取模块配置
+     */
+    private ModuleConfigDO getModuleByName(String moduleName) {
+        return moduleConfigMapper.selectOne(
+                new LambdaQueryWrapperX<ModuleConfigDO>()
+                        .eq(ModuleConfigDO::getModuleName, moduleName)
+                        .eq(ModuleConfigDO::getIsLeaf, 1));
+    }
+
+    /**
+     * 根据模块编码获取模块配置
+     */
+    private ModuleConfigDO getModuleByCode(String moduleCode) {
+        if (StringUtils.isBlank(moduleCode)) {
+            return null;
+        }
+        return moduleConfigMapper.selectOne(
+                new LambdaQueryWrapperX<ModuleConfigDO>()
+                        .eq(ModuleConfigDO::getModuleCode, moduleCode));
+    }
+
+    /**
      * 将字段配置转换为字段信息
      */
     private List<FieldDisplayVO.FieldInfo> convertToFieldInfo(List<FieldConfigDO> fields, String tableName) {
+        if (fields == null || fields.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        return fields.stream()
+                .filter(field -> {
+                    // 过滤掉关联字段和系统字段
+                    if ("tjh".equals(field.getFieldCode())) return false;
+                    if (field.getFieldCode().toLowerCase().endsWith("name")) return false;
+                    if (field.getStatus() != 1) return false; // 只返回启用状态的字段
+                    return true;
+                })
+                .map(field -> {
+                    FieldDisplayVO.FieldInfo fieldInfo = new FieldDisplayVO.FieldInfo();
+                    fieldInfo.setFieldCode(field.getFieldCode());
+                    fieldInfo.setFieldLabel(field.getFieldLabel());
+                    fieldInfo.setFieldType(field.getFieldType());
+                    fieldInfo.setTableName(tableName);
+
+                    // 生成唯一属性名：表名_字段名
+                    String prop = tableName + "_" + field.getFieldCode();
+                    fieldInfo.setProp(prop);
+
+                    return fieldInfo;
+                })
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * 将字段配置转换为字段信息
+     */
+    private List<FieldDisplayVO.FieldInfo> convertToFieldInfo(List<FieldConfigDO> fields, String tableName, boolean isMainTable) {
         if (fields == null || fields.isEmpty()) {
             return new ArrayList<>();
         }
@@ -1950,7 +2239,11 @@ public class DynamicTableServiceImpl implements DynamicTableService {
                     fieldInfo.setFieldLabel(field.getFieldLabel());
                     fieldInfo.setFieldType(field.getFieldType());
                     fieldInfo.setTableName(tableName);
-                    fieldInfo.setProp(tableName + "_" + field.getFieldCode()); // 生成唯一属性名
+
+                    // 生成唯一属性名：如果是主表字段，直接使用字段名；如果是子表字段，使用表名_字段名
+                    String prop = isMainTable ? field.getFieldCode() : tableName + "_" + field.getFieldCode();
+                    fieldInfo.setProp(prop);
+
                     return fieldInfo;
                 })
                 .collect(Collectors.toList());
@@ -1978,16 +2271,7 @@ public class DynamicTableServiceImpl implements DynamicTableService {
             return null;
         }
 
-        String fieldName = field;
-        // 如果字段名包含表别名，移除表别名部分
-        if (field.contains("_")) {
-            String[] parts = field.split("_");
-            if (parts.length > 1) {
-                fieldName = parts[1];
-            }
-        }
-
-        String fullFieldName = tableAlias + "." + fieldName;
+        String fullFieldName = tableAlias + "." + field;
 
         if (value instanceof String) {
             String strValue = ((String) value).trim();
@@ -2036,16 +2320,6 @@ public class DynamicTableServiceImpl implements DynamicTableService {
         return statistics;
     }
 
-    /**
-     * 根据模块名称获取模块配置
-     */
-    private ModuleConfigDO getModuleByName(String moduleName) {
-        return moduleConfigMapper.selectOne(
-                new LambdaQueryWrapperX<ModuleConfigDO>()
-                        .eq(ModuleConfigDO::getModuleName, moduleName));
-//                        .eq(ModuleConfigDO::getIsLeaf, 1));
-    }
-
     @Override
     public List<ModuleConfigDO> getQueryableModules() {
         // 查询所有叶子模块（即实际有表的模块）
@@ -2057,7 +2331,28 @@ public class DynamicTableServiceImpl implements DynamicTableService {
     }
 
     @Override
-    public List<FieldDisplayVO> getModuleFields(List<String> moduleNames) {
-        return getDisplayFieldsForModules(moduleNames);
+    public List<FieldDisplayVO> getModuleFields(List<String> moduleCodes) {
+        if (moduleCodes == null || moduleCodes.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        List<FieldDisplayVO> result = new ArrayList<>();
+
+        for (String moduleCode : moduleCodes) {
+            ModuleConfigDO module = getModuleByCode(moduleCode);
+            if (module == null) {
+                continue;
+            }
+
+            List<FieldConfigDO> fields = fieldConfigMapper.selectListByModuleCode(module.getModuleCode());
+
+            FieldDisplayVO displayVO = new FieldDisplayVO();
+            displayVO.setGroupName(module.getModuleName());
+            displayVO.setFields(convertToFieldInfo(fields, module.getTableName(), false));
+
+            result.add(displayVO);
+        }
+
+        return result;
     }
 }

@@ -38,4 +38,6 @@ public class DynamicTableQueryReqDTO extends PageParam {
      * 指定关联字段（默认为 tjh）
      */
     private String joinField = "tjh";
+
+    private String mainModuleCode;  // 主表模块编码，如 "prospective"
 }

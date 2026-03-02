@@ -338,6 +338,118 @@ public class ModuleConfigServiceImpl implements ModuleConfigService {
     }
 
     @Override
+    public List<ModuleConfigRespVO> getModuleTreeWithFields(String moduleCode) {
+        // 构建查询条件
+        LambdaQueryWrapper<ModuleConfigDO> moduleWrapper = new LambdaQueryWrapper<ModuleConfigDO>()
+                .eq(ModuleConfigDO::getStatus, 1)
+                .orderByAsc(ModuleConfigDO::getOrderNo);
+
+        // 如果指定了模块编码，需要找到该模块及其所有子模块
+        Set<String> targetModuleCodes = new HashSet<>();
+        if (StringUtils.isNotBlank(moduleCode)) {
+            // 先找到目标模块
+            ModuleConfigDO targetModule = moduleConfigMapper.selectByCode(moduleCode);
+            if (targetModule == null) {
+                return Collections.emptyList(); // 模块不存在，返回空列表
+            }
+
+            // 获取目标模块及其所有子模块的编码
+            targetModuleCodes = getAllModuleCodes(targetModule);
+
+            // 只查询目标模块及其子模块
+            moduleWrapper.in(ModuleConfigDO::getModuleCode, targetModuleCodes);
+        }
+
+        // 查询所有启用的模块（按条件过滤）
+        List<ModuleConfigDO> allModules = moduleConfigMapper.selectList(moduleWrapper);
+
+        // 查询所有启用的字段
+        LambdaQueryWrapper<FieldConfigDO> fieldWrapper = new LambdaQueryWrapper<FieldConfigDO>()
+                .eq(FieldConfigDO::getStatus, 1)
+                .orderByAsc(FieldConfigDO::getOrderNo);
+
+        // 如果指定了模块编码，只查询相关模块的字段
+        if (StringUtils.isNotBlank(moduleCode) && !targetModuleCodes.isEmpty()) {
+            fieldWrapper.in(FieldConfigDO::getModuleCode, targetModuleCodes);
+        }
+
+        List<FieldConfigDO> allFields = fieldConfigMapper.selectList(fieldWrapper);
+
+        // 按模块编码分组字段
+        Map<String, List<FieldConfigDO>> fieldMap = allFields.stream()
+                .collect(Collectors.groupingBy(FieldConfigDO::getModuleCode));
+
+        // 按父ID分组模块
+        Map<Long, List<ModuleConfigDO>> groupedByParent = allModules.stream()
+                .filter(module -> module.getParentId() != null)
+                .collect(Collectors.groupingBy(ModuleConfigDO::getParentId));
+
+        // 获取根模块（parent_id为null）
+        List<ModuleConfigDO> rootModules;
+        if (StringUtils.isNotBlank(moduleCode)) {
+            // 如果指定了模块编码，根模块就是目标模块本身（如果它是根）或者是目标模块的顶级祖先
+            ModuleConfigDO targetModule = allModules.stream()
+                    .filter(m -> m.getModuleCode().equals(moduleCode))
+                    .findFirst()
+                    .orElse(null);
+
+            if (targetModule != null) {
+                // 找到目标模块的顶级祖先
+                ModuleConfigDO rootAncestor = findRootAncestor(targetModule, allModules);
+                rootModules = Collections.singletonList(rootAncestor);
+            } else {
+                rootModules = Collections.emptyList();
+            }
+        } else {
+            // 没有指定模块编码，返回所有根模块
+            rootModules = allModules.stream()
+                    .filter(module -> module.getParentId() == null)
+                    .sorted(Comparator.comparing(ModuleConfigDO::getOrderNo))
+                    .collect(Collectors.toList());
+        }
+
+        // 构建包含字段的模块树
+        return buildModuleTreeWithFields(rootModules, groupedByParent, fieldMap);
+    }
+
+    /**
+     * 获取模块及其所有子模块的编码
+     */
+    private Set<String> getAllModuleCodes(ModuleConfigDO module) {
+        Set<String> codes = new HashSet<>();
+        codes.add(module.getModuleCode());
+
+        // 查询子模块
+        List<ModuleConfigDO> children = moduleConfigMapper.selectByParentId(module.getId());
+        for (ModuleConfigDO child : children) {
+            codes.addAll(getAllModuleCodes(child));
+        }
+
+        return codes;
+    }
+
+    /**
+     * 查找模块的顶级祖先
+     */
+    private ModuleConfigDO findRootAncestor(ModuleConfigDO module, List<ModuleConfigDO> allModules) {
+        if (module.getParentId() == null) {
+            return module;
+        }
+
+        // 查找父模块
+        ModuleConfigDO parent = allModules.stream()
+                .filter(m -> m.getId().equals(module.getParentId()))
+                .findFirst()
+                .orElse(null);
+
+        if (parent == null) {
+            return module;
+        }
+
+        return findRootAncestor(parent, allModules);
+    }
+
+    @Override
     public List<ModuleConfigDO> getBaseModules() {
         // 查询所有一级模块（parent_id为null）且启用的
         return moduleConfigMapper.selectList(

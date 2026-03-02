@@ -36,9 +36,12 @@ export interface FieldConfigVO {
 }
 
 // 获取完整的模块树（包含字段）
-export const getModuleTree = () => {
+export const getModuleTree = (moduleCode?: string) => {
   return request.get<ModuleTreeVO[]>({
-    url: '/queueDB/module-config/tree-with-fields'
+    url: '/queueDB/module-config/tree-with-fields',
+    params: {
+      moduleCode: moduleCode
+    }
   })
 }
 

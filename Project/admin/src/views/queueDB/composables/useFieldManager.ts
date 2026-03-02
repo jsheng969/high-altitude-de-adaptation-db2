@@ -12,35 +12,74 @@ export function useFieldManager(queryParams: any) {
   const displayedFields = ref<Record<string, TableField[]>>({})
   const moduleTree = ref<ModuleTreeVO[]>([])
   const loading = ref(false)
+  // 主表字段（基础字段）
+  const mainTableFields = ref<TableField[]>([])
 
-// 加载模块树
-const loadModuleTree = async () => {
-  loading.value = true
-  try {
-    const response = await getModuleTree()
-    moduleTree.value = response || []
-    
-    console.log('=== 完整的模块树结构 ===')
-    moduleTree.value.forEach(module => {
-      console.log(`模块 ${module.moduleName}:`, {
-        id: module.id,
-        moduleCode: module.moduleCode,
-        tableName: module.tableName,
-        isLeaf: module.isLeaf,
-        children: module.children,
-        fields: module.fields,
-        childrenCount: module.children?.length,
-        fieldsCount: module.fields?.length
+  // 加载模块树
+  const loadModuleTree = async () => {
+    loading.value = true
+    try {
+      const response = await getModuleTree("prospective")
+      moduleTree.value = response || []
+      
+      console.log('=== 完整的模块树结构 ===')
+      moduleTree.value.forEach(module => {
+        console.log(`模块 ${module.moduleName} (ID: ${module.id}):`, {
+          id: module.id,
+          moduleCode: module.moduleCode,
+          tableName: module.tableName,
+          isLeaf: module.isLeaf,
+          children: module.children?.map(c => c.moduleName),
+          fields: module.fields?.map(f => ({ 
+            label: f.fieldLabel, 
+            code: f.fieldCode,
+            status: f.status 
+          })),
+          childrenCount: module.children?.length,
+          fieldsCount: module.fields?.length
+        })
       })
-    })
-    
-  } catch (error) {
-    console.error('加载模块树失败:', error)
-    moduleTree.value = []
-  } finally {
-    loading.value = false
+      
+      // 获取主表字段（ID为176的模块，即前瞻性队列数据库）
+      const mainModule = moduleTree.value.find(m => m.id === 176)
+      if (mainModule && mainModule.fields) {
+        console.log('找到主模块，所有字段:', mainModule.fields.map(f => ({ 
+          label: f.fieldLabel, 
+          code: f.fieldCode,
+          status: f.status 
+        })))
+        
+        mainTableFields.value = mainModule.fields
+          .filter(field => {
+            // 过滤条件：状态为1
+            if (field.status !== 1) {
+              console.log(`字段 ${field.fieldLabel} 状态不为1，跳过`)
+              return false
+            }
+            
+            // 记录所有通过的字段
+            console.log(`字段 ${field.fieldLabel} 通过过滤`)
+            return true
+          })
+          .map(field => ({
+            label: field.fieldLabel,
+            prop: field.fieldCode, // 主表字段直接使用fieldCode
+            moduleCode: mainModule.moduleCode,
+            tableName: mainModule.tableName
+          }))
+        
+        console.log('主表字段最终结果:', mainTableFields.value)
+      } else {
+        console.log('未找到主模块或主模块没有字段')
+      }
+      
+    } catch (error) {
+      console.error('加载模块树失败:', error)
+      moduleTree.value = []
+    } finally {
+      loading.value = false
+    }
   }
-}
 
   // 获取基础信息模块（一级模块）
   const baseModules = computed(() => {
@@ -54,157 +93,138 @@ const loadModuleTree = async () => {
     return baseModules.value.find(module => module.moduleName === moduleName)
   }
 
-  // 构建多级表头结构
-const buildTableFields = (module: ModuleTreeVO): Record<string, any> => {
-  const result: Record<string, any> = {}
+  // 递归查找模块
+  const findModuleByName = (moduleName: string, modules: ModuleTreeVO[]): ModuleTreeVO | null => {
+    for (const module of modules) {
+      if (module.moduleName === moduleName) {
+        return module
+      }
+      if (module.children) {
+        const found = findModuleByName(moduleName, module.children)
+        if (found) return found
+      }
+    }
+    return null
+  }
 
-  console.log(`构建模块 ${module.moduleName} 的表头:`, {
-    id: module.id,
-    moduleCode: module.moduleCode,
-    tableName: module.tableName,
-    isLeaf: module.isLeaf,
-    children: module.children,
-    fields: module.fields,
-    childrenCount: module.children?.length,
-    fieldsCount: module.fields?.length
-  })
-
-  // 检查是否有有效的子模块（children 存在且是数组）
-  const hasValidChildren = Array.isArray(module.children) && module.children.length > 0
-  
-  // 如果模块有有效的子模块，构建多级表头（如吸烟情况）
-  if (hasValidChildren) {
-    console.log(`模块 ${module.moduleName} 有子模块，构建多级表头`)
+  // 获取模块的字段
+  const getModuleFields = (module: ModuleTreeVO): TableField[] => {
+    const fields: TableField[] = []
     
-    result[module.moduleName] = {}
-    let hasValidChildFields = false
+    console.log(`获取模块 ${module.moduleName} 的字段:`, {
+      id: module.id,
+      isLeaf: module.isLeaf,
+      hasFields: module.fields?.length,
+      hasChildren: module.children?.length,
+      tableName: module.tableName
+    })
     
-    module.children.forEach((child: ModuleTreeVO) => {
-      console.log(`处理子模块 ${child.moduleName}:`, {
-        isLeaf: child.isLeaf,
-        tableName: child.tableName,
-        hasFields: child.fields?.length
-      })
+    // 如果是叶子节点且有字段，直接使用字段
+    if (module.isLeaf === 1 && module.fields && module.fields.length > 0) {
+      console.log(`模块 ${module.moduleName} 的原始字段:`, module.fields.map(f => ({ 
+        label: f.fieldLabel, 
+        code: f.fieldCode,
+        status: f.status 
+      })))
       
-      // 子模块是叶子节点且有字段
-      if (child.isLeaf === 1 && child.fields && child.fields.length > 0) {
-        const childFields = child.fields
-          .filter(field => {
-        // 过滤条件：状态为1且不以name结尾
-        if (field.status !== 1) return false
-        
-        // 剔除以name结尾的字段
-        const fieldCode = field.fieldCode || ''
-        return !fieldCode.toLowerCase().endsWith('name')
-      })
-          .map(field => {
-            const prop = child.tableName ? `${child.tableName}.${field.fieldCode}` : field.fieldCode
-            console.log(`字段 ${field.fieldLabel} -> ${prop}`)
-            return {
-              label: field.fieldLabel,
-              prop: prop,
-              moduleCode: child.moduleCode,
-              tableName: child.tableName
-            }
+      module.fields
+        .filter(field => {
+          // 过滤条件：状态为1
+          if (field.status !== 1) {
+            console.log(`字段 ${field.fieldLabel} 状态不为1，跳过`)
+            return false
+          }
+          
+          console.log(`字段 ${field.fieldLabel} 通过过滤`)
+          return true
+        })
+        .forEach(field => {
+          const prop = module.tableName ? `${module.tableName}.${field.fieldCode}` : field.fieldCode
+          fields.push({
+            label: field.fieldLabel,
+            prop: prop,
+            moduleCode: module.moduleCode,
+            tableName: module.tableName
           })
-        
-        if (childFields.length > 0) {
-          result[module.moduleName][child.moduleName] = childFields
-          hasValidChildFields = true
-        }
-      } else {
-        console.log(`子模块 ${child.moduleName} 没有字段或不是叶子节点，跳过`)
-      }
-    })
-  } 
-  // 如果是叶子节点且有字段，直接使用字段作为一级表头下的二级表头（如超声）
-  else if (module.isLeaf === 1 && module.fields && module.fields.length > 0) {
-    console.log(`模块 ${module.moduleName} 是叶子节点，构建一级表头 + 二级表头`)
-    
-    const fields = module.fields
-      .filter(field => field.status === 1)
-      .map(field => {
-        const prop = module.tableName ? `${module.tableName}.${field.fieldCode}` : field.fieldCode
-        console.log(`字段 ${field.fieldLabel} -> ${prop}`)
-        return {
-          label: field.fieldLabel,
-          prop: prop,
-          moduleCode: module.moduleCode,
-          tableName: module.tableName
-        }
-      })
-    
-    if (fields.length > 0) {
-      // 一级表头：模块名称
-      // 二级表头：直接显示字段
-      result[module.moduleName] = fields
+        })
+    } else {
+      console.log(`模块 ${module.moduleName} 不是叶子节点或没有字段`)
     }
-  }
-  // 既不是叶子节点也没有子模块，但是有字段（特殊情况）
-  else if (module.fields && module.fields.length > 0) {
-    console.log(`模块 ${module.moduleName} 既不是叶子节点也没有子模块，但直接有字段`)
     
-    const fields = module.fields
-      .filter(field => {
-        // 过滤条件：状态为1且不以name结尾
-        if (field.status !== 1) return false
-        
-        // 剔除以name结尾的字段
-        const fieldCode = field.fieldCode || ''
-        return !fieldCode.toLowerCase().endsWith('name')
-      })
-      .map(field => ({
-        label: field.fieldLabel,
-        prop: module.tableName ? `${module.tableName}.${field.fieldCode}` : field.fieldCode,
-        moduleCode: module.moduleCode,
-        tableName: module.tableName
-      }))
-    
-    if (fields.length > 0) {
-      result[module.moduleName] = fields
-    }
-  } else {
-    console.log(`模块 ${module.moduleName} 没有任何字段，跳过`)
+    console.log(`模块 ${module.moduleName} 最终字段:`, fields)
+    return fields
   }
 
-  console.log(`模块 ${module.moduleName} 最终结果:`, result)
-  return result
-}
-
-const updateDisplayedFields = () => {
-  const groupedFields: Record<string, any> = {}
-  
-  console.log('=== 开始更新显示字段 ===')
-  console.log('查询参数 baseInfo:', queryParams.baseInfo)
-  console.log('当前模块树:', moduleTree.value)
-  console.log('基础模块:', baseModules.value.map(m => ({name: m.moduleName, isLeaf: m.isLeaf, hasChildren: m.children?.length})))
-  
-  // 基础信息 - 动态从模块树获取
-  if (queryParams.baseInfo && queryParams.baseInfo.length > 0) {
-    queryParams.baseInfo.forEach((moduleName: string) => {
-      console.log(`=== 处理模块: ${moduleName} ===`)
-      const module = getModuleByName(moduleName)
-      console.log(`找到模块:`, module ? {
-        name: module.moduleName,
-        isLeaf: module.isLeaf,
-        hasChildren: module.children?.length,
-        hasFields: module.fields?.length
-      } : '未找到')
+  const updateDisplayedFields = () => {
+    const groupedFields: Record<string, any> = {}
+    
+    console.log('=== 开始更新显示字段 ===')
+    console.log('查询参数 baseInfo:', queryParams.baseInfo)
+    console.log('当前模块树:', moduleTree.value)
+    console.log('主表字段:', mainTableFields.value)
+    
+    // 先添加主表字段（作为第一列）
+    if (mainTableFields.value.length > 0) {
+      groupedFields['基础信息'] = mainTableFields.value
+      console.log('添加主表字段到基础信息:', mainTableFields.value)
+    }
+    
+    // 基础信息 - 动态从模块树获取
+    if (queryParams.baseInfo && queryParams.baseInfo.length > 0) {
+      queryParams.baseInfo.forEach((moduleName: string) => {
+        console.log(`=== 处理模块: ${moduleName} ===`)
+        
+        // 查找模块（可能是一级模块或二级模块）
+        let targetModule = null
+        
+        // 先在一级模块中查找
+        const baseModule = baseModules.value.find(m => m.moduleName === moduleName)
+        
+        if (baseModule) {
+          // 如果是一级模块（如"前瞻性队列数据库"），获取其直接子模块（二级模块）
+          console.log(`找到一级模块: ${baseModule.moduleName}，获取其子模块`)
+          
+          if (baseModule.children && baseModule.children.length > 0) {
+            // 遍历所有子模块（二级模块）
+            baseModule.children.forEach((childModule: ModuleTreeVO) => {
+              if (childModule.status === 1) {
+                console.log(`处理子模块: ${childModule.moduleName}`)
+                
+                // 直接使用子模块名称作为表头
+                const fields = getModuleFields(childModule)
+                if (fields.length > 0) {
+                  groupedFields[childModule.moduleName] = fields
+                  console.log(`为模块 ${childModule.moduleName} 添加字段:`, fields)
+                } else {
+                  console.log(`模块 ${childModule.moduleName} 没有字段，跳过`)
+                }
+              }
+            })
+          } else {
+            console.log(`一级模块 ${baseModule.moduleName} 没有子模块`)
+          }
+        } else {
+          // 如果直接是二级模块名称（如"检查结果"）
+          targetModule = findModuleByName(moduleName, moduleTree.value)
+          if (targetModule) {
+            console.log(`找到二级模块: ${targetModule.moduleName}`)
+            const fields = getModuleFields(targetModule)
+            if (fields.length > 0) {
+              groupedFields[targetModule.moduleName] = fields
+              console.log(`为模块 ${targetModule.moduleName} 添加字段:`, fields)
+            }
+          } else {
+            console.log(`未找到模块: ${moduleName}`)
+          }
+        }
+      })
       
-      if (module) {
-        const moduleFields = buildTableFields(module)
-        console.log(`模块 ${moduleName} 生成的表头结构:`, moduleFields)
-        // 合并到 groupedFields
-        Object.assign(groupedFields, moduleFields)
-      }
-    })
-    
-    console.log('最终基础信息字段结构:', groupedFields)
-  }
+      console.log('最终基础信息字段结构:', groupedFields)
+    }
 
-  displayedFields.value = groupedFields
-  console.log('=== 最终显示的字段结构 ===', displayedFields.value)
-}
+    displayedFields.value = groupedFields
+    console.log('=== 最终显示的字段结构 ===', displayedFields.value)
+  }
 
   const fieldGroups = computed(() => {
     return convertToGroupedTree(displayedFields.value)
@@ -230,6 +250,7 @@ const updateDisplayedFields = () => {
     updateDisplayedFields,
     fieldGroups,
     baseModules,
+    mainTableFields,
     loadModuleTree,
     loading
   }

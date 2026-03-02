@@ -18,13 +18,13 @@
         width="120"
         class-name="level-1-header"
       /> -->
-      <el-table-column
+      <!-- <el-table-column
         label="姓名"
         align="center"
         key="name"
         prop="name"
         class-name="level-1-header"
-      />
+      /> -->
 
       <!-- 动态字段：用规范化后的 groups 渲染 -->
       <template v-for="group in groups" :key="group.groupKey">

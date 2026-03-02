@@ -75,6 +75,8 @@ public interface ModuleConfigService {
      */
     List<ModuleConfigRespVO> getModuleTreeWithFields();
 
+    List<ModuleConfigRespVO> getModuleTreeWithFields(String moduleCode);
+
     /**
      * 获取基础信息模块（一级模块）
      */
