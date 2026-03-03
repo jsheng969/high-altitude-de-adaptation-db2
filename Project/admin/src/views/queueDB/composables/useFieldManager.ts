@@ -8,7 +8,23 @@ interface TableField {
   tableName?: string
 }
 
-export function useFieldManager(queryParams: any) {
+interface ModuleTreeVO {
+  id: number
+  moduleName: string
+  moduleCode: string
+  tableName: string
+  isLeaf: number
+  status: number
+  parentId: number | null
+  children?: ModuleTreeVO[]
+  fields?: Array<{
+    fieldLabel: string
+    fieldCode: string
+    status: number
+  }>
+}
+
+export function useFieldManager(queryParams: any, moduleType: string) {
   const displayedFields = ref<Record<string, TableField[]>>({})
   const moduleTree = ref<ModuleTreeVO[]>([])
   const loading = ref(false)
@@ -19,10 +35,10 @@ export function useFieldManager(queryParams: any) {
   const loadModuleTree = async () => {
     loading.value = true
     try {
-      const response = await getModuleTree("prospective")
+      const response = await getModuleTree(moduleType)
       moduleTree.value = response || []
       
-      console.log('=== 完整的模块树结构 ===')
+      console.log(`=== 完整的模块树结构 (${moduleType}) ===`)
       moduleTree.value.forEach(module => {
         console.log(`模块 ${module.moduleName} (ID: ${module.id}):`, {
           id: module.id,
@@ -40,8 +56,8 @@ export function useFieldManager(queryParams: any) {
         })
       })
       
-      // 获取主表字段（ID为176的模块，即前瞻性队列数据库）
-      const mainModule = moduleTree.value.find(m => m.id === 176)
+      // 获取主表字段（假设主模块是第一个模块，或者需要根据实际情况调整）
+      const mainModule = moduleTree.value[0] // 或者根据特定规则查找主模块
       if (mainModule && mainModule.fields) {
         console.log('找到主模块，所有字段:', mainModule.fields.map(f => ({ 
           label: f.fieldLabel, 
@@ -181,7 +197,7 @@ export function useFieldManager(queryParams: any) {
         const baseModule = baseModules.value.find(m => m.moduleName === moduleName)
         
         if (baseModule) {
-          // 如果是一级模块（如"前瞻性队列数据库"），获取其直接子模块（二级模块）
+          // 如果是一级模块，获取其直接子模块（二级模块）
           console.log(`找到一级模块: ${baseModule.moduleName}，获取其子模块`)
           
           if (baseModule.children && baseModule.children.length > 0) {
@@ -204,7 +220,7 @@ export function useFieldManager(queryParams: any) {
             console.log(`一级模块 ${baseModule.moduleName} 没有子模块`)
           }
         } else {
-          // 如果直接是二级模块名称（如"检查结果"）
+          // 如果直接是二级模块名称
           targetModule = findModuleByName(moduleName, moduleTree.value)
           if (targetModule) {
             console.log(`找到二级模块: ${targetModule.moduleName}`)

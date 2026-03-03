@@ -79,6 +79,9 @@ const queryParams = reactive({
   advancedConditions: []
 })
 
+// 模块类型 - 从路由或配置中获取
+const moduleType = 'prospective' // 这里可以根据需要动态设置
+
 // 组合式函数
 const { 
   displayedFields, 
@@ -87,7 +90,7 @@ const {
   baseModules, 
   loadModuleTree,
   loading: fieldLoading 
-} = useFieldManager(queryParams)
+} = useFieldManager(queryParams, moduleType)
 
 const { conditions, handleFieldSelect } = useConditionManager()
 const { handleExport, exportLoading } = useExportHandler(queryParams)

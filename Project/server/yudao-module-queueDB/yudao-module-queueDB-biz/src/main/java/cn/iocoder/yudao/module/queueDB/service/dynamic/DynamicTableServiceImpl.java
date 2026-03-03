@@ -1697,19 +1697,23 @@ public class DynamicTableServiceImpl implements DynamicTableService {
         DynamicTableQueryRespDTO resp = new DynamicTableQueryRespDTO();
 
         try {
-            // 1. 获取主表模块（parent_id为null的模块）- 使用selectOne，但如果有多条会报错
+            // 1. 获取主表模块编码（从前端传入）
+            String mainModuleCode = reqDTO.getMainModuleCode();
+            if (StringUtils.isBlank(mainModuleCode)) {
+                throw new RuntimeException("请指定主表模块编码");
+            }
+
+            // 2. 查询主表模块
             ModuleConfigDO mainModule = moduleConfigMapper.selectOne(
                     new LambdaQueryWrapperX<ModuleConfigDO>()
-                            .isNull(ModuleConfigDO::getParentId)
-                            .eq(ModuleConfigDO::getModuleCode, "prospective")
-                            .last("LIMIT 1") // 添加LIMIT 1确保只返回一条
+                            .eq(ModuleConfigDO::getModuleCode, mainModuleCode)
+                            .eq(ModuleConfigDO::getStatus, 1)
             );
 
             if (mainModule == null) {
-                throw new RuntimeException("未找到主表模块配置");
+                throw new RuntimeException("未找到主表模块配置: " + mainModuleCode);
             }
 
-            String mainModuleCode = mainModule.getModuleCode();
             String mainTableName = mainModule.getTableName();
             String mainAlias = "main";
             String joinField = mainModule.getJoinField() != null ? mainModule.getJoinField() : "tjh";
@@ -1717,23 +1721,23 @@ public class DynamicTableServiceImpl implements DynamicTableService {
             log.info("主表信息: code={}, table={}, joinField={}",
                     mainModuleCode, mainTableName, joinField);
 
-            // 2. 获取所有选中的子模块
+            // 3. 获取所有选中的子模块
             List<String> selectedModules = reqDTO.getSelectedModules();
             if (selectedModules == null || selectedModules.isEmpty()) {
                 throw new RuntimeException("请选择要查询的模块");
             }
 
-            // 3. 构建查询SQL
+            // 4. 构建查询SQL
             String sql = buildDynamicQuerySql(mainModule, selectedModules, reqDTO);
             String countSql = buildCountSql(sql);
 
             log.debug("执行查询SQL: {}", sql);
             log.debug("计数SQL: {}", countSql);
 
-            // 4. 执行查询获取数据
+            // 5. 执行查询获取数据
             List<Map<String, Object>> dataList = jdbcTemplate.queryForList(sql);
 
-            // 5. 获取总记录数
+            // 6. 获取总记录数
             Long total = 0L;
             try {
                 Map<String, Object> countResult = jdbcTemplate.queryForMap(countSql);
@@ -1742,13 +1746,13 @@ public class DynamicTableServiceImpl implements DynamicTableService {
                 log.error("获取总记录数失败", e);
             }
 
-            // 6. 处理查询结果，将字段名转换为前端需要的格式
+            // 7. 处理查询结果，将字段名转换为前端需要的格式
             List<Map<String, Object>> processedList = processQueryResult(dataList, selectedModules);
 
-            // 7. 获取字段显示配置
+            // 8. 获取字段显示配置
             List<FieldDisplayVO> displayedFields = getDisplayFieldsForModules(mainModule, selectedModules);
 
-            // 8. 设置返回结果
+            // 9. 设置返回结果
             resp.setList(processedList);
             resp.setTotal(total);
             resp.setDisplayedFields(displayedFields);

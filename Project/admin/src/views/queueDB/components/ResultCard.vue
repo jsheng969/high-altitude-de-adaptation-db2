@@ -86,35 +86,88 @@ const localDisplayedFields = ref({})
 // 执行查询
 const executeQuery = async () => {
   if (!props.queryParams.baseInfo || props.queryParams.baseInfo.length === 0) {
+    console.log('没有选择基础模块，不执行查询')
+    localList.value = []
+    localTotal.value = 0
     return
   }
   
+  console.log('=== 开始执行查询 ===')
+  console.log('查询参数:', JSON.stringify(props.queryParams, null, 2))
+  console.log('当前页码:', currentPage.value)
+  console.log('每页大小:', pageSize.value)
+  
   try {
+    // 构建查询参数
     const queryData = {
+      // 主表模块编码（固定为prospective，或者可以从配置中获取）
+      mainModuleCode: 'prospective',
+      
+      // 选中的模块（子模块名称列表）
       selectedModules: props.queryParams.baseInfo,
-      conditions: null,
-      // conditions: props.queryParams,
+      
+      // 分页参数
       pageNo: currentPage.value,
-      pageSize: pageSize.value
+      pageSize: pageSize.value,
+      
+      // 过滤条件
+      conditions: props.queryParams.advancedConditions && props.queryParams.advancedConditions.length > 0 
+        ? { conditions: props.queryParams.advancedConditions }
+        : {},
+      
+      // 其他筛选条件
+      group: props.queryParams.group,
+      type: props.queryParams.type,
+      year: props.queryParams.year,
+      vip: props.queryParams.vip,
+      surveyOrExam: props.queryParams.surveyOrExam,
+      groupType: props.queryParams.groupType,
+      timePoint: props.queryParams.timePoint,
+      name: props.queryParams.name,
+      mobile: props.queryParams.mobile,
+      status: props.queryParams.status,
+      deptId: props.queryParams.deptId,
+      createTime: props.queryParams.createTime
     }
     
-    const data = await queryDynamicTables(queryData)
-    localList.value = data.list || []
-    localTotal.value = data.total || 0
-    console.log(localList.value);
+    console.log('发送的查询数据:', JSON.stringify(queryData, null, 2))
     
-    emit('update:list', data.list)
-    emit('update:total', data.total)
+    const data = await queryDynamicTables(queryData)
+    console.log('API返回的原始数据:', JSON.stringify(data, null, 2))
+    
+    // 处理返回的数据
+    if (data && data.list) {
+      localList.value = data.list || []
+      localTotal.value = data.total || 0
+      
+      console.log('处理后的列表数据:', localList.value)
+      console.log('第一条数据示例:', localList.value[0])
+      
+      emit('update:list', localList.value)
+      emit('update:total', localTotal.value)
+    } else {
+      console.log('API返回的数据格式异常:', data)
+      localList.value = []
+      localTotal.value = 0
+    }
     
     // 转换字段格式供前端显示
-    const transformedFields = transformFieldsForDisplay(data.displayedFields)
-    localDisplayedFields.value = transformedFields
-    console.log('Transformed Fields:', transformedFields);
-    
-    emit('update:displayed-fields', transformedFields)
+    if (data && data.displayedFields) {
+      const transformedFields = transformFieldsForDisplay(data.displayedFields)
+      localDisplayedFields.value = transformedFields
+      console.log('转换后的字段结构:', JSON.stringify(transformedFields, null, 2))
+      
+      emit('update:displayed-fields', transformedFields)
+    } else if (props.displayedFields) {
+      // 如果没有返回字段结构，使用传入的
+      localDisplayedFields.value = props.displayedFields
+      console.log('使用传入的字段结构:', JSON.stringify(props.displayedFields, null, 2))
+    }
     
   } catch (error) {
     console.error('查询失败:', error)
+    localList.value = []
+    localTotal.value = 0
   }
 }
 
