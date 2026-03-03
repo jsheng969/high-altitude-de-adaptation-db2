@@ -1792,14 +1792,14 @@ public class DynamicTableServiceImpl implements DynamicTableService {
         }
 
         // 添加子表字段
-        for (String moduleName : selectedModules) {
-            if (moduleName.equals(mainModule.getModuleName())) {
+        for (String moduleCode  : selectedModules) {
+            if (moduleCode.equals(mainModule.getModuleCode())) {
                 continue; // 跳过主表
             }
 
-            ModuleConfigDO subModule = getModuleByName(moduleName);
+            ModuleConfigDO subModule = getModuleByCode(moduleCode);
             if (subModule == null || subModule.getTableName() == null) {
-                log.warn("未找到子模块配置或表名为空: {}", moduleName);
+                log.warn("未找到子模块配置或表名为空: {}", moduleCode);
                 continue;
             }
 
@@ -1840,13 +1840,15 @@ public class DynamicTableServiceImpl implements DynamicTableService {
         sql.append(" FROM ").append(mainTable).append(" ").append(mainAlias);
 
         // 3. 构建LEFT JOIN子句
-        for (String moduleName : selectedModules) {
-            if (moduleName.equals(mainModule.getModuleName())) {
+        for (String moduleCode : selectedModules) { // 注意：这里应该使用moduleCode，而不是moduleName
+            if (moduleCode.equals(mainModule.getModuleCode())) {
                 continue;
             }
 
-            ModuleConfigDO subModule = getModuleByName(moduleName);
+            // 使用moduleCode查询
+            ModuleConfigDO subModule = getModuleByCode(moduleCode);
             if (subModule == null || subModule.getTableName() == null) {
+                log.warn("未找到子模块配置或表名为空: {}", moduleCode);
                 continue;
             }
 
@@ -1896,21 +1898,19 @@ public class DynamicTableServiceImpl implements DynamicTableService {
     private String buildSelectFields(ModuleConfigDO mainModule, List<String> selectedModules, String mainAlias) {
         List<String> fields = new ArrayList<>();
 
-        // 1. 添加主表的所有字段（排除关联字段）
+        // 1. 添加主表的所有字段
         List<FieldConfigDO> mainFields = fieldConfigMapper.selectListByModuleCode(mainModule.getModuleCode());
         for (FieldConfigDO field : mainFields) {
-//            if (!"tjh".equals(field.getFieldCode())) { // 排除关联字段，可根据需要调整
-                fields.add(mainAlias + "." + field.getFieldCode() + " AS " + field.getFieldCode());
-//            }
+            fields.add(mainAlias + "." + field.getFieldCode() + " AS " + field.getFieldCode());
         }
 
         // 2. 添加子表字段
         for (String moduleCode : selectedModules) {
             if (moduleCode.equals(mainModule.getModuleCode())) {
-                continue; // 跳过主表，已经添加过了
+                continue; // 跳过主表
             }
 
-            ModuleConfigDO subModule = getModuleByCode(moduleCode);
+            ModuleConfigDO subModule = getModuleByCode(moduleCode); // 使用moduleCode查询
             if (subModule == null) {
                 log.warn("未找到子模块配置: {}", moduleCode);
                 continue;
@@ -1934,7 +1934,7 @@ public class DynamicTableServiceImpl implements DynamicTableService {
         StringBuilder joins = new StringBuilder();
 
         for (String moduleCode : selectedModules) {
-            ModuleConfigDO module = getModuleByCode(moduleCode);
+            ModuleConfigDO module = getModuleByCode(moduleCode); // 使用moduleCode查询
             if (module == null) {
                 continue;
             }
@@ -2084,7 +2084,7 @@ public class DynamicTableServiceImpl implements DynamicTableService {
                     fieldInfo.setFieldLabel(field.getFieldLabel());
                     fieldInfo.setFieldType(field.getFieldType());
                     fieldInfo.setTableName(mainModule.getTableName());
-                    fieldInfo.setProp("main_" + field.getFieldCode()); // 使用main_前缀
+                    fieldInfo.setProp(field.getFieldCode()); // 主表字段直接使用字段名
                     return fieldInfo;
                 })
                 .collect(Collectors.toList());
@@ -2093,13 +2093,14 @@ public class DynamicTableServiceImpl implements DynamicTableService {
         result.add(mainDisplayVO);
 
         // 2. 添加选中的子模块字段
-        for (String moduleName : selectedModules) {
-            if (moduleName.equals(mainModule.getModuleName())) {
+        for (String moduleCode : selectedModules) { // 使用moduleCode
+            if (moduleCode.equals(mainModule.getModuleCode())) {
                 continue;
             }
 
-            ModuleConfigDO subModule = getModuleByName(moduleName);
+            ModuleConfigDO subModule = getModuleByCode(moduleCode); // 使用moduleCode查询
             if (subModule == null) {
+                log.warn("未找到子模块配置: {}", moduleCode);
                 continue;
             }
 
@@ -2107,7 +2108,7 @@ public class DynamicTableServiceImpl implements DynamicTableService {
             List<ModuleConfigDO> subSubModules = getSubModulesByParentId(subModule.getId());
 
             if (subSubModules != null && !subSubModules.isEmpty()) {
-                // 多级表头情况（如吸烟情况 -> 现在吸烟情况、过去吸烟情况）
+                // 多级表头情况
                 for (ModuleConfigDO subSubModule : subSubModules) {
                     FieldDisplayVO subDisplayVO = new FieldDisplayVO();
                     subDisplayVO.setGroupName(subSubModule.getModuleName());
@@ -2121,7 +2122,7 @@ public class DynamicTableServiceImpl implements DynamicTableService {
                                 fieldInfo.setFieldLabel(field.getFieldLabel());
                                 fieldInfo.setFieldType(field.getFieldType());
                                 fieldInfo.setTableName(subSubModule.getTableName());
-                                // 使用子表名_字段名作为prop
+                                // 使用表名_字段名作为prop
                                 fieldInfo.setProp(subSubModule.getTableName() + "_" + field.getFieldCode());
                                 return fieldInfo;
                             })
@@ -2355,6 +2356,29 @@ public class DynamicTableServiceImpl implements DynamicTableService {
             displayVO.setFields(convertToFieldInfo(fields, module.getTableName(), false));
 
             result.add(displayVO);
+        }
+
+        return result;
+    }
+
+    /**
+     * 递归获取所有子模块（包括多级）
+     */
+    private List<ModuleConfigDO> getAllChildModules(Long parentId) {
+        if (parentId == null) {
+            return new ArrayList<>();
+        }
+
+        List<ModuleConfigDO> result = new ArrayList<>();
+        List<ModuleConfigDO> directChildren = moduleConfigMapper.selectList(
+                new LambdaQueryWrapperX<ModuleConfigDO>()
+                        .eq(ModuleConfigDO::getParentId, parentId)
+                        .eq(ModuleConfigDO::getStatus, 1));
+
+        for (ModuleConfigDO child : directChildren) {
+            result.add(child);
+            // 递归获取孙模块
+            result.addAll(getAllChildModules(child.getId()));
         }
 
         return result;

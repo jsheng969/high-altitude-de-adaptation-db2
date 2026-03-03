@@ -29,7 +29,7 @@
     <DataTable
       :list="localList"
       :loading="loading"
-      :displayed-fields="displayedFields"
+      :displayed-fields="localDisplayedFields"
       @header-click="$emit('header-click', $event)"
     />
 
@@ -60,6 +60,10 @@ interface Props {
   queryParams: any
   displayedFields: any
   exportLoading?: boolean
+  // 新增：主表模块编码
+  mainModuleCode: string
+  // 新增：默认选中的模块（可选）
+  defaultSelectedModules?: string[]
 }
 
 interface Emits {
@@ -72,7 +76,15 @@ interface Emits {
   (e: 'update:displayed-fields', fields: any): void
 }
 
-const props = defineProps<Props>()
+const props = withDefaults(defineProps<Props>(), {
+  defaultSelectedModules: () => [],
+  exportLoading: false,
+  list: () => [],
+  total: 0,
+  conditions: () => [],
+  displayedFields: () => ({})
+})
+
 const emit = defineEmits<Emits>()
 
 const currentPage = ref(1)
@@ -85,26 +97,23 @@ const localDisplayedFields = ref({})
 
 // 执行查询
 const executeQuery = async () => {
-  if (!props.queryParams.baseInfo || props.queryParams.baseInfo.length === 0) {
-    console.log('没有选择基础模块，不执行查询')
-    localList.value = []
-    localTotal.value = 0
-    return
-  }
   
   console.log('=== 开始执行查询 ===')
   console.log('查询参数:', JSON.stringify(props.queryParams, null, 2))
   console.log('当前页码:', currentPage.value)
   console.log('每页大小:', pageSize.value)
+  console.log('主表模块编码:', props.mainModuleCode)
   
   try {
     // 构建查询参数
     const queryData = {
-      // 主表模块编码（固定为prospective，或者可以从配置中获取）
-      mainModuleCode: 'prospective',
+      // 主表模块编码（从props传入）
+      mainModuleCode: props.mainModuleCode,
       
       // 选中的模块（子模块名称列表）
-      selectedModules: props.queryParams.baseInfo,
+      selectedModules: props.queryParams.baseInfo && props.queryParams.baseInfo.length > 0
+        ? props.queryParams.baseInfo
+        : (props.defaultSelectedModules.length > 0 ? props.defaultSelectedModules : [props.mainModuleCode]),
       
       // 分页参数
       pageNo: currentPage.value,
@@ -203,10 +212,10 @@ const handleSizeChange = (size: number) => {
 watch(
   () => props.queryParams,
   () => {
-    currentPage.value = 1 // 重置页码
+    currentPage.value = 1
     executeQuery()
   },
-  { deep: true }
+  { deep: true, immediate: true }
 )
 
 // 监听外部queryParams变化同步分页
@@ -221,6 +230,16 @@ watch(
   () => props.queryParams.pageSize,
   (newSize) => {
     pageSize.value = newSize
+  }
+)
+
+// 监听主表模块编码变化
+watch(
+  () => props.mainModuleCode,
+  () => {
+    // 当主表模块编码变化时，重新查询
+    currentPage.value = 1
+    executeQuery()
   }
 )
 </script>

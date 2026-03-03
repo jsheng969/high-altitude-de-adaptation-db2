@@ -60,8 +60,8 @@ const average = ref({})
 const fieldSelectorVisible = ref(false)
 
 // 模块配置 - 可以根据需要动态设置或从路由获取
-const mainModuleCode = ref('prospective') // 主表模块编码
-const defaultSelectedModules = ref(['prospective']) // 默认选中的模块
+const mainModuleCode = ref('plateau_ability') // 主表模块编码
+const defaultSelectedModules = ref(['plateau_ability']) // 默认选中的模块
 
 // 查询参数
 const queryParams = reactive({
@@ -89,7 +89,7 @@ const queryParams = reactive({
 })
 
 // 模块类型 - 从路由或配置中获取
-const moduleType = 'prospective' // 这里可以根据需要动态设置
+const moduleType = 'plateau_ability' // 这里可以根据需要动态设置
 
 // 组合式函数
 const { 

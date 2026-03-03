@@ -7,6 +7,7 @@ export {}
 
 declare module 'vue' {
   export interface GlobalComponents {
+    '副本': typeof import('./../views/queueDB/ProspectiveDataView - 副本.vue')['default']
     AppLinkInput: typeof import('./../components/AppLinkInput/index.vue')['default']
     AppLinkSelectDialog: typeof import('./../components/AppLinkInput/AppLinkSelectDialog.vue')['default']
     Backtop: typeof import('./../components/Backtop/src/Backtop.vue')['default']
@@ -57,6 +58,7 @@ declare module 'vue' {
     ElCollapse: typeof import('element-plus/es')['ElCollapse']
     ElCollapseItem: typeof import('element-plus/es')['ElCollapseItem']
     ElCollapseTransition: typeof import('element-plus/es')['ElCollapseTransition']
+    ElDatePicker: typeof import('element-plus/es')['ElDatePicker']
     ElDescriptions: typeof import('element-plus/es')['ElDescriptions']
     ElDescriptionsItem: typeof import('element-plus/es')['ElDescriptionsItem']
     ElDialog: typeof import('element-plus/es')['ElDialog']
@@ -125,6 +127,7 @@ declare module 'vue' {
     OperateLogV2: typeof import('./../components/OperateLogV2/src/OperateLogV2.vue')['default']
     Pagination: typeof import('./../components/Pagination/index.vue')['default']
     ParallelNode: typeof import('./../components/SimpleProcessDesignerV2/src/nodes/ParallelNode.vue')['default']
+    PlateauAbilityDataView: typeof import('./../views/queueDB/PlateauAbilityDataView.vue')['default']
     ProcessDesigner: typeof import('./../components/bpmnProcessDesigner/package/designer/ProcessDesigner.vue')['default']
     ProcessExpressionDialog: typeof import('./../components/bpmnProcessDesigner/package/penal/task/task-components/ProcessExpressionDialog.vue')['default']
     ProcessListenerDialog: typeof import('./../components/bpmnProcessDesigner/package/penal/listeners/ProcessListenerDialog.vue')['default']
@@ -134,6 +137,7 @@ declare module 'vue' {
     PropertiesPanel: typeof import('./../components/bpmnProcessDesigner/package/penal/PropertiesPanel.vue')['default']
     Qrcode: typeof import('./../components/Qrcode/src/Qrcode.vue')['default']
     ReceiveTask: typeof import('./../components/bpmnProcessDesigner/package/penal/task/task-components/ReceiveTask.vue')['default']
+    RetrospectiveDataView: typeof import('./../views/queueDB/RetrospectiveDataView.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterNode: typeof import('./../components/SimpleProcessDesignerV2/src/nodes/RouterNode.vue')['default']
     RouterNodeConfig: typeof import('./../components/SimpleProcessDesignerV2/src/nodes-config/RouterNodeConfig.vue')['default']

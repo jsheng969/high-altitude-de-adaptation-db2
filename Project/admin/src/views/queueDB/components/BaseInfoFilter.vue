@@ -20,7 +20,7 @@
           <el-checkbox
             v-for="module in childModules"
             :key="module.id"
-            :label="module.moduleName"
+            :label="module.moduleCode"
             :disabled="loading"
             class="module-checkbox"
           >
