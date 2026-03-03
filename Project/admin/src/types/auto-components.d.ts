@@ -108,6 +108,7 @@ declare module 'vue' {
     EndEventNode: typeof import('./../components/SimpleProcessDesignerV2/src/nodes/EndEventNode.vue')['default']
     Error: typeof import('./../components/Error/src/Error.vue')['default']
     ExclusiveNode: typeof import('./../components/SimpleProcessDesignerV2/src/nodes/ExclusiveNode.vue')['default']
+    Export: typeof import('./../api/dynamic/export.ts')['default']
     FlowCondition: typeof import('./../components/bpmnProcessDesigner/package/penal/flow-condition/FlowCondition.vue')['default']
     Form: typeof import('./../components/Form/src/Form.vue')['default']
     Highlight: typeof import('./../components/Highlight/src/Highlight.vue')['default']

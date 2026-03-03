@@ -2,15 +2,14 @@ package cn.iocoder.yudao.module.queueDB.service.dynamic;
 
 import cn.hutool.db.PageResult;
 import cn.iocoder.yudao.framework.common.pojo.CommonResult;
-import cn.iocoder.yudao.module.queueDB.controller.admin.dynamictable.dto.DynamicTableQueryReqDTO;
-import cn.iocoder.yudao.module.queueDB.controller.admin.dynamictable.dto.DynamicTableQueryRespDTO;
-import cn.iocoder.yudao.module.queueDB.controller.admin.dynamictable.dto.ExcelImportReqDTO;
+import cn.iocoder.yudao.module.queueDB.controller.admin.dynamictable.dto.*;
 import cn.iocoder.yudao.module.queueDB.controller.admin.dynamictable.vo.ExcelImportResultVO;
 import cn.iocoder.yudao.module.queueDB.controller.admin.dynamictable.vo.FieldDisplayVO;
 import cn.iocoder.yudao.module.queueDB.controller.admin.dynamictable.vo.ImportHistoryVO;
 import cn.iocoder.yudao.module.queueDB.dal.dataobject.moduleconfig.ModuleConfigDO;
 
 import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import java.util.List;
 
 /**
@@ -83,4 +82,19 @@ public interface DynamicTableService {
      * 根据模块名称获取字段配置
      */
     List<FieldDisplayVO> getModuleFields(List<String> moduleNames);
+
+    /**
+     * 导出模块数据（按导入模板格式）
+     */
+    void exportData(String moduleCode, HttpServletResponse response) throws IOException;
+
+    /**
+     * 按条件导出数据
+     */
+    void exportDataByQuery(DynamicTableExportReqDTO exportReq, HttpServletResponse response) throws IOException;
+
+    /**
+     * 批量导出多个模块数据
+     */
+    void batchExportData(BatchExportReqDTO batchExportReq, HttpServletResponse response) throws IOException;
 }

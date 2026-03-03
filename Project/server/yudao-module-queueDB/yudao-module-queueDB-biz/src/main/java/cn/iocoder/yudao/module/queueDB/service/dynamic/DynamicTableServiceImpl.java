@@ -10,6 +10,10 @@ import cn.iocoder.yudao.module.queueDB.dal.mysql.fieldconfig.FieldConfigMapper;
 import cn.iocoder.yudao.module.queueDB.dal.mysql.moduleconfig.ModuleConfigMapper;
 import cn.iocoder.yudao.module.queueDB.service.dynamic.DynamicTableService;
 import com.alibaba.excel.EasyExcel;
+import com.alibaba.excel.ExcelWriter;
+import com.alibaba.excel.write.metadata.WriteSheet;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.Data;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -26,8 +30,11 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.net.URLEncoder;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 @Slf4j
 @Service
@@ -701,14 +708,39 @@ public class DynamicTableServiceImpl implements DynamicTableService {
             resultVO.setTotalFields(totalFields);
             resultVO.setSuccessFields(successFields);
 
-            // 9. 插入数据
+            // ========== 优化点：批量插入数据 ==========
             int dataStartRow = 6;
             int totalDataRows = 0;
             int successDataRows = 0;
-            int systemErrorCount = 0;  // 记录系统级错误数量
+            int systemErrorCount = 0;
 
             // 用于去重，避免同一关联字段插入多次
             Set<String> processedJoinFieldValues = new HashSet<>();
+
+            // 批量插入的数据容器
+            Map<String, List<Map<String, Object>>> batchDataMap = new HashMap<>();
+            batchDataMap.put(mainTableName, new ArrayList<>());
+
+            // 初始化所有子表的批量数据容器
+            for (String groupCode : groupTableNameMap.keySet()) {
+                String tableName = groupTableNameMap.get(groupCode);
+                batchDataMap.put(tableName, new ArrayList<>());
+            }
+
+            // 预计算字段配置映射，提高查找效率
+            Map<String, FieldConfigDO> mainFieldMap = mainTableFields.stream()
+                    .collect(Collectors.toMap(FieldConfigDO::getFieldCode, f -> f));
+
+            Map<String, Map<String, FieldConfigDO>> groupFieldMapByCode = new HashMap<>();
+            for (Map.Entry<String, List<FieldConfigDO>> entry : groupFieldMap.entrySet()) {
+                String groupCode = entry.getKey();
+                Map<String, FieldConfigDO> fieldMap = entry.getValue().stream()
+                        .collect(Collectors.toMap(FieldConfigDO::getFieldCode, f -> f));
+                groupFieldMapByCode.put(groupCode, fieldMap);
+            }
+
+            // 批量大小配置
+            final int BATCH_SIZE = 500; // 每批插入500条记录
 
             for (int rowIndex = dataStartRow; rowIndex < excelData.size(); rowIndex++) {
                 List<Object> row = excelData.get(rowIndex);
@@ -719,7 +751,9 @@ public class DynamicTableServiceImpl implements DynamicTableService {
 
                 totalDataRows++;
 
+                // 准备主表数据
                 Map<String, Object> mainData = new HashMap<>();
+                // 准备子表数据（每个子表一个Map）
                 Map<String, Map<String, Object>> subTableDataMap = new HashMap<>();
 
                 String joinFieldValue = null;
@@ -741,23 +775,34 @@ public class DynamicTableServiceImpl implements DynamicTableService {
                         if (StringUtils.isNotBlank(joinFieldValue)) {
                             hasValidData = true;
                         }
+                        continue;
                     }
 
-                    FieldConfigDO field = findFieldByCode(mainTableFields, groupFieldMap, groupCode, fieldCode);
-                    if (field != null && value != null && StringUtils.isNotBlank(value.toString())) {
-                        Object convertedValue = convertValueByType(field.getFieldType(), value);
-
-                        if (StringUtils.isBlank(groupCode)) {
+                    // 根据分组获取字段配置并转换值
+                    if (StringUtils.isBlank(groupCode)) {
+                        // 主表字段
+                        FieldConfigDO field = mainFieldMap.get(fieldCode);
+                        if (field != null && value != null && StringUtils.isNotBlank(value.toString())) {
+                            Object convertedValue = convertValueByType(field.getFieldType(), value);
                             mainData.put(fieldCode, convertedValue);
-                        } else {
-                            subTableDataMap.computeIfAbsent(groupCode, k -> new HashMap<>())
-                                    .put(fieldCode, convertedValue);
+                            hasValidData = true;
                         }
-                        hasValidData = true;
+                    } else {
+                        // 子表字段
+                        Map<String, FieldConfigDO> fieldMap = groupFieldMapByCode.get(groupCode);
+                        if (fieldMap != null) {
+                            FieldConfigDO field = fieldMap.get(fieldCode);
+                            if (field != null && value != null && StringUtils.isNotBlank(value.toString())) {
+                                Object convertedValue = convertValueByType(field.getFieldType(), value);
+                                subTableDataMap.computeIfAbsent(groupCode, k -> new HashMap<>())
+                                        .put(fieldCode, convertedValue);
+                                hasValidData = true;
+                            }
+                        }
                     }
                 }
 
-                // 关联字段不存在或为空，跳过该行数据（业务错误，不是系统错误）
+                // 关联字段不存在或为空，跳过该行数据
                 if (StringUtils.isBlank(joinFieldValue)) {
                     String error = "第" + (rowIndex + 1) + "行数据关联字段 [" + joinField + "] 为空，已跳过";
                     resultVO.addError(error);
@@ -765,7 +810,7 @@ public class DynamicTableServiceImpl implements DynamicTableService {
                     continue;
                 }
 
-                // 检查关联字段是否重复（业务错误，不是系统错误）
+                // 检查关联字段是否重复
                 if (processedJoinFieldValues.contains(joinFieldValue)) {
                     String error = "第" + (rowIndex + 1) + "行数据关联字段 [" + joinField + "] 值重复: " + joinFieldValue + "，已跳过";
                     resultVO.addError(error);
@@ -773,8 +818,8 @@ public class DynamicTableServiceImpl implements DynamicTableService {
                     continue;
                 }
 
-                // 检查是否有有效数据（业务错误，不是系统错误）
-                if (!hasValidData) {
+                // 检查是否有有效数据
+                if (!hasValidData && !mainData.isEmpty() && !subTableDataMap.isEmpty()) {
                     String error = "第" + (rowIndex + 1) + "行数据没有有效数据，已跳过";
                     resultVO.addError(error);
                     log.warn(error);
@@ -782,33 +827,55 @@ public class DynamicTableServiceImpl implements DynamicTableService {
                 }
 
                 try {
-                    // 插入主表数据
+                    // 准备批量插入数据
                     if (!mainData.isEmpty() || joinFieldValue != null) {
-                        mainData.put(joinField, joinFieldValue);
-                        insertIntoTable(mainTableName, mainData);
+                        Map<String, Object> mainRowData = new HashMap<>(mainData);
+                        mainRowData.put(joinField, joinFieldValue);
+                        batchDataMap.get(mainTableName).add(mainRowData);
                     }
 
-                    // 插入子表数据
+                    // 准备子表批量插入数据
                     for (Map.Entry<String, Map<String, Object>> entry : subTableDataMap.entrySet()) {
                         String groupCode = entry.getKey();
                         Map<String, Object> subData = entry.getValue();
                         String tableName = groupTableNameMap.get(groupCode);
 
                         if (tableName != null && !subData.isEmpty()) {
-                            subData.put(joinField, joinFieldValue);
-                            insertIntoTable(tableName, subData);
+                            Map<String, Object> subRowData = new HashMap<>(subData);
+                            subRowData.put(joinField, joinFieldValue);
+                            batchDataMap.get(tableName).add(subRowData);
                         }
                     }
 
                     // 记录已处理的关联字段值
                     processedJoinFieldValues.add(joinFieldValue);
-                    successDataRows++;
+
+                    // 当达到批量大小时执行批量插入
+                    if (batchDataMap.get(mainTableName).size() >= BATCH_SIZE) {
+                        executeBatchInsertOptimized(batchDataMap);
+                        successDataRows += batchDataMap.get(mainTableName).size();
+
+                        // 清空批量数据
+                        for (String tableName : batchDataMap.keySet()) {
+                            batchDataMap.get(tableName).clear();
+                        }
+                    }
 
                 } catch (Exception e) {
-                    // 数据库插入异常，属于系统级错误
-                    String error = "第" + (rowIndex + 1) + "行数据插入失败: " + e.getMessage();
+                    String error = "第" + (rowIndex + 1) + "行数据准备失败: " + e.getMessage();
                     resultVO.addError(error);
                     log.error(error, e);
+                    systemErrorCount++;
+                }
+            }
+
+            // 执行剩余数据的批量插入
+            if (!batchDataMap.get(mainTableName).isEmpty()) {
+                try {
+                    executeBatchInsertOptimized(batchDataMap);
+                    successDataRows += batchDataMap.get(mainTableName).size();
+                } catch (Exception e) {
+                    log.error("批量插入剩余数据失败", e);
                     systemErrorCount++;
                 }
             }
@@ -822,26 +889,18 @@ public class DynamicTableServiceImpl implements DynamicTableService {
             long costTime = System.currentTimeMillis() - startTime;
             resultVO.setCostTime(costTime);
 
-            // ===== 关键修改：根据实际情况设置 success 状态 =====
-
-            // 1. 如果有系统级错误，设置为失败
+            // 设置返回状态
             if (systemErrorCount > 0) {
                 resultVO.setSuccess(false);
                 resultVO.setMessage(String.format("导入失败：发生%d个系统错误，请查看详细错误信息", systemErrorCount));
-            }
-            // 2. 如果一条数据都没成功，但有数据行，也设置为失败
-            else if (successDataRows == 0 && totalDataRows > 0) {
+            } else if (successDataRows == 0 && totalDataRows > 0) {
                 resultVO.setSuccess(false);
                 resultVO.setMessage(String.format("导入失败：共处理%d行数据，但全部失败。请检查数据格式。", totalDataRows));
-            }
-            // 3. 部分成功或全部成功，都设置为成功
-            else if (successDataRows < totalDataRows) {
+            } else if (successDataRows < totalDataRows) {
                 resultVO.setSuccess(true);
                 resultVO.setMessage(String.format("导入完成：共处理%d行数据，成功%d行，跳过%d行",
                         totalDataRows, successDataRows, totalDataRows - successDataRows));
-            }
-            // 4. 全部成功
-            else {
+            } else {
                 resultVO.setSuccess(true);
                 resultVO.setMessage(String.format("导入成功：共%d个字段，%d条数据全部导入成功",
                         totalFields, totalDataRows));
@@ -851,7 +910,6 @@ public class DynamicTableServiceImpl implements DynamicTableService {
                     resultVO.getMessage(), resultVO.getSuccess(), systemErrorCount);
 
         } catch (Exception e) {
-            // 系统级异常才设置 success=false
             long costTime = System.currentTimeMillis() - startTime;
             resultVO.setCostTime(costTime);
             resultVO.setSuccess(false);
@@ -861,6 +919,74 @@ public class DynamicTableServiceImpl implements DynamicTableService {
         }
 
         return resultVO;
+    }
+
+    /**
+     * 优化后的批量插入方法 - 使用JDBC批量操作
+     */
+    private void executeBatchInsertOptimized(Map<String, List<Map<String, Object>>> batchDataMap) {
+        for (Map.Entry<String, List<Map<String, Object>>> entry : batchDataMap.entrySet()) {
+            String tableName = entry.getKey();
+            List<Map<String, Object>> dataList = entry.getValue();
+
+            if (dataList == null || dataList.isEmpty()) {
+                continue;
+            }
+
+            // 获取所有字段名（从第一条数据中获取）
+            Set<String> allColumns = new LinkedHashSet<>();
+            for (Map<String, Object> data : dataList) {
+                allColumns.addAll(data.keySet());
+            }
+
+            if (allColumns.isEmpty()) {
+                continue;
+            }
+
+            List<String> columnList = new ArrayList<>(allColumns);
+
+            // 构建批量插入SQL
+            StringBuilder sqlBuilder = new StringBuilder("INSERT INTO ");
+            sqlBuilder.append(tableName).append(" (");
+            sqlBuilder.append(String.join(",", columnList));
+            sqlBuilder.append(") VALUES (");
+            sqlBuilder.append(columnList.stream().map(c -> "?").collect(Collectors.joining(",")));
+            sqlBuilder.append(")");
+
+            String sql = sqlBuilder.toString();
+
+            // 准备批量参数
+            List<Object[]> batchArgs = new ArrayList<>(dataList.size());
+
+            for (Map<String, Object> data : dataList) {
+                Object[] args = new Object[columnList.size()];
+                for (int i = 0; i < columnList.size(); i++) {
+                    args[i] = data.get(columnList.get(i));
+                }
+                batchArgs.add(args);
+            }
+
+            // 执行批量插入
+            try {
+                jdbcTemplate.batchUpdate(sql, batchArgs);
+                log.debug("成功批量插入 {} 条数据到表: {}", dataList.size(), tableName);
+            } catch (Exception e) {
+                log.error("批量插入失败，表: {}, 数据量: {}, 错误: {}", tableName, dataList.size(), e.getMessage());
+
+                // 如果批量插入失败，尝试逐条插入并记录错误
+                int successCount = 0;
+                for (Object[] args : batchArgs) {
+                    try {
+                        jdbcTemplate.update(sql, args);
+                        successCount++;
+                    } catch (Exception ex) {
+                        log.error("单条插入失败，表: {}, 数据: {}, 错误: {}",
+                                tableName, Arrays.toString(args), ex.getMessage());
+                    }
+                }
+                log.info("表 {} 逐条插入完成: {}/{} 成功", tableName, successCount, batchArgs.size());
+            }
+        }
     }
 
     /**
@@ -2301,14 +2427,6 @@ public class DynamicTableServiceImpl implements DynamicTableService {
     }
 
     /**
-     * SQL转义
-     */
-    private String escapeSql(String str) {
-        if (str == null) return "";
-        return str.replace("'", "''");
-    }
-
-    /**
      * 计算统计信息
      */
     private Map<String, Object> calculateStatistics(List<Map<String, Object>> dataList) {
@@ -2382,5 +2500,701 @@ public class DynamicTableServiceImpl implements DynamicTableService {
         }
 
         return result;
+    }
+
+    //=======================================导出================================================================
+    // ==================== 导出方法实现 ====================
+
+    @Override
+    public void exportData(String moduleCode, HttpServletResponse response) throws IOException {
+        DynamicTableExportReqDTO exportReq = new DynamicTableExportReqDTO();
+        exportReq.setModuleCode(moduleCode);
+        exportReq.setExportAll(true);
+        exportReq.setMaxExport(10000);
+        exportDataByQuery(exportReq, response);
+    }
+
+    @Override
+    public void exportDataByQuery(DynamicTableExportReqDTO exportReq, HttpServletResponse response) throws IOException {
+        long startTime = System.currentTimeMillis();
+        String moduleCode = exportReq.getModuleCode();
+
+        try {
+            // 1. 查询模块配置
+            ModuleConfigDO mainModule = moduleConfigMapper.selectOne(
+                    new LambdaQueryWrapperX<ModuleConfigDO>()
+                            .eq(ModuleConfigDO::getModuleCode, moduleCode)
+                            .eq(ModuleConfigDO::getStatus, 1)
+            );
+
+            if (mainModule == null) {
+                throw new RuntimeException("未找到模块配置: " + moduleCode);
+            }
+
+            String joinField = StringUtils.isNotBlank(exportReq.getJoinField())
+                    ? exportReq.getJoinField()
+                    : (mainModule.getJoinField() != null ? mainModule.getJoinField() : "tjh");
+
+            log.info("开始导出数据: moduleCode={}, joinField={}, exportAll={}",
+                    moduleCode, joinField, exportReq.getExportAll());
+
+            // 2. 获取所有子模块
+            List<ModuleConfigDO> allModules = getAllRelatedModules(mainModule);
+
+            // 3. 构建导出数据
+            List<List<Object>> exportData = buildExportData(mainModule, allModules, exportReq, joinField);
+
+            // 4. 设置响应头 - 这是关键！
+            String fileName = URLEncoder.encode(
+                    mainModule.getModuleName() + "_导出数据_" + new SimpleDateFormat("yyyyMMddHHmmss").format(new Date()),
+                    "UTF-8");
+
+            // 设置正确的 Content-Type 和 Content-Disposition
+            response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+            response.setCharacterEncoding("UTF-8");
+            response.setHeader("Content-Disposition", "attachment;filename=" + fileName + ".xlsx");
+
+            // 5. 写入Excel
+            EasyExcel.write(response.getOutputStream())
+                    .sheet("数据导出")
+                    .doWrite(exportData);
+
+            long costTime = System.currentTimeMillis() - startTime;
+            log.info("导出完成: 模块={}, 耗时={}ms, 数据行数={}",
+                    moduleCode, costTime, exportData.size() - 6);
+
+        } catch (Exception e) {
+            log.error("导出数据失败", e);
+
+            // 如果已经提交了响应，不能再次写入
+            if (!response.isCommitted()) {
+                response.reset();
+                response.setContentType("application/json;charset=UTF-8");
+                response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+
+                Map<String, Object> error = new HashMap<>();
+                error.put("success", false);
+                error.put("message", "导出失败: " + e.getMessage());
+                error.put("code", 500);
+
+                response.getWriter().write(new ObjectMapper().writeValueAsString(error));
+            }
+
+            throw new RuntimeException("导出失败: " + e.getMessage(), e);
+        }
+    }
+
+    @Override
+    public void batchExportData(BatchExportReqDTO batchExportReq, HttpServletResponse response) throws IOException {
+        long startTime = System.currentTimeMillis();
+        List<String> moduleCodes = batchExportReq.getModuleCodes();
+        String joinField = StringUtils.isNotBlank(batchExportReq.getJoinField()) ? batchExportReq.getJoinField() : "tjh";
+
+        log.info("开始批量导出数据: 模块数量={}", moduleCodes.size());
+
+        try {
+            if (batchExportReq.getMergeToSingleFile()) {
+                // 合并到一个Excel文件（多个sheet）
+                exportToMultipleSheets(batchExportReq, response);
+            } else {
+                // 导出为ZIP压缩包（多个文件）
+                exportToZipFile(batchExportReq, response);
+            }
+
+            long costTime = System.currentTimeMillis() - startTime;
+            log.info("批量导出完成: 模块数量={}, 耗时={}ms", moduleCodes.size(), costTime);
+
+        } catch (Exception e) {
+            log.error("批量导出失败", e);
+            throw new RuntimeException("批量导出失败: " + e.getMessage(), e);
+        }
+    }
+
+// ==================== 私有辅助方法 ====================
+
+    /**
+     * 获取所有相关模块（包括主表和所有子表）
+     */
+    private List<ModuleConfigDO> getAllRelatedModules(ModuleConfigDO mainModule) {
+        List<ModuleConfigDO> allModules = new ArrayList<>();
+        allModules.add(mainModule);
+
+        // 获取所有子模块（递归）
+        List<ModuleConfigDO> childModules = getAllChildModules(mainModule.getId());
+        allModules.addAll(childModules);
+
+        return allModules;
+    }
+
+    /**
+     * 构建导出数据（完全匹配导入模板格式）
+     */
+    private List<List<Object>> buildExportData(ModuleConfigDO mainModule,
+                                               List<ModuleConfigDO> allModules,
+                                               DynamicTableExportReqDTO exportReq,
+                                               String joinField) {
+        List<List<Object>> exportData = new ArrayList<>();
+
+        // 1. 获取所有字段配置并按列顺序整理
+        ExportFieldStructure fieldStructure = buildExportFieldStructure(mainModule, allModules, joinField);
+
+        // 2. 添加模板头（5行头信息）
+        exportData.add(buildFieldGroupRow(fieldStructure));      // 第1行：字段分组
+        exportData.add(buildGroupCodeRow(fieldStructure));       // 第2行：分组标识
+        exportData.add(buildFieldNameRow(fieldStructure));       // 第3行：字段名称
+        exportData.add(buildFieldCodeRow(fieldStructure));       // 第4行：字段标识
+        exportData.add(buildFieldTypeRow(fieldStructure));       // 第5行：字段类型
+
+        // 3. 添加空行分隔
+        exportData.add(createEmptyRow(fieldStructure.getTotalColumns()));
+
+        // 4. 添加说明行
+        exportData.add(buildDescriptionRow(fieldStructure));
+
+        // 5. 查询数据并填充
+        List<Map<String, Object>> dataRows = queryExportData(mainModule, allModules, exportReq, joinField);
+
+        // 如果没有数据，至少返回模板头
+        if (dataRows == null || dataRows.isEmpty()) {
+            log.warn("没有查询到导出数据，只返回模板头");
+            return exportData;
+        }
+
+        // 6. 将数据转换为Excel行格式
+        for (Map<String, Object> rowData : dataRows) {
+            List<Object> excelRow = convertToExcelRow(rowData, fieldStructure, joinField);
+            exportData.add(excelRow);
+        }
+
+        log.info("构建导出数据完成: 总列数={}, 数据行数={}",
+                fieldStructure.getTotalColumns(), dataRows.size());
+
+        return exportData;
+    }
+
+    /**
+     * 构建导出字段结构
+     */
+    private ExportFieldStructure buildExportFieldStructure(ModuleConfigDO mainModule,
+                                                           List<ModuleConfigDO> allModules,
+                                                           String joinField) {
+        ExportFieldStructure structure = new ExportFieldStructure();
+
+        // 第一列总是空的
+        structure.getFieldGroups().add("");
+        structure.getGroupCodes().add("");
+        structure.getFieldNames().add("");
+        structure.getFieldCodes().add("");
+        structure.getFieldTypes().add("");
+
+        // 1. 先处理主表字段
+        List<FieldConfigDO> mainFields = fieldConfigMapper.selectListByModuleCode(mainModule.getModuleCode())
+                .stream()
+                .filter(f -> f.getStatus() == 1)  // 只取启用状态的字段
+                .sorted(Comparator.comparing(FieldConfigDO::getDisplayOrder))
+                .collect(Collectors.toList());
+
+        for (FieldConfigDO field : mainFields) {
+            // 主表字段分组为空
+            structure.getFieldGroups().add("");
+            structure.getGroupCodes().add("");
+            structure.getFieldNames().add(field.getFieldLabel());
+            structure.getFieldCodes().add(field.getFieldCode());
+            structure.getFieldTypes().add(field.getFieldType() != null ? field.getFieldType() : "varchar");
+
+            structure.getFieldToGroupMap().put(field.getFieldCode(), "");
+            structure.getFieldToTableMap().put(field.getFieldCode(), mainModule.getTableName());
+        }
+
+        // 2. 处理所有子表字段（按模块分组）
+        for (ModuleConfigDO module : allModules) {
+            if (module.getId().equals(mainModule.getId())) {
+                continue; // 跳过主表
+            }
+
+            String groupName = module.getModuleName();
+            String groupCode = module.getModuleCode().replace(mainModule.getModuleCode() + "_", "");
+
+            List<FieldConfigDO> subFields = fieldConfigMapper.selectListByModuleCode(module.getModuleCode())
+                    .stream()
+                    .filter(f -> f.getStatus() == 1)
+                    .sorted(Comparator.comparing(FieldConfigDO::getDisplayOrder))
+                    .collect(Collectors.toList());
+
+            for (FieldConfigDO field : subFields) {
+                structure.getFieldGroups().add(groupName);
+                structure.getGroupCodes().add(groupCode);
+                structure.getFieldNames().add(field.getFieldLabel());
+                structure.getFieldCodes().add(field.getFieldCode());
+                structure.getFieldTypes().add(field.getFieldType() != null ? field.getFieldType() : "varchar");
+
+                structure.getFieldToGroupMap().put(field.getFieldCode(), groupCode);
+                structure.getFieldToTableMap().put(field.getFieldCode(), module.getTableName());
+            }
+        }
+
+        return structure;
+    }
+
+    /**
+     * 构建字段分组行（第1行）
+     */
+    private List<Object> buildFieldGroupRow(ExportFieldStructure structure) {
+        List<Object> row = new ArrayList<>();
+        row.add("字段分组");
+        for (int i = 1; i < structure.getFieldGroups().size(); i++) {
+            row.add(structure.getFieldGroups().get(i));
+        }
+        return row;
+    }
+
+    /**
+     * 构建分组标识行（第2行）
+     */
+    private List<Object> buildGroupCodeRow(ExportFieldStructure structure) {
+        List<Object> row = new ArrayList<>();
+        row.add("分组标识");
+        for (int i = 1; i < structure.getGroupCodes().size(); i++) {
+            row.add(structure.getGroupCodes().get(i));
+        }
+        return row;
+    }
+
+    /**
+     * 构建字段名称行（第3行）
+     */
+    private List<Object> buildFieldNameRow(ExportFieldStructure structure) {
+        List<Object> row = new ArrayList<>();
+        row.add("字段名称");
+        for (int i = 1; i < structure.getFieldNames().size(); i++) {
+            row.add(structure.getFieldNames().get(i));
+        }
+        return row;
+    }
+
+    /**
+     * 构建字段标识行（第4行）
+     */
+    private List<Object> buildFieldCodeRow(ExportFieldStructure structure) {
+        List<Object> row = new ArrayList<>();
+        row.add("字段标识");
+        for (int i = 1; i < structure.getFieldCodes().size(); i++) {
+            row.add(structure.getFieldCodes().get(i));
+        }
+        return row;
+    }
+
+    /**
+     * 构建字段类型行（第5行）
+     */
+    private List<Object> buildFieldTypeRow(ExportFieldStructure structure) {
+        List<Object> row = new ArrayList<>();
+        row.add("字段类型");
+        for (int i = 1; i < structure.getFieldTypes().size(); i++) {
+            row.add(structure.getFieldTypes().get(i));
+        }
+        return row;
+    }
+
+    /**
+     * 创建空行
+     */
+    private List<Object> createEmptyRow(int totalColumns) {
+        List<Object> row = new ArrayList<>();
+        for (int i = 0; i < totalColumns; i++) {
+            row.add("");
+        }
+        return row;
+    }
+
+    /**
+     * 构建说明行
+     */
+    private List<Object> buildDescriptionRow(ExportFieldStructure structure) {
+        List<Object> row = new ArrayList<>();
+        row.add("↓↓↓ 数据区域（以下为导出的数据）↓↓↓");
+        for (int i = 1; i < structure.getTotalColumns(); i++) {
+            row.add("");
+        }
+        return row;
+    }
+
+    /**
+     * 查询导出数据
+     */
+    private List<Map<String, Object>> queryExportData(ModuleConfigDO mainModule,
+                                                      List<ModuleConfigDO> allModules,
+                                                      DynamicTableExportReqDTO exportReq,
+                                                      String joinField) {
+        // 构建查询SQL
+        String sql = buildExportQuerySql(mainModule, allModules, exportReq, joinField);
+
+        log.debug("导出查询SQL: {}", sql);
+
+        try {
+            return jdbcTemplate.queryForList(sql);
+        } catch (Exception e) {
+            log.error("导出数据查询失败", e);
+            return new ArrayList<>();
+        }
+    }
+
+    /**
+     * 构建导出查询SQL
+     */
+    /**
+     * 构建导出查询SQL - 修复版
+     */
+    private String buildExportQuerySql(ModuleConfigDO mainModule,
+                                       List<ModuleConfigDO> allModules,
+                                       DynamicTableExportReqDTO exportReq,
+                                       String joinField) {
+        StringBuilder sql = new StringBuilder("SELECT ");
+
+        String mainAlias = "main";
+        String mainTable = mainModule.getTableName();
+
+        // 构建SELECT字段 - 按照字段在模板中的顺序
+        List<String> selectFields = new ArrayList<>();
+
+        // 先添加主表的所有字段（按显示顺序）
+        List<FieldConfigDO> mainFields = fieldConfigMapper.selectListByModuleCode(mainModule.getModuleCode())
+                .stream()
+                .filter(f -> f.getStatus() == 1)
+                .sorted(Comparator.comparing(FieldConfigDO::getDisplayOrder))
+                .collect(Collectors.toList());
+
+        for (FieldConfigDO field : mainFields) {
+            selectFields.add(mainAlias + "." + field.getFieldCode() + " AS " + field.getFieldCode());
+        }
+
+        // 再添加所有子表的字段（按模块顺序）
+        for (ModuleConfigDO module : allModules) {
+            if (module.getId().equals(mainModule.getId())) {
+                continue;
+            }
+
+            List<FieldConfigDO> subFields = fieldConfigMapper.selectListByModuleCode(module.getModuleCode())
+                    .stream()
+                    .filter(f -> f.getStatus() == 1)
+                    .sorted(Comparator.comparing(FieldConfigDO::getDisplayOrder))
+                    .collect(Collectors.toList());
+
+            for (FieldConfigDO field : subFields) {
+                // 使用表名_字段名作为别名，避免重名
+                String alias = module.getTableName() + "_" + field.getFieldCode();
+                selectFields.add(module.getTableName() + "." + field.getFieldCode() + " AS " + alias);
+            }
+        }
+
+        sql.append(String.join(", ", selectFields));
+
+        // FROM主表
+        sql.append(" FROM ").append(mainTable).append(" ").append(mainAlias);
+
+        // LEFT JOIN所有子表
+        for (ModuleConfigDO module : allModules) {
+            if (module.getId().equals(mainModule.getId())) {
+                continue;
+            }
+            sql.append(" LEFT JOIN ").append(module.getTableName())
+                    .append(" ON ").append(mainAlias).append(".").append(joinField)
+                    .append(" = ").append(module.getTableName()).append(".").append(joinField);
+        }
+
+        // WHERE条件
+        sql.append(" WHERE ").append(mainAlias).append(".deleted = 0");
+
+        // 添加自定义查询条件 - 直接在这里处理，不使用buildExportWhereClause
+        if (exportReq.getConditions() != null && !exportReq.getConditions().isEmpty()) {
+            Map<String, Object> conditions = exportReq.getConditions();
+
+            // 处理可能包装在conditions对象中的情况
+            Object actualConditions = conditions.get("conditions");
+            if (actualConditions instanceof Map) {
+                conditions = (Map<String, Object>) actualConditions;
+            }
+
+            for (Map.Entry<String, Object> entry : conditions.entrySet()) {
+                String field = entry.getKey();
+                Object value = entry.getValue();
+
+                if (value == null || (value instanceof String && StringUtils.isBlank((String) value))) {
+                    continue;
+                }
+
+                // 关键修复：所有字段名都用反引号括起来，避免关键字问题
+                sql.append(" AND ").append(mainAlias).append(".`").append(field).append("`");
+
+                if (value instanceof String) {
+                    String strValue = (String) value;
+                    // 处理LIKE查询
+                    if (strValue.contains("%")) {
+                        sql.append(" LIKE '").append(escapeSql(strValue)).append("'");
+                    } else {
+                        sql.append(" = '").append(escapeSql(strValue)).append("'");
+                    }
+                } else if (value instanceof Number) {
+                    sql.append(" = ").append(value);
+                } else if (value instanceof Boolean) {
+                    sql.append(" = ").append(((Boolean) value) ? 1 : 0);
+                } else if (value instanceof List) {
+                    // 处理IN查询
+                    List<?> listValue = (List<?>) value;
+                    if (!listValue.isEmpty()) {
+                        sql.append(" IN (");
+                        for (int i = 0; i < listValue.size(); i++) {
+                            if (i > 0) sql.append(",");
+                            Object item = listValue.get(i);
+                            if (item instanceof String) {
+                                sql.append("'").append(escapeSql(item.toString())).append("'");
+                            } else {
+                                sql.append(item);
+                            }
+                        }
+                        sql.append(")");
+                    } else {
+                        // 空列表，跳过这个条件
+                        sql.setLength(sql.length() - (" AND " + mainAlias + ".`" + field + "`").length());
+                    }
+                } else {
+                    // 其他类型，转为字符串
+                    sql.append(" = '").append(escapeSql(value.toString())).append("'");
+                }
+            }
+        }
+
+        // 默认按关联字段排序
+        sql.append(" ORDER BY ").append(mainAlias).append(".").append(joinField);
+
+        // 限制导出数量
+        if (!exportReq.getExportAll() && exportReq.getMaxExport() != null) {
+            sql.append(" LIMIT ").append(exportReq.getMaxExport());
+        }
+
+        log.debug("最终导出SQL: {}", sql.toString());
+
+        return sql.toString();
+    }
+
+    /**
+     * 构建导出WHERE条件
+     */
+    private String buildExportWhereClause(Map<String, Object> conditions, String mainAlias) {
+        if (conditions == null || conditions.isEmpty()) {
+            return "";
+        }
+
+        List<String> whereList = new ArrayList<>();
+
+        for (Map.Entry<String, Object> entry : conditions.entrySet()) {
+            String field = entry.getKey();
+            Object value = entry.getValue();
+
+            if (value == null || (value instanceof String && StringUtils.isBlank((String) value))) {
+                continue;
+            }
+
+            if (value instanceof String) {
+                whereList.add(mainAlias + "." + field + " LIKE '%" + escapeSql(value.toString()) + "%'");
+            } else {
+                whereList.add(mainAlias + "." + field + " = '" + escapeSql(value.toString()) + "'");
+            }
+        }
+
+        return String.join(" AND ", whereList);
+    }
+
+    /**
+     * 将查询结果转换为Excel行格式
+     */
+    private List<Object> convertToExcelRow(Map<String, Object> rowData,
+                                           ExportFieldStructure structure,
+                                           String joinField) {
+        List<Object> excelRow = new ArrayList<>();
+
+        // 第一列保持为空
+        excelRow.add("");
+
+        // 按字段顺序填充数据
+        for (int i = 1; i < structure.getFieldCodes().size(); i++) {
+            String fieldCode = structure.getFieldCodes().get(i);
+            String groupCode = structure.getGroupCodes().get(i);
+
+            Object value = null;
+
+            if (StringUtils.isBlank(groupCode)) {
+                // 主表字段
+                value = rowData.get(fieldCode);
+            } else {
+                // 子表字段 - 需要从对应的表别名中获取
+                String tableName = structure.getFieldToTableMap().get(fieldCode);
+                if (tableName != null) {
+                    value = rowData.get(tableName + "_" + fieldCode);
+                }
+            }
+
+            // 处理空值
+            excelRow.add(value != null ? value : "");
+        }
+
+        return excelRow;
+    }
+
+    /**
+     * 导出到多个Sheet（一个Excel文件）
+     */
+    private void exportToMultipleSheets(BatchExportReqDTO batchExportReq, HttpServletResponse response) throws IOException {
+        List<String> moduleCodes = batchExportReq.getModuleCodes();
+        String joinField = StringUtils.isNotBlank(batchExportReq.getJoinField()) ? batchExportReq.getJoinField() : "tjh";
+
+        // 设置响应头
+        String fileName = URLEncoder.encode(
+                StringUtils.isNotBlank(batchExportReq.getFileName())
+                        ? batchExportReq.getFileName()
+                        : "批量导出数据_" + new SimpleDateFormat("yyyyMMddHHmmss").format(new Date()),
+                "UTF-8");
+        response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        response.setCharacterEncoding("UTF-8");
+        response.setHeader("Content-Disposition", "attachment;filename=" + fileName + ".xlsx");
+
+        // 使用EasyExcel写入多个Sheet
+        try (ExcelWriter excelWriter = EasyExcel.write(response.getOutputStream()).build()) {
+
+            for (String moduleCode : moduleCodes) {
+                try {
+                    // 查询模块配置
+                    ModuleConfigDO module = moduleConfigMapper.selectOne(
+                            new LambdaQueryWrapperX<ModuleConfigDO>()
+                                    .eq(ModuleConfigDO::getModuleCode, moduleCode)
+                                    .eq(ModuleConfigDO::getStatus, 1));
+
+                    if (module == null) {
+                        log.warn("模块不存在，跳过: {}", moduleCode);
+                        continue;
+                    }
+
+                    // 构建导出请求
+                    DynamicTableExportReqDTO exportReq = new DynamicTableExportReqDTO();
+                    exportReq.setModuleCode(moduleCode);
+                    exportReq.setJoinField(joinField);
+                    exportReq.setExportAll(batchExportReq.getExportAll());
+                    exportReq.setMaxExport(batchExportReq.getMaxExportPerModule());
+
+                    // 获取所有相关模块
+                    List<ModuleConfigDO> allModules = getAllRelatedModules(module);
+
+                    // 构建导出数据
+                    List<List<Object>> exportData = buildExportData(module, allModules, exportReq, joinField);
+
+                    // 创建Sheet
+                    WriteSheet writeSheet = EasyExcel.writerSheet(module.getModuleName())
+                            .build();
+                    excelWriter.write(exportData, writeSheet);
+
+                    log.info("模块导出完成: {}, 数据行数={}", moduleCode, exportData.size() - 6);
+
+                } catch (Exception e) {
+                    log.error("导出模块失败: " + moduleCode, e);
+                    // 继续导出其他模块
+                }
+            }
+        }
+    }
+
+    /**
+     * 导出为ZIP压缩包（多个文件）
+     */
+    private void exportToZipFile(BatchExportReqDTO batchExportReq, HttpServletResponse response) throws IOException {
+        List<String> moduleCodes = batchExportReq.getModuleCodes();
+        String joinField = StringUtils.isNotBlank(batchExportReq.getJoinField()) ? batchExportReq.getJoinField() : "tjh";
+
+        // 设置响应头
+        String fileName = URLEncoder.encode(
+                StringUtils.isNotBlank(batchExportReq.getFileName())
+                        ? batchExportReq.getFileName()
+                        : "批量导出数据_" + new SimpleDateFormat("yyyyMMddHHmmss").format(new Date()),
+                "UTF-8");
+        response.setContentType("application/zip");
+        response.setCharacterEncoding("UTF-8");
+        response.setHeader("Content-Disposition", "attachment;filename=" + fileName + ".zip");
+
+        // 创建ZIP输出流
+        try (ZipOutputStream zos = new ZipOutputStream(response.getOutputStream())) {
+
+            for (String moduleCode : moduleCodes) {
+                try {
+                    // 查询模块配置
+                    ModuleConfigDO module = moduleConfigMapper.selectOne(
+                            new LambdaQueryWrapperX<ModuleConfigDO>()
+                                    .eq(ModuleConfigDO::getModuleCode, moduleCode)
+                                    .eq(ModuleConfigDO::getStatus, 1));
+
+                    if (module == null) {
+                        log.warn("模块不存在，跳过: {}", moduleCode);
+                        continue;
+                    }
+
+                    // 构建导出请求
+                    DynamicTableExportReqDTO exportReq = new DynamicTableExportReqDTO();
+                    exportReq.setModuleCode(moduleCode);
+                    exportReq.setJoinField(joinField);
+                    exportReq.setExportAll(batchExportReq.getExportAll());
+                    exportReq.setMaxExport(batchExportReq.getMaxExportPerModule());
+
+                    // 获取所有相关模块
+                    List<ModuleConfigDO> allModules = getAllRelatedModules(module);
+
+                    // 构建导出数据
+                    List<List<Object>> exportData = buildExportData(module, allModules, exportReq, joinField);
+
+                    // 创建ZIP条目
+                    String zipEntryName = module.getModuleName() + "_"
+                            + new SimpleDateFormat("yyyyMMddHHmmss").format(new Date()) + ".xlsx";
+                    ZipEntry zipEntry = new ZipEntry(zipEntryName);
+                    zos.putNextEntry(zipEntry);
+
+                    // 将Excel数据写入ZIP
+                    EasyExcel.write(zos)
+                            .sheet("数据")
+                            .doWrite(exportData);
+
+                    zos.closeEntry();
+
+                    log.info("模块导出完成: {}, 数据行数={}", moduleCode, exportData.size() - 6);
+
+                } catch (Exception e) {
+                    log.error("导出模块失败: " + moduleCode, e);
+                    // 继续导出其他模块
+                }
+            }
+        }
+    }
+
+    /**
+     * SQL转义（防止注入）
+     */
+    private String escapeSql(String str) {
+        if (str == null) return "";
+        return str.replace("'", "''");
+    }
+
+    /**
+     * 导出字段结构内部类
+     */
+    @Data
+    private static class ExportFieldStructure {
+        private List<String> fieldGroups = new ArrayList<>();      // 字段分组
+        private List<String> groupCodes = new ArrayList<>();       // 分组标识
+        private List<String> fieldNames = new ArrayList<>();       // 字段名称
+        private List<String> fieldCodes = new ArrayList<>();       // 字段标识
+        private List<String> fieldTypes = new ArrayList<>();       // 字段类型
+        private Map<String, String> fieldToGroupMap = new HashMap<>(); // 字段到分组的映射
+        private Map<String, String> fieldToTableMap = new HashMap<>(); // 字段到表的映射
+
+        // 总列数 = 字段数
+        public int getTotalColumns() {
+            return fieldCodes.size();
+        }
     }
 }

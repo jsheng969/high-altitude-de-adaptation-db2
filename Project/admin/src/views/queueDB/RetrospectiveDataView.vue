@@ -61,19 +61,13 @@ const fieldSelectorVisible = ref(false)
 
 // 模块配置 - 可以根据需要动态设置或从路由获取
 const mainModuleCode = ref('retrospective') // 主表模块编码
+const mainModuleName = ref('回顾性队列') // 主表模块编码
 const defaultSelectedModules = ref(['retrospective']) // 默认选中的模块
 
 // 查询参数
 const queryParams = reactive({
   pageNo: 1,
   pageSize: 10,
-  group: 1,
-  type: 181,
-  year: 23,
-  vip: 1,
-  surveyOrExam: 'survey',
-  groupType: 1,
-  timePoint: 1,
   name: undefined,
   mobile: undefined,
   status: undefined,
@@ -102,7 +96,7 @@ const {
 } = useFieldManager(queryParams, moduleType, mainModuleCode.value) // 传入主表模块编码
 
 const { conditions, handleFieldSelect } = useConditionManager()
-const { handleExport, exportLoading } = useExportHandler(queryParams, mainModuleCode.value) // 传入主表模块编码
+const { handleExport, exportLoading } = useExportHandler(queryParams, mainModuleCode.value,mainModuleName.value) // 传入主表模块编码
 const { getList, loadPageData } = useDataHandler(
   queryParams, 
   list, 

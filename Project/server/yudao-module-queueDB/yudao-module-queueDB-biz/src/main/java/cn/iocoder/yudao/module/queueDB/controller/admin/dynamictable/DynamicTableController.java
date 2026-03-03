@@ -2,9 +2,7 @@ package cn.iocoder.yudao.module.queueDB.controller.admin.dynamictable;
 
 import cn.hutool.db.PageResult;
 import cn.iocoder.yudao.framework.common.pojo.CommonResult;
-import cn.iocoder.yudao.module.queueDB.controller.admin.dynamictable.dto.DynamicTableQueryReqDTO;
-import cn.iocoder.yudao.module.queueDB.controller.admin.dynamictable.dto.DynamicTableQueryRespDTO;
-import cn.iocoder.yudao.module.queueDB.controller.admin.dynamictable.dto.ExcelImportReqDTO;
+import cn.iocoder.yudao.module.queueDB.controller.admin.dynamictable.dto.*;
 import cn.iocoder.yudao.module.queueDB.controller.admin.dynamictable.vo.ExcelImportResultVO;
 import cn.iocoder.yudao.module.queueDB.controller.admin.dynamictable.vo.FieldDisplayVO;
 import cn.iocoder.yudao.module.queueDB.controller.admin.dynamictable.vo.ImportHistoryVO;
@@ -169,4 +167,77 @@ public class DynamicTableController {
         List<FieldDisplayVO> fields = dynamicTableService.getModuleFields(moduleNames);
         return CommonResult.success(fields);
     }
+
+    /**
+     * 导出模块数据（按导入模板格式）
+     */
+    @GetMapping("/export/{moduleCode}")
+    @Operation(summary = "导出模块数据")
+    public void exportData(@PathVariable String moduleCode, HttpServletResponse response) {
+        log.info("开始导出模块数据: {}", moduleCode);
+        try {
+            DynamicTableExportReqDTO exportReq = new DynamicTableExportReqDTO();
+            exportReq.setModuleCode(moduleCode);
+            exportReq.setExportAll(true);
+            exportReq.setMaxExport(10000);
+            dynamicTableService.exportDataByQuery(exportReq, response);
+        } catch (Exception e) {
+            log.error("导出数据失败", e);
+            throw new RuntimeException("导出失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 按条件导出数据
+     */
+    @PostMapping("/export/query")
+    @Operation(summary = "按条件导出数据")
+    public void exportDataByQuery(@RequestBody DynamicTableExportReqDTO exportReq,
+                                  HttpServletResponse response) {
+        log.info("开始按条件导出数据: {}", exportReq.getModuleCode());
+        try {
+            dynamicTableService.exportDataByQuery(exportReq, response);
+        } catch (Exception e) {
+            log.error("按条件导出数据失败", e);
+            throw new RuntimeException("导出失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 批量导出多个模块数据
+     */
+    @PostMapping("/export/batch")
+    @Operation(summary = "批量导出多个模块数据")
+    public void batchExportData(@RequestBody BatchExportReqDTO batchExportReq,
+                                HttpServletResponse response) {
+        log.info("开始批量导出数据: 模块数量={}", batchExportReq.getModuleCodes().size());
+        try {
+            dynamicTableService.batchExportData(batchExportReq, response);
+        } catch (Exception e) {
+            log.error("批量导出数据失败", e);
+            throw new RuntimeException("批量导出失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 导出当前查询结果（配合前端表格导出）
+     */
+    @PostMapping("/export/current")
+    @Operation(summary = "导出当前查询结果")
+    public void exportCurrentQuery(@RequestBody DynamicTableExportReqDTO exportReq,
+                                   HttpServletResponse response) {
+        log.info("开始导出当前查询结果: {}", exportReq.getModuleCode());
+        try {
+            // 限制导出数量，避免导出过多
+            exportReq.setExportAll(false);
+            if (exportReq.getMaxExport() == null) {
+                exportReq.setMaxExport(10000);
+            }
+            dynamicTableService.exportDataByQuery(exportReq, response);
+        } catch (Exception e) {
+            log.error("导出当前查询结果失败", e);
+            throw new RuntimeException("导出失败: " + e.getMessage());
+        }
+    }
+
 }
