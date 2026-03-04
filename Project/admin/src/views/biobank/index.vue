@@ -163,7 +163,7 @@
           "
         >
           <drawer-view
-            title="超低温冰箱"
+            title="急进（前瞻）样本库"
             color="#ff7d00"
             :value="drawer6ViewData"
             @box-click="handlePickTube"
@@ -320,7 +320,7 @@ const submitTakeOut = async () => {
 
 // 生命周期钩子
 const initData = async () => {
-  const freezer6 = await SampleApi.getBoxesWithSampleTypes({ freezerNo: '1' })
+  const freezer6 = await SampleApi.getBoxesWithSampleTypes({ freezerNo: '急进（前瞻）样本库' })
   drawer6ViewData.value = freezer6
   console.log(freezer6,"drawer6ViewData.valuedrawer6ViewData.valuedrawer6ViewData.value");
   

@@ -2,7 +2,7 @@
   <div class="module-management">
     <!-- 搜索和操作栏 -->
     <div class="header-operation">
-      <el-form :inline="true" :model="queryParams">
+      <!-- <el-form :inline="true" :model="queryParams">
         <el-form-item label="模块名称">
           <el-input
             v-model="queryParams.moduleName"
@@ -33,7 +33,7 @@
             <Icon icon="ep:refresh" />重置
           </el-button>
         </el-form-item>
-      </el-form>
+      </el-form> -->
 
       <div class="right-buttons">
         <el-button type="primary" @click="handleCreate">
@@ -78,7 +78,7 @@
             <span v-else>-</span>
           </template>
         </el-table-column>
-        <el-table-column prop="tableName" label="对应表名" width="200" />
+        <!-- <el-table-column prop="tableName" label="对应表名" width="200" /> -->
         <el-table-column prop="joinField" label="关联字段" width="100">
           <template #default="{ row }">
             {{ row.joinField || 'tjh' }}
@@ -176,7 +176,7 @@
           <template #header>
             <div class="card-header">
               <span>主表配置</span>
-              <el-tag type="info">可自定义主表类型</el-tag>
+              <!-- <el-tag type="info">可自定义主表类型</el-tag> -->
             </div>
           </template>
 

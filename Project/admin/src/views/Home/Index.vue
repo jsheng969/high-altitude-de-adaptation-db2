@@ -39,7 +39,7 @@
           <div class="card-btn">点击查看</div>
         </div>
 
-        <div class="card">
+        <div class="card" @click="handleClick('/indexReview')">
           <div class="card-title">常驻（回顾）样本库</div>
           <div class="card-btn">点击查看</div>
         </div>

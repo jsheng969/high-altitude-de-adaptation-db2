@@ -12,8 +12,8 @@
           <entry name="$PROJECT_DIR$/../../../../maven/repository/org/mapstruct/mapstruct-processor/1.6.3/mapstruct-processor-1.6.3.jar" />
           <entry name="$PROJECT_DIR$/../../../../maven/repository/org/mapstruct/mapstruct/1.6.3/mapstruct-1.6.3.jar" />
         </processorPath>
-        <module name="yudao-server" />
         <module name="yudao-spring-boot-starter-job" />
+        <module name="yudao-server" />
         <module name="yudao-module-system-biz" />
         <module name="yudao-spring-boot-starter-redis" />
         <module name="yudao-module-review-api" />

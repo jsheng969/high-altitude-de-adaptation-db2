@@ -50,6 +50,7 @@ public interface SampleMapper extends BaseMapperX<SampleDO> {
     List<SampleRespVO> selectDataByBoxNo(SampleRespVO sampleRespVO);
 
     List<SampleTypeCountVO> selectSampleTypeCount();
+    List<SampleTypeCountVO> selectSampleTypeCount2();
 
     // 根据唯一条件查询样本
     SampleDO selectByUniqueCondition(@Param("freezerNo") String freezerNo,

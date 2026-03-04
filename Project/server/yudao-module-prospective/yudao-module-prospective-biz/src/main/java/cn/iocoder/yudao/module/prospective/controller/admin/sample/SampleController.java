@@ -285,6 +285,12 @@ public class SampleController {
         return success(countList);
     }
 
+    @GetMapping("/getSampleTypeCount2")
+    public CommonResult<List<SampleTypeCountVO>> getSampleTypeCount2() {
+        List<SampleTypeCountVO> countList = sampleService.getSampleTypeCount2();
+        return success(countList);
+    }
+
 
     @GetMapping("/takeOut")
     @Operation(summary = "取出")

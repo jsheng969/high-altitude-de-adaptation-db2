@@ -109,6 +109,11 @@ public class SampleServiceImpl implements SampleService {
     }
 
     @Override
+    public List<SampleTypeCountVO> getSampleTypeCount2() {
+        return sampleMapper.selectSampleTypeCount2();
+    }
+
+    @Override
     public void takeOut(Long id) {
         SampleDO sampleDO = sampleMapper.selectById(id);
         if (null != sampleDO) {

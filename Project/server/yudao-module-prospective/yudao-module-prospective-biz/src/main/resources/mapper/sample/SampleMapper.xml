@@ -101,7 +101,31 @@
                    END AS sampleType,
                COUNT(*) as count
         FROM `bio_sample`
-        WHERE sample_type IS NOT NULL
+        WHERE sample_type IS NOT NULL and freezer_no = '急进（前瞻）样本库'
+        GROUP BY
+            CASE
+            WHEN sample_type IN ('u', 'u1', 'u2', 'u3') THEN 'urine'
+            WHEN sample_type IN ('t', 't1', 't2', 't3') THEN 'saliva'
+            WHEN sample_type IN ('p', 'p1', 'p2', 'p3', 's', 's1', 's2', 's3', 'b', 'b1', 'b2', 'b3', 'w', 'w1', 'w2', 'w3', 'r', 'r1', 'r2', 'r3') THEN 'blood'
+            ELSE 'other'
+        END
+        ORDER BY count DESC
+    LIMIT 4
+    </select>
+
+    <select id="selectSampleTypeCount2"
+            resultType="cn.iocoder.yudao.module.prospective.controller.admin.sample.vo.SampleTypeCountVO">
+        SELECT CASE
+                   WHEN sample_type IN ('u', 'u1', 'u2', 'u3') THEN 'urine'
+                   WHEN sample_type IN ('t', 't1', 't2', 't3') THEN 'saliva'
+                   WHEN sample_type IN
+                        ('p', 'p1', 'p2', 'p3', 's', 's1', 's2', 's3', 'b', 'b1', 'b2', 'b3', 'w', 'w1', 'w2', 'w3',
+                         'r', 'r1', 'r2', 'r3') THEN 'blood'
+                   ELSE 'other'
+                   END AS sampleType,
+               COUNT(*) as count
+        FROM `bio_sample`
+        WHERE sample_type IS NOT NULL and freezer_no = '常驻（回顾）样本库'
         GROUP BY
             CASE
             WHEN sample_type IN ('u', 'u1', 'u2', 'u3') THEN 'urine'

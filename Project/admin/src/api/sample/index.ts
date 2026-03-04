@@ -68,6 +68,10 @@ export const SampleApi = {
     return await request.get({ url: `/prospective/sample/getSampleTypeCount` })
   },
 
+  getSampleTypeCount2: async () => {
+    return await request.get({ url: `/prospective/sample/getSampleTypeCount2` })
+  },
+
 
     takeOut: async (id: number) => {
       return await request.get({ url: `/prospective/sample/takeOut?id=` + id })

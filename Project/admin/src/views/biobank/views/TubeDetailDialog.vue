@@ -15,12 +15,13 @@
         </el-descriptions-item>
         <el-descriptions-item label="样本类型">{{ selectedTube.sampleType }}</el-descriptions-item>
         <el-descriptions-item label="所属人员编号">
-          <span 
+          <!-- <span 
             style="cursor: pointer; color: #409EFF; text-decoration: underline;"
             @click="handleOperatorIdClick(selectedTube.operatorId, selectedTube.timePoint)"
           >
             {{ selectedTube.operatorId }}
-          </span>  
+          </span>   -->
+            {{ selectedTube.operatorId }}
         </el-descriptions-item>
         <el-descriptions-item label="所属盒号">{{ selectedTube.boxNo }}</el-descriptions-item>
         <el-descriptions-item label="所属柜名">{{ selectedTube.freezerNo }}</el-descriptions-item>

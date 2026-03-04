@@ -67,6 +67,8 @@ public interface SampleService {
 
     List<SampleTypeCountVO> getSampleTypeCount();
 
+    List<SampleTypeCountVO> getSampleTypeCount2();
+
     void takeOut(Long id);
 
     void putBack(SamplePageReqVO pageReqVO);
