@@ -149,7 +149,6 @@ const formData = reactive({
   mainTableType: 'prospective',  // 主表类型
   joinField: 'tjh',               // 关联字段
   isLeaf: 0,
-  tableName: '',
   orderNo: 0,
   status: 1,
   remark: ''

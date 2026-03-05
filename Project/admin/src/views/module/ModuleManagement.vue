@@ -54,7 +54,7 @@
         row-key="id"
         :tree-props="{ children: 'children', hasChildren: 'hasChildren' }"
       >
-        <el-table-column prop="moduleCode" label="模块代码" width="200" />
+        <el-table-column prop="moduleCode" label="模块代码" width="300" />
         <el-table-column prop="moduleName" label="模块名称" width="200" />
         <el-table-column prop="moduleCode" label="主表类型" width="150">
           <template #default="{ row }">
@@ -391,8 +391,36 @@ const loadModuleTree = async () => {
     loading.value = true
     const response = await ModuleConfigApi.getModuleTreeWithStats({
       params: queryParams
-    })    
-    moduleTree.value = response
+    })
+    
+    console.log('原始数据:', response) // 查看数据结构
+    
+    // 检查返回的数据是否是扁平结构（包含parentId字段）
+    if (response && Array.isArray(response) && response.length > 0) {
+      // 构建树形结构
+      const buildTree = (items, parentId = null) => {
+        const tree = []
+        items.forEach(item => {
+          // 注意：数据库中使用的是 NULL 作为根节点，所以需要处理 null 的情况
+          if ((item.parentId === parentId) || 
+              (parentId === null && (item.parentId === null || item.parentId === undefined))) {
+            const children = buildTree(items, item.id)
+            if (children.length > 0) {
+              item.children = children
+            }
+            tree.push({...item}) // 创建副本避免引用问题
+          }
+        })
+        return tree
+      }
+      
+      // 将扁平数据转换为树形结构
+      moduleTree.value = buildTree(response, null)
+      console.log('构建后的树:', moduleTree.value)
+    } else {
+      moduleTree.value = response
+    }
+    
   } catch (error) {
     console.error('加载模块树失败:', error)
     ElMessage.error('加载模块树失败')
