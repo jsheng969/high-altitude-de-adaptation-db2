@@ -57,14 +57,14 @@ const toDocument = () => {
 <template>
   <ElDropdown class="custom-hover" :class="prefixCls" trigger="click">
     <div class="flex items-center">
-      <ElAvatar :src="avatar" alt="" class="w-[calc(var(--logo-height)-25px)] rounded-[50%]" />
+      <!-- <ElAvatar :src="avatar" alt="" class="w-[calc(var(--logo-height)-25px)] rounded-[50%]" /> -->
       <span class="pl-[5px] text-14px text-[var(--top-header-text-color)] <lg:hidden">
         {{ userName }}
       </span>
     </div>
     <template #dropdown>
       <ElDropdownMenu>
-        <ElDropdownItem>
+        <!-- <ElDropdownItem>
           <Icon icon="ep:tools" />
           <div @click="toProfile">{{ t('common.profile') }}</div>
         </ElDropdownItem>
@@ -75,8 +75,8 @@ const toDocument = () => {
         <ElDropdownItem divided>
           <Icon icon="ep:lock" />
           <div @click="lockScreen">{{ t('lock.lockScreen') }}</div>
-        </ElDropdownItem>
-        <ElDropdownItem divided @click="loginOut">
+        </ElDropdownItem> -->
+        <ElDropdownItem @click="loginOut">
           <Icon icon="ep:switch-button" />
           <div>{{ t('common.loginOut') }}</div>
         </ElDropdownItem>

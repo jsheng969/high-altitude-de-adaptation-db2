@@ -50,12 +50,12 @@
     <div class="section green">
       <div class="section-title">预测模型</div>
       <div class="card-grid two">
-        <div class="card">
+        <div class="card"  @click="handleClick('/reportPage')">
           <div class="card-title">急慢性高原病预测模型</div>
           <div class="card-btn">点击查看</div>
         </div>
 
-        <div class="card">
+        <div class="card" @click="handleClick('/AltitudeModel')">
           <div class="card-title">高原作业能力评估模型</div>
           <div class="card-btn">点击查看</div>
         </div>

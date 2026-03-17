@@ -225,3 +225,7 @@ iot:
 # 插件配置
 pf4j:
   pluginsDir: ${user.home}/plugins # 插件目录
+base:
+  rServiceUrl: http://127.0.0.1:8000
+  sharedRoot: /Users/jsheng/Downloads/Tools/Tools/shared
+  inputDir: /Users/jsheng/Downloads/Tools/Tools/shared/input

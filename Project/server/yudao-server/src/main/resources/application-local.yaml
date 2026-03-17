@@ -57,8 +57,8 @@ spring:
           #          url: jdbc:kingbase8://127.0.0.1:54321/test  # 人大金仓 KingbaseES 连接的示例
           #          url: jdbc:postgresql://127.0.0.1:5432/postgres # OpenGauss 连接的示例
           username: root
-          password: root$p@ssw0rd
-#          password: wang123456
+#          password: root$p@ssw0rd
+          password: wang123456
           #          username: sa # SQL Server 连接的示例
           #          password: Yudao@2024 # SQL Server 连接的示例
           #          username: SYSDBA # DM 连接的示例
@@ -272,3 +272,7 @@ justauth:
 pf4j:
 #  pluginsDir: /tmp/
   pluginsDir: ../plugins
+base:
+  rServiceUrl: http://127.0.0.1:8000
+  sharedRoot: /Users/jsheng/Downloads/Tools/Tools/数据和代码-给邓工20260211/shared
+  inputDir: /Users/jsheng/Downloads/Tools/Tools/数据和代码-给邓工20260211/shared/input

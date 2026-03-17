@@ -746,7 +746,87 @@ const remainingRouter: AppRouteRecordRaw[] = [
         component: () => import('@/views/iot/plugin/detail/index.vue')
       }
     ]
-  }
+  },
+  {
+  path: '/ability-model',
+  component: Layout,
+  name: 'AbilityModel',
+  meta: {
+    hidden: true
+  },
+  children: [
+    // {
+    //   path: 'index',
+    //   component: () => import('@/views/ability-model/index.vue'),
+    //   name: 'AbilityIndex',
+    //   meta: {
+    //     title: '能力模型',
+    //     hidden: true,
+    //     canTo: true
+    //   }
+    // },
+    {
+      path: 'brain-prediction',
+      component: () => import('@/views/ability-model/brain-prediction.vue'),
+      name: 'BrainPrediction',
+      meta: {
+        title: '脑力预测',
+        hidden: true,
+        canTo: true
+      }
+    },
+    {
+      path: 'brain-train',
+      component: () => import('@/views/ability-model/brain-train.vue'),
+      name: 'BrainTrain',
+      meta: {
+        title: '脑力训练',
+        hidden: true,
+        canTo: true
+      }
+    },
+    {
+      path: 'physical-prediction',
+      component: () => import('@/views/ability-model/physical-prediction.vue'),
+      name: 'PhysicalPrediction',
+      meta: {
+        title: '体力预测',
+        hidden: true,
+        canTo: true
+      }
+    },
+    {
+      path: 'physical-train',
+      component: () => import('@/views/ability-model/physical-train.vue'),
+      name: 'PhysicalTrain',
+      meta: {
+        title: '体力训练',
+        hidden: true,
+        canTo: true
+      }
+    },
+    {
+      path: 'operation-prediction',
+      component: () => import('@/views/ability-model/operation-prediction.vue'),
+      name: 'OperationPrediction',
+      meta: {
+        title: '精确操作预测',
+        hidden: true,
+        canTo: true
+      }
+    },
+    {
+      path: 'operation-train',
+      component: () => import('@/views/ability-model/operation-train.vue'),
+      name: 'OperationTrain',
+      meta: {
+        title: '精确操作训练',
+        hidden: true,
+        canTo: true
+      }
+    }
+  ]
+}
 ]
 
 export default remainingRouter

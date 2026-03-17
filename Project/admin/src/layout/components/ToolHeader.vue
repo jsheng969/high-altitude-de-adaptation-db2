@@ -62,7 +62,7 @@ export default defineComponent({
           </div>
         ) : undefined}
         <div class="h-full flex items-center">
-          {screenfull.value ? (
+          {/* {screenfull.value ? (
             <Screenfull class="custom-hover" color="var(--top-header-text-color)"></Screenfull>
           ) : undefined}
           {search.value ? <RouterSearch isModal={false} /> : undefined}
@@ -77,7 +77,7 @@ export default defineComponent({
           ) : undefined}
           {message.value ? (
             <Message class="custom-hover" color="var(--top-header-text-color)"></Message>
-          ) : undefined}
+          ) : undefined} */}
           <UserInfo></UserInfo>
         </div>
       </div>

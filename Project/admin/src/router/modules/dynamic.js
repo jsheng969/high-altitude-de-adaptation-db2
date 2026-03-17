@@ -10,6 +10,14 @@ export default {
       component: () => import('@/views/dynamic/ExcelImport'),
       name: 'ExcelImport',
       meta: { title: 'Excel导入', icon: 'el-icon-upload' }
-    }
+    },
+{
+  path: '/ability-model/brain-prediction',
+  name: 'BrainPrediction',
+  component: () => import('@/views/ability-model/brain-prediction.vue'),
+  meta: {
+    title: '脑力作业能力预测'
+  }
+}
   ]
 }
