@@ -11,6 +11,8 @@ public class AppProperties {
     private String sharedRoot;
     private String inputDir;
 
+    private String outputDir;
+
     public String getrServiceUrl() {
         return rServiceUrl;
     }
@@ -31,7 +33,15 @@ public class AppProperties {
         return inputDir;
     }
 
+    public String getOutputDir() {
+        return outputDir;
+    }
+
     public void setInputDir(String inputDir) {
         this.inputDir = inputDir;
+    }
+
+    public void setOutputDir(String outputDir) {
+        this.outputDir = outputDir;
     }
 }

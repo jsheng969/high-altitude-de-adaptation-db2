@@ -71,7 +71,7 @@ public class RReportServiceImpl implements RReportService {
 
         HttpEntity<Map<String, Object>> request = new HttpEntity<Map<String, Object>>(body, headers);
 
-        String rUrl = "http://127.0.0.1:8000/run/" + reportType;
+        String rUrl = appProperties.getrServiceUrl() +"/run/" + reportType;
 
         try {
             ResponseEntity<Map> response = restTemplate.postForEntity(
@@ -104,7 +104,7 @@ public class RReportServiceImpl implements RReportService {
     public Map getResult(String type, String taskId) {
         String reportType = normalizeType(type);
 
-        String url = "http://127.0.0.1:8000/result?task_id=" + taskId + "&type=" + reportType;
+        String url = appProperties.getrServiceUrl() +"/result?task_id=" + taskId + "&type=" + reportType;
         Map raw = restTemplate.getForObject(url, Map.class);
 
         if (raw == null) {
@@ -167,7 +167,7 @@ public class RReportServiceImpl implements RReportService {
     @Override
     public Map getTasks(String type) {
         String reportType = normalizeType(type);
-        String url = "http://127.0.0.1:8000/tasks?type=" + reportType;
+        String url = appProperties.getrServiceUrl() +"/tasks?type=" + reportType;
         Map raw = restTemplate.getForObject(url, Map.class);
 
         if (raw == null) {

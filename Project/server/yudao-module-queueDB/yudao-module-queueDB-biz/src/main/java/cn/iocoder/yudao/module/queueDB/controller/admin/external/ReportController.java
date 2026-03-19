@@ -1,6 +1,7 @@
 package cn.iocoder.yudao.module.queueDB.controller.admin.external;
 
 import cn.iocoder.yudao.framework.common.pojo.CommonResult;
+import cn.iocoder.yudao.module.queueDB.controller.admin.external.config.AppProperties;
 import cn.iocoder.yudao.module.queueDB.service.external.RReportService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -22,6 +23,9 @@ public class ReportController {
 
     @Autowired
     private RReportService reportService;
+
+    @Autowired
+    private AppProperties appProperties;
 
     @PostMapping("/run")
     public CommonResult<Map> run(
@@ -53,8 +57,8 @@ public class ReportController {
         String safeType = normalizeType(type);
 
         File file = new File(
-                "/Users/jsheng/Downloads/Tools/Tools/数据和代码-给邓工20260211/shared/output/"
-                        + safeType + "/" + taskId + "/" + fileName
+                appProperties.getOutputDir()
+                        + "/" + safeType + "/" + taskId + "/" + fileName
         );
 
         if (!file.exists() || !file.isFile()) {
