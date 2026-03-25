@@ -410,7 +410,7 @@ onMounted(() => {
 .login-image {
   width: 400px;
   height: 500px;
-  background-image: url("../../../assets/images/login-image2.png");
+  // background-image: url("../../../assets/images/login-image2.png");
   background-size: 100% 100%; /* 拉伸图片以填充整个容器 */
   background-repeat: no-repeat; /* 防止图片重复 */
 }

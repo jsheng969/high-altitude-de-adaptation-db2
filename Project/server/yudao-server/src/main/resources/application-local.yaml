@@ -274,6 +274,6 @@ pf4j:
   pluginsDir: ../plugins
 base:
   rServiceUrl: http://127.0.0.1:8000
-  sharedRoot: E:\项目\西部战区医院\103\预测模型\shared
-  inputDir: E:\项目\西部战区医院\103\预测模型\shared\input
-  outputDir: E:\项目\西部战区医院\103\预测模型\shared\output\
+  sharedRoot: D:\hadad\shared
+  inputDir: D:\hadad\shared\input
+  outputDir: D:\hadad\shared\output\

@@ -1,6 +1,8 @@
 <template>
   <h2 class="enter-x mb-3 text-center text-2xl font-bold xl:text-center xl:text-3xl">
-    {{ getFormTitle }}
+    <!-- {{ getFormTitle }} -->
+      <div :style="{ color: '#009688', fontSize: '24px' }">急进与长期驻防高原军人队列样本库及表型组数据库</div>
+      
   </h2>
 </template>
 <script lang="ts" setup>
