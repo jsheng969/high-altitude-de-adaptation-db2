@@ -1,7 +1,7 @@
 <template>
   <div class="home">
     <div class="overview-graph">
-      <div class="overview-graph__side-title">      数据图谱</div>
+      <div class="overview-graph__side-title">数据图谱</div>
       <div class="overview-graph__header">
         <button class="overview-graph__icon-btn" type="button" aria-label="展开图谱" @click="graphExpanded = true">
           <span class="overview-graph__icon overview-graph__icon--expand">
@@ -19,7 +19,7 @@
     <div v-if="graphExpanded" class="overview-graph-modal" @click.self="graphExpanded = false">
       <div class="overview-graph-modal__panel">
         <div class="overview-graph-modal__header">
-          <div class="overview-graph-modal__title">表型组数据库总览</div>
+          <div class="overview-graph-modal__title"></div>
           <button class="overview-graph__icon-btn" type="button" aria-label="收起图谱" @click="graphExpanded = false">
             <span class="overview-graph__icon overview-graph__icon--collapse">
               <span></span>
@@ -54,7 +54,7 @@
           <div class="card-btn">点击查看</div>
         </div>
 
-        <div class="card" @click="handleClick('VipChart')">
+        <div class="card" @click="handleClick('/VipChart')">
           <div class="card-title">多组学数据库</div>
           <div class="card-sub">Integrated Multi-Omics Database</div>
           <div class="card-btn">点击查看</div>
@@ -124,22 +124,22 @@ const handleClick = (path: string) => {
   top: 0;
   bottom: 0;
   width: 80px;
+  box-sizing: border-box;
+  padding-top: 62px;
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  letter-spacing: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  font-weight: 600;
   background: #E6F2FF;
   color: transparent;
 }
 
 .overview-graph__side-title::before {
   content: '数据图谱';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  writing-mode: vertical-rl;
-  text-orientation: mixed;
-  letter-spacing: 4px;
-  line-height: 1;
-  font-size: 20px;
-  font-weight: 600;
   color: #0A76B6;
 }
 
@@ -227,17 +227,18 @@ const handleClick = (path: string) => {
 .overview-graph__body {
   position: relative;
   height: 220px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   overflow: hidden;
   background: linear-gradient(180deg, #f8fbff 0%, #eef4ff 100%);
   margin-left: 80px;
 }
 
 .overview-graph__preview {
-  position: absolute;
-  top: 50%;
-  left: 50%;
+  position: relative;
   width: 1400px;
-  transform: translate(-50%, -50%);
+  flex: 0 0 auto;
   pointer-events: none;
 }
 
