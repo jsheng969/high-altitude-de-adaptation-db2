@@ -15,6 +15,8 @@ public class AppProperties {
 
     private String pluginsDir;
 
+    private String abilityModelServiceUrl;
+
     public String getrServiceUrl() {
         return rServiceUrl;
     }
@@ -53,5 +55,13 @@ public class AppProperties {
 
     public void setPluginsDir(String pluginsDir) {
         this.pluginsDir = pluginsDir;
+    }
+
+    public String getAbilityModelServiceUrl() {
+        return abilityModelServiceUrl;
+    }
+
+    public void setAbilityModelServiceUrl(String abilityModelServiceUrl) {
+        this.abilityModelServiceUrl = abilityModelServiceUrl;
     }
 }

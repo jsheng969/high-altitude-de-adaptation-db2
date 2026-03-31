@@ -272,6 +272,7 @@ justauth:
 
 base:
   rServiceUrl: http://127.0.0.1:8000
+  abilityModelServiceUrl: http://127.0.0.1:5001
   sharedRoot: D:\hadad\shared
   inputDir: D:\hadad\shared\input
   outputDir: D:\hadad\shared\output\

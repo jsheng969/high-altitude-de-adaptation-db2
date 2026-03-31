@@ -181,18 +181,20 @@
 import { computed, ref, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { UploadFilled } from '@element-plus/icons-vue'
+import { getAccessToken, getTenantId } from '@/utils/auth'
+import {
+  AbilityModelApi,
+  normalizeAbilityModelDetailUrls,
+  toAbilityModelPreviewUrl,
+  type AbilityModelType
+} from '@/api/abilityModel'
 
 type UploadState = 'idle' | 'uploading' | 'success' | 'error'
 
 const props = defineProps<{
   title: string
-  datatype: '脑力' | '体力' | '精确'
+  datatype: AbilityModelType
 }>()
-
-const BASE_URL = 'http://127.0.0.1:5001'
-const UPLOAD_API_URL = `${BASE_URL}/api/upload/brainexcel`
-const RECORDS_API_URL = `${BASE_URL}/api/analysis/records/page`
-const RECORD_DETAIL_API_URL = `${BASE_URL}/api/train/record/`
 
 const fileInputRef = ref<HTMLInputElement | null>(null)
 const isDragover = ref(false)
@@ -273,7 +275,15 @@ const handleFileUpload = (file: File) => {
   uploadingText.value = `正在上传 ${file.name}...`
 
   const xhr = new XMLHttpRequest()
-  xhr.open('POST', UPLOAD_API_URL, true)
+  xhr.open('POST', AbilityModelApi.trainUploadUrl, true)
+  const accessToken = getAccessToken()
+  if (accessToken) {
+    xhr.setRequestHeader('Authorization', `Bearer ${accessToken}`)
+  }
+  const tenantId = getTenantId()
+  if (tenantId) {
+    xhr.setRequestHeader('tenant-id', tenantId)
+  }
 
   xhr.upload.addEventListener('progress', (e) => {
     if (e.lengthComputable) {
@@ -338,18 +348,13 @@ const handleFileChange = (e: Event) => {
 const loadRecords = async () => {
   tableLoading.value = true
   try {
-    const params = new URLSearchParams({
-      page: String(currentPage.value),
-      page_size: String(pageSize.value),
+    const result = await AbilityModelApi.getTrainRecordsPage({
+      page: currentPage.value,
+      page_size: pageSize.value,
       altitude_group: props.datatype
     })
-
-    const response = await fetch(`${RECORDS_API_URL}?${params.toString()}`)
-    if (!response.ok) throw new Error(`请求失败：${response.status} ${response.statusText}`)
-
-    const result = await response.json()
-    const pagination = result.data?.pagination || {}
-    list.value = result.data?.records || []
+    const pagination = result?.pagination || {}
+    list.value = result?.records || []
     total.value = pagination.total || 0
     currentPage.value = pagination.page || 1
     pageSize.value = pagination.page_size || 10
@@ -385,20 +390,15 @@ const handleViewDetail = async (recordId: number | string) => {
   detailData.value = null
 
   try {
-    const response = await fetch(`${RECORD_DETAIL_API_URL}${recordId}`)
-    if (!response.ok) throw new Error(`请求失败：${response.status} ${response.statusText}`)
-
-    const result = await response.json()
-    const data = result.data || {}
+    const result = await AbilityModelApi.getTrainRecordDetail(recordId)
+    const data = normalizeAbilityModelDetailUrls(result || {})
 
     // 关键修正：
     // plain_path 实际表示图表，不显示成“平原数据文件”
     detailData.value = {
       ...data,
       chart_path: data.plain_path,
-      chart_preview_url: data.plain_download_url?.includes('/api/file/download/')
-        ? data.plain_download_url.replace('/api/file/download/', '/api/file/preview/').replace('?action=download', '')
-        : undefined
+      chart_preview_url: toAbilityModelPreviewUrl(data.plain_download_url)
     }
   } catch {
     detailError.value = true
@@ -412,7 +412,7 @@ const openDownload = (url?: string) => {
     ElMessage.warning('文件不存在')
     return
   }
-  window.open(url, '_blank')
+  window.open(url, '_blank', 'noopener,noreferrer')
 }
 
 const handleDialogClose = () => {
