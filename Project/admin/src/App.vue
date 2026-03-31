@@ -1,5 +1,4 @@
 <script lang="ts" setup>
-import { isDark } from '@/utils/is'
 import { useAppStore } from '@/store/modules/app'
 import { useDesign } from '@/hooks/web/useDesign'
 import { CACHE_KEY, useCache } from '@/hooks/web/useCache'
@@ -18,7 +17,7 @@ const { wsCache } = useCache()
 const setDefaultTheme = () => {
   let isDarkTheme = wsCache.get(CACHE_KEY.IS_DARK)
   if (isDarkTheme === null) {
-    isDarkTheme = isDark()
+    isDarkTheme = false
   }
   appStore.setIsDark(isDarkTheme)
 }
