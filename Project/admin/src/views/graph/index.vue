@@ -1,772 +1,517 @@
 <template>
-  <div class="mind-map-wrapper" ref="wrapperRef">
-    <!-- SVG连线层 -->
-    <svg class="connections-svg" ref="svgRef" :width="svgWidth" :height="svgHeight">
-      <defs>
-        <marker id="arrowBlue" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
-          <circle cx="3" cy="3" r="2" fill="#3B6FE8" opacity="0.6"/>
-        </marker>
-        <marker id="arrowRed" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
-          <circle cx="3" cy="3" r="2" fill="#E84B4B" opacity="0.6"/>
-        </marker>
-        <marker id="arrowCyan" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
-          <circle cx="3" cy="3" r="2" fill="#00B8D9" opacity="0.6"/>
-        </marker>
-        <filter id="glow">
-          <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
-          <feMerge>
-            <feMergeNode in="coloredBlur"/>
-            <feMergeNode in="SourceGraphic"/>
-          </feMerge>
-        </filter>
-      </defs>
-      <!-- 主干连线 -->
+  <div class="mind-map-wrapper" :class="{ 'mind-map-wrapper--preview': props.preview }" ref="wrapperRef">
+    <div v-if="!props.preview" class="toolbar">
+      <div>
+        <div class="toolbar__title">数据图谱</div>
+        <div class="toolbar__desc">共 {{ idList.length }} 个体检 ID，可按 ID 查询对应连线数据</div>
+      </div>
+      <div class="toolbar__search">
+        <input
+          v-model.trim="searchKeyword"
+          class="toolbar__input"
+          type="text"
+          placeholder="请输入体检 ID，例如 TJ000001"
+          @keyup.enter="handleSearch"
+        />
+        <button type="button" class="toolbar__btn toolbar__btn--primary" @click="handleSearch">
+          查询
+        </button>
+        <button type="button" class="toolbar__btn" @click="resetSearch">重置</button>
+      </div>
+    </div>
+
+    <div v-if="!props.preview" class="toolbar__status">
+      {{ currentParticipantId ? `当前 ID：${currentParticipantId}` : '当前视图：总体图谱' }}
+    </div>
+
+    <svg class="connections-svg" :width="svgWidth" :height="svgHeight">
       <path
-        v-for="(line, idx) in mainLines"
-        :key="'main-' + idx"
+        v-for="(line, index) in mainLines"
+        :key="'main-' + index"
         :d="line.d"
         :stroke="line.color"
+        fill="none"
         stroke-width="2"
-        fill="none"
-        opacity="0.8"
-        :class="['main-line', { active: line.active }]"
+        opacity="0.82"
       />
-      <!-- 子节点连线 -->
       <path
-        v-for="(line, idx) in subLines"
-        :key="'sub-' + idx"
+        v-for="(line, index) in childLines"
+        :key="'child-' + index"
         :d="line.d"
         :stroke="line.color"
+        fill="none"
         stroke-width="1.5"
-        fill="none"
-        opacity="0.6"
-        class="sub-line"
-      />
-      <!-- 明细展开连线 -->
-      <path
-        v-for="(line, idx) in detailLines"
-        :key="'detail-' + idx"
-        :d="line.d"
-        :stroke="line.color"
-        stroke-width="1"
-        fill="none"
-        opacity="0.5"
-        stroke-dasharray="4,3"
-        class="detail-line"
+        opacity="0.62"
       />
     </svg>
 
-    <!-- 中心节点 -->
-    <div
-      class="center-node"
-      ref="centerRef"
-      :style="centerStyle"
-    >
-      <div class="center-inner">
-        <div class="center-title">{{ mapData.title }}</div>
-        <div class="center-subtitle">{{ mapData.subtitle }}</div>
-      </div>
-      <div class="center-pulse"></div>
+    <div class="center-node" ref="centerRef" :style="centerStyle">
+      <div class="center-node__title">{{ mapData.title }}</div>
+      <div class="center-node__subtitle">{{ mapData.subtitle }}</div>
     </div>
 
-    <!-- 左侧分组节点 -->
-    <template v-for="(group, gIdx) in leftGroups" :key="'lg-' + gIdx">
+    <template v-for="(group, index) in leftGroups" :key="'left-' + group.id">
       <div
-        :ref="el => setGroupRef(el, 'left', gIdx)"
+        :ref="(el) => setGroupRef(el, 'left', index)"
         class="group-node group-node--left"
-        :class="{ active: activeGroup === group.id }"
-        :style="getGroupStyle('left', gIdx)"
-        @click="toggleGroup(group)"
+        :style="getGroupStyle('left', index)"
       >
-        <span class="group-label">{{ group.name }}</span>
-        <span class="group-count">{{ group.count }}</span>
+        <span>{{ group.name }}</span>
+        <small>{{ group.count }}</small>
       </div>
-
-      <!-- 左侧子节点（前瞻/回顾） -->
-      <template v-if="group.children">
-        <div
-          v-for="(child, cIdx) in group.children"
-          :key="'lc-' + gIdx + '-' + cIdx"
-          :ref="el => setChildRef(el, 'left', gIdx, cIdx)"
-          class="child-node child-node--left"
-          :style="getChildStyle('left', gIdx, cIdx, group.children.length)"
-        >
-          {{ child.label }}
-        </div>
-      </template>
-
-      <!-- 左侧展开明细 -->
-      <transition name="expand">
-        <div
-          v-if="activeGroup === group.id && group.details"
-          class="detail-panel detail-panel--left"
-          :style="getDetailPanelStyle('left', gIdx)"
-        >
-          <div class="detail-panel__title">{{ group.name }} 明细</div>
-          <div class="detail-panel__content">
-            <div
-              v-for="(detail, dIdx) in group.details"
-              :key="dIdx"
-              class="detail-item"
-            >
-              <div class="detail-item__tag" :class="detail.type">{{ detail.type === 'prospect' ? '前瞻' : '回顾' }}</div>
-              <div class="detail-item__info">
-                <span class="detail-item__name">{{ detail.name }}</span>
-                <span class="detail-item__value">{{ detail.value }}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </transition>
+      <div
+        v-for="(child, childIndex) in group.children || []"
+        :key="'left-child-' + group.id + '-' + childIndex"
+        :ref="(el) => setChildRef(el, 'left', index, childIndex)"
+        class="child-node"
+        :style="getChildStyle('left', index, childIndex, group.children.length)"
+      >
+        {{ child.label }}
+      </div>
     </template>
 
-    <!-- 右侧分组节点 -->
-    <template v-for="(group, gIdx) in rightGroups" :key="'rg-' + gIdx">
+    <template v-for="(group, index) in rightGroups" :key="'right-' + group.id">
       <div
-        :ref="el => setGroupRef(el, 'right', gIdx)"
-        class="group-node group-node--right"
-        :class="[`group-node--${group.color}`, { active: activeGroup === group.id }]"
-        :style="getGroupStyle('right', gIdx)"
-        @click="toggleGroup(group)"
+        :ref="(el) => setGroupRef(el, 'right', index)"
+        class="group-node"
+        :class="`group-node--${group.color || 'dark'}`"
+        :style="getGroupStyle('right', index)"
       >
-        <span class="group-label">{{ group.name }}</span>
-        <span class="group-count">{{ group.count }}</span>
+        <span>{{ group.name }}</span>
+        <small>{{ group.count }}</small>
       </div>
-
-      <!-- 右侧子节点 -->
-      <template v-if="group.children">
-        <div
-          v-for="(child, cIdx) in group.children"
-          :key="'rc-' + gIdx + '-' + cIdx"
-          :ref="el => setChildRef(el, 'right', gIdx, cIdx)"
-          class="child-node child-node--right"
-          :style="getChildStyle('right', gIdx, cIdx, group.children.length)"
-        >
-          {{ child.label }}
-        </div>
-      </template>
-
-      <!-- 右侧展开明细 -->
-      <transition name="expand">
-        <div
-          v-if="activeGroup === group.id && group.details"
-          class="detail-panel detail-panel--right"
-          :style="getDetailPanelStyle('right', gIdx)"
-        >
-          <div class="detail-panel__title">{{ group.name }} 明细</div>
-          <div class="detail-panel__content">
-            <div
-              v-for="(detail, dIdx) in group.details"
-              :key="dIdx"
-              class="detail-item"
-            >
-              <div
-                class="detail-item__tag"
-                :class="detail.type"
-              >{{ getDetailTag(detail.type) }}</div>
-              <div class="detail-item__info">
-                <span class="detail-item__name">{{ detail.name }}</span>
-                <span class="detail-item__value">{{ detail.value }}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </transition>
+      <div
+        v-for="(child, childIndex) in group.children || []"
+        :key="'right-child-' + group.id + '-' + childIndex"
+        :ref="(el) => setChildRef(el, 'right', index, childIndex)"
+        class="child-node"
+        :style="getChildStyle('right', index, childIndex, group.children.length)"
+      >
+        {{ child.label }}
+      </div>
     </template>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted, nextTick, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
+import { ElMessage } from 'element-plus'
 
-// ========== Props ==========
 const props = defineProps({
-  // 后台接口返回数据结构
-  data: {
-    type: Object,
-    default: () => null
-  }
+  data: { type: Object, default: () => null },
+  preview: { type: Boolean, default: false }
 })
 
-// ========== 默认演示数据（对接后台时替换） ==========
-const defaultData = {
-  title: '体检人数',
-  subtitle: '6368人',
-  leftGroups: [
-    {
-      id: 'liudiao', name: '流调', count: 'XXXX人', color: 'dark',
-      children: [{ label: '前瞻XXXX人' }, { label: '回顾XXX人' }],
-      details: [
-        { type: 'prospect', name: '前瞻问卷', value: '3200人' },
-        { type: 'prospect', name: '前瞻随访', value: '1762人' },
-        { type: 'retrospect', name: '回顾数据', value: '890人' },
-        { type: 'retrospect', name: '回顾问卷', value: '478人' },
-      ]
-    },
-    {
-      id: 'xinlishuimian', name: '心理睡眠', count: 'XXXX人', color: 'dark',
-      children: [{ label: '前瞻XXXX人' }, { label: '回顾XXX人' }],
-      details: [
-        { type: 'prospect', name: 'PSQI量表', value: '2100人' },
-        { type: 'prospect', name: '焦虑量表', value: '1900人' },
-        { type: 'retrospect', name: '历史记录', value: '700人' },
-      ]
-    },
-    {
-      id: 'renzhi', name: '认知', count: 'XXX人', color: 'dark',
-      children: [{ label: '前瞻XXXX人' }, { label: '回顾XXX人' }],
-      details: [
-        { type: 'prospect', name: 'MoCA量表', value: '1500人' },
-        { type: 'retrospect', name: '历史数据', value: '600人' },
-      ]
-    },
-    {
-      id: 'rentichenfen', name: '人体成分', count: 'XXX人', color: 'dark',
-      children: [{ label: '前瞻XXXX人' }, { label: '回顾XXX人' }],
-      details: [
-        { type: 'prospect', name: 'BMI', value: '1800人' },
-        { type: 'prospect', name: '体脂率', value: '1650人' },
-        { type: 'retrospect', name: '历史数据', value: '550人' },
-      ]
-    },
-    {
-      id: 'shenjingwaike', name: '神经外科', count: 'XXX人', color: 'dark',
-      children: [{ label: '前瞻XXXX人' }, { label: '回顾XXX人' }],
-      details: [
-        { type: 'prospect', name: '前瞻检查', value: '1200人' },
-        { type: 'retrospect', name: '回顾病历', value: '480人' },
-      ]
-    },
-    {
-      id: 'feigongneng', name: '肺功能', count: 'XXXX人', color: 'dark',
-      children: [
-        { label: '弥散XXX人' }, { label: '通气XXX人' }
-      ],
-      childrenSub: [
-        [{ label: '前瞻XXXX人' }, { label: '回顾XXX人' }],
-        [{ label: '前瞻XXXX人' }, { label: '回顾XXX人' }],
-      ],
-      details: [
-        { type: 'prospect', name: '弥散前瞻', value: '1200人' },
-        { type: 'prospect', name: '通气前瞻', value: '1100人' },
-        { type: 'retrospect', name: '弥散回顾', value: '500人' },
-        { type: 'retrospect', name: '通气回顾', value: '480人' },
-      ]
-    },
-    {
-      id: 'yanke', name: '眼科', count: 'XXX人', color: 'dark',
-      children: [],
-      details: [
-        { type: 'prospect', name: '眼底检查', value: '1400人' },
-        { type: 'prospect', name: '视力测试', value: '1300人' },
-      ]
-    },
-  ],
-  rightGroups: [
-    {
-      id: 'qianzhan_sample', name: '前瞻样本', count: 'XXX份', color: 'red',
-      children: [{ label: '血液XX份' }, { label: '唾液XX份' }],
-      details: [
-        { type: 'blood', name: '全血样本', value: '320份' },
-        { type: 'blood', name: '血清样本', value: '280份' },
-        { type: 'saliva', name: '唾液样本', value: '180份' },
-      ]
-    },
-    {
-      id: 'huigu_sample', name: '回顾样本', count: 'XXX份', color: 'red',
-      children: [{ label: '血液XX份' }, { label: '尿液XX份' }],
-      details: [
-        { type: 'blood', name: '回顾血液', value: '240份' },
-        { type: 'urine', name: '回顾尿液', value: '160份' },
-      ]
-    },
-    {
-      id: 'zuxue', name: '组学送样', count: 'XXX份', color: 'cyan',
-      children: [
-        { label: '全基因 XX份' }, { label: '宏基因组 XX份' },
-        { label: '代谢组 XX份' }, { label: '表观组 XX份' },
-        { label: '转录组 XX份' }, { label: '蛋白组 XX份' },
-        { label: '免疫组 XX份' },
-      ],
-      details: [
-        { type: 'genome', name: '全基因组', value: '120份' },
-        { type: 'genome', name: '宏基因组', value: '95份' },
-        { type: 'genome', name: '代谢组', value: '88份' },
-        { type: 'genome', name: '表观组', value: '76份' },
-        { type: 'genome', name: '转录组', value: '82份' },
-        { type: 'genome', name: '蛋白组', value: '70份' },
-        { type: 'genome', name: '免疫组', value: '65份' },
-      ]
-    },
-    {
-      id: 'xueye', name: '血液', count: 'XXX人', color: 'dark',
-      children: [{ label: '前瞻XXXX人' }, { label: '回顾XXX人' }],
-      details: [
-        { type: 'prospect', name: '血常规', value: '2800人' },
-        { type: 'prospect', name: '生化全套', value: '2600人' },
-        { type: 'retrospect', name: '历史血检', value: '900人' },
-      ]
-    },
-    {
-      id: 'chaosheng', name: '超声', count: 'XXX人', color: 'dark',
-      children: [],
-      details: [
-        { type: 'prospect', name: '腹部超声', value: '1600人' },
-        { type: 'prospect', name: '心脏超声', value: '1200人' },
-        { type: 'prospect', name: '颈动脉超声', value: '1100人' },
-      ]
-    },
-    {
-      id: 'xindian', name: '心电', count: 'XXX人', color: 'dark',
-      children: [
-        { label: '1静态血压血氧' }, { label: '2静态心电图' },
-        { label: '3动态心电图' }, { label: '4动态血压' },
-      ],
-      details: [
-        { type: 'prospect', name: '静态血压', value: '2500人' },
-        { type: 'prospect', name: '静态心电图', value: '2400人' },
-        { type: 'prospect', name: '动态心电图', value: '1800人' },
-        { type: 'prospect', name: '动态血压', value: '1700人' },
-        { type: 'retrospect', name: '回顾数据', value: '700人' },
-      ]
-    },
-  ]
+const mockIdList = Array.from({ length: 6368 }, (_, index) => `TJ${String(index + 1).padStart(6, '0')}`)
+
+function createSummaryGraph(total) {
+  return {
+    title: '体检人数',
+    subtitle: `${total}人`,
+    leftGroups: [
+      { id: 'liudiao', name: '流调', count: 'XXXX人', children: [{ label: '前瞻XXXX人' }, { label: '回顾XXX人' }] },
+      { id: 'xinli', name: '心理睡眠', count: 'XXXX人', children: [{ label: 'PSQI' }, { label: '焦虑量表' }] },
+      { id: 'renzhi', name: '认知', count: 'XXX人', children: [{ label: 'MoCA' }] },
+      { id: 'renti', name: '人体成分', count: 'XXX人', children: [{ label: 'BMI' }, { label: '体脂率' }] }
+    ],
+    rightGroups: [
+      { id: 'qianzhan', name: '前瞻样本', count: 'XXX份', color: 'red', children: [{ label: '血液XX份' }, { label: '唾液XX份' }] },
+      { id: 'zuxue', name: '组学送样', count: 'XXX份', color: 'cyan', children: [{ label: '全基因组XX份' }, { label: '转录组XX份' }, { label: '蛋白组XX份' }] },
+      { id: 'xueye', name: '血液', count: 'XXX人', color: 'dark', children: [{ label: '血常规' }, { label: '生化全套' }] },
+      { id: 'xindian', name: '心电', count: 'XXX人', color: 'dark', children: [{ label: '静态心电图' }, { label: '动态血压' }] }
+    ]
+  }
 }
 
-// ========== 响应式状态 ==========
+function buildParticipantGraph(id) {
+  const seed = Number(id.replace(/\D/g, '').slice(-3) || 0)
+  const hasTranscriptome = seed % 2 === 0
+  const hasProteomics = seed % 3 === 0
+
+  return {
+    title: '体检 ID',
+    subtitle: id,
+    leftGroups: [
+      { id: 'liudiao', name: '流调', count: '已关联', children: [{ label: seed % 2 === 0 ? '前瞻问卷' : '回顾问卷' }] },
+      { id: 'xinli', name: '心理睡眠', count: '已关联', children: [{ label: 'PSQI' }, { label: '焦虑量表' }] },
+      { id: 'renzhi', name: '认知', count: seed % 5 === 0 ? '未关联' : '已关联', children: seed % 5 === 0 ? [] : [{ label: 'MoCA' }] },
+      { id: 'renti', name: '人体成分', count: '已关联', children: [{ label: 'BMI' }, { label: '体脂率' }] }
+    ],
+    rightGroups: [
+      { id: 'qianzhan', name: '前瞻样本', count: `${(seed % 2) + 1}份`, color: 'red', children: [{ label: '血液1份' }, ...(seed % 2 === 0 ? [{ label: '唾液1份' }] : [])] },
+      { id: 'zuxue', name: '组学送样', count: `${1 + Number(hasTranscriptome) + Number(hasProteomics)}项`, color: 'cyan', children: [{ label: '全基因组' }, ...(hasTranscriptome ? [{ label: '转录组' }] : []), ...(hasProteomics ? [{ label: '蛋白组' }] : [])] },
+      { id: 'xueye', name: '血液', count: '已关联', color: 'dark', children: [{ label: '血常规' }, { label: '生化全套' }] },
+      { id: 'xindian', name: '心电', count: seed % 4 === 0 ? '未关联' : '已关联', color: 'dark', children: seed % 4 === 0 ? [] : [{ label: '静态心电图' }, { label: '动态血压' }] }
+    ]
+  }
+}
+
 const wrapperRef = ref(null)
-const svgRef = ref(null)
 const centerRef = ref(null)
 const groupRefs = reactive({ left: [], right: [] })
 const childRefs = reactive({ left: [], right: [] })
-
-const activeGroup = ref(null)
+const searchKeyword = ref('')
+const currentParticipantId = ref('')
 const svgWidth = ref(1400)
-const svgHeight = ref(900)
-
+const svgHeight = ref(props.preview ? 260 : 980)
 const mainLines = ref([])
-const subLines = ref([])
-const detailLines = ref([])
+const childLines = ref([])
 
-// ========== 计算属性 ==========
-const mapData = computed(() => {
-  const d = props.data || defaultData
-  return { title: d.title, subtitle: d.subtitle }
+const idList = computed(() => (Array.isArray(props.data?.idList) && props.data.idList.length ? props.data.idList : mockIdList))
+const currentGraph = computed(() => {
+  if (!currentParticipantId.value) {
+    return props.data?.summaryGraph || createSummaryGraph(idList.value.length)
+  }
+  return props.data?.graphById?.[currentParticipantId.value] || buildParticipantGraph(currentParticipantId.value)
 })
-const leftGroups = computed(() => (props.data || defaultData).leftGroups)
-const rightGroups = computed(() => (props.data || defaultData).rightGroups)
+const mapData = computed(() => ({ title: currentGraph.value.title, subtitle: currentGraph.value.subtitle }))
+const leftGroups = computed(() => currentGraph.value.leftGroups || [])
+const rightGroups = computed(() => currentGraph.value.rightGroups || [])
 
-// ========== 布局参数 ==========
-const CENTER_X = 560
-const CENTER_Y = 450
-const GROUP_W = 120
-const GROUP_H = 56
-const LEFT_X = 270
-const RIGHT_X = 850
-const CHILD_W = 110
-const CHILD_H = 30
-const CHILD_SPACING = 42
-const LEFT_CHILD_OFFSET_X = 150
-const RIGHT_CHILD_OFFSET_X = 165
-const GROUP_VERTICAL_GAP = 34
+const CENTER_X = props.preview ? 595 : 660
+const CENTER_Y = props.preview ? 138 : 420
+const CENTER_W = props.preview ? 132 : 180
+const CENTER_H = props.preview ? 86 : 120
+const GROUP_W = props.preview ? 96 : 120
+const GROUP_H = props.preview ? 34 : 56
+const LEFT_X = props.preview ? 372 : 270
+const RIGHT_X = props.preview ? 845 : 950
+const CHILD_W = props.preview ? 92 : 110
+const CHILD_H = props.preview ? 20 : 30
+const CHILD_SPACING = props.preview ? 22 : 42
+const GROUP_VERTICAL_GAP = props.preview ? 16 : 34
 
-function getCenterPos() {
-  return { x: CENTER_X, y: CENTER_Y }
+const centerStyle = computed(() => ({
+  left: `${CENTER_X - CENTER_W / 2}px`,
+  top: `${CENTER_Y - CENTER_H / 2}px`,
+  width: `${CENTER_W}px`,
+  height: `${CENTER_H}px`
+}))
+
+function clearRefs() {
+  groupRefs.left = []
+  groupRefs.right = []
+  childRefs.left = []
+  childRefs.right = []
 }
 
-function getGroupPos(side, idx) {
+function getGroupPos(side, index) {
   const x = side === 'left' ? LEFT_X : RIGHT_X
   const groups = side === 'left' ? leftGroups.value : rightGroups.value
-  const blockHeights = groups.map((group) => {
-    const childCount = group.children?.length || 0
-    const childHeight = childCount > 0 ? (childCount - 1) * CHILD_SPACING + CHILD_H : 0
-    return Math.max(GROUP_H, childHeight)
-  })
-  const totalHeight =
-    blockHeights.reduce((sum, height) => sum + height, 0) +
-    Math.max(groups.length - 1, 0) * GROUP_VERTICAL_GAP
-
-  let currentTop = CENTER_Y - totalHeight / 2
-  for (let i = 0; i < blockHeights.length; i++) {
-    const blockHeight = blockHeights[i]
-    const centerY = currentTop + blockHeight / 2
-    if (i === idx) {
-      return { x, y: centerY }
-    }
-    currentTop += blockHeight + GROUP_VERTICAL_GAP
+  const heights = groups.map((group) => Math.max(GROUP_H, ((group.children?.length || 1) - 1) * CHILD_SPACING + CHILD_H))
+  const totalHeight = heights.reduce((sum, item) => sum + item, 0) + Math.max(heights.length - 1, 0) * GROUP_VERTICAL_GAP
+  let top = CENTER_Y - totalHeight / 2
+  for (let i = 0; i < heights.length; i += 1) {
+    const centerY = top + heights[i] / 2
+    if (i === index) return { x, y: centerY }
+    top += heights[i] + GROUP_VERTICAL_GAP
   }
-
   return { x, y: CENTER_Y }
 }
 
-function getGroupStyle(side, idx) {
-  const pos = getGroupPos(side, idx)
-  return {
-    left: pos.x + 'px',
-    top: pos.y - GROUP_H / 2 + 'px',
-    width: GROUP_W + 'px',
-    height: GROUP_H + 'px',
-  }
+function getGroupStyle(side, index) {
+  const pos = getGroupPos(side, index)
+  return { left: `${pos.x}px`, top: `${pos.y - GROUP_H / 2}px`, width: `${GROUP_W}px`, height: `${GROUP_H}px` }
 }
 
-function getChildStyle(side, gIdx, cIdx, total) {
-  const gPos = getGroupPos(side, gIdx)
-  const startY = gPos.y - ((total - 1) * CHILD_SPACING) / 2
-  const offsetX = side === 'left' ? -LEFT_CHILD_OFFSET_X : RIGHT_CHILD_OFFSET_X
+function getChildStyle(side, groupIndex, childIndex, total) {
+  const groupPos = getGroupPos(side, groupIndex)
+  const startY = groupPos.y - ((total - 1) * CHILD_SPACING) / 2
+  const offsetX = props.preview
+    ? side === 'left'
+      ? -112
+      : 116
+    : side === 'left'
+      ? -150
+      : 165
   return {
-    left: (gPos.x + GROUP_W / 2 + offsetX - CHILD_W / 2) + 'px',
-    top: (startY + cIdx * CHILD_SPACING - CHILD_H / 2) + 'px',
-    width: CHILD_W + 'px',
-    height: CHILD_H + 'px',
+    left: `${groupPos.x + GROUP_W / 2 + offsetX - CHILD_W / 2}px`,
+    top: `${startY + childIndex * CHILD_SPACING - CHILD_H / 2}px`,
+    width: `${CHILD_W}px`,
+    height: `${CHILD_H}px`
   }
-}
-
-function getDetailPanelStyle(side, gIdx) {
-  const gPos = getGroupPos(side, gIdx)
-  const offsetX = side === 'left' ? -330 : 150
-  return {
-    left: (gPos.x + GROUP_W / 2 + offsetX) + 'px',
-    top: (gPos.y - 80) + 'px',
-    width: '200px',
-  }
-}
-
-const centerStyle = computed(() => ({
-  left: (CENTER_X - 90) + 'px',
-  top: (CENTER_Y - 60) + 'px',
-  width: '180px',
-  height: '120px',
-}))
-
-// ========== 连线计算 ==========
-function bezierPath(x1, y1, x2, y2, side) {
-  const cp = side === 'left'
-    ? `C ${x1 - 80},${y1} ${x2 + 80},${y2} ${x2},${y2}`
-    : `C ${x1 + 80},${y1} ${x2 - 80},${y2} ${x2},${y2}`
-  return `M ${x1},${y1} ${cp}`
 }
 
 function getRelativeRect(el) {
   const wrapper = wrapperRef.value
   if (!wrapper || !el) return null
-
   const wrapperRect = wrapper.getBoundingClientRect()
   const rect = el.getBoundingClientRect()
-
   return {
     left: rect.left - wrapperRect.left,
     right: rect.right - wrapperRect.left,
     top: rect.top - wrapperRect.top,
-    bottom: rect.bottom - wrapperRect.top,
-    width: rect.width,
     height: rect.height,
-    centerX: rect.left - wrapperRect.left + rect.width / 2,
     centerY: rect.top - wrapperRect.top + rect.height / 2
   }
 }
 
-function getCenterAnchor(side) {
-  const rect = getRelativeRect(centerRef.value)
-  if (!rect) {
-    return {
-      x: side === 'left' ? CENTER_X - 90 : CENTER_X + 90,
-      y: CENTER_Y
-    }
-  }
-
-  return {
-    x: side === 'left' ? rect.left : rect.right,
-    y: rect.centerY
-  }
-}
-
-function distributeEdgeY(rect, idx, total, padding = 10) {
+function distributeEdgeY(rect, index, total, padding = 12) {
   if (!rect || total <= 1) return rect?.centerY ?? CENTER_Y
   const usableHeight = Math.max(rect.height - padding * 2, 0)
-  return rect.top + padding + (usableHeight * idx) / (total - 1)
+  return rect.top + padding + (usableHeight * index) / (total - 1)
 }
 
-function getMainCenterAnchor(side, idx, total) {
-  const rect = getRelativeRect(centerRef.value)
-  if (!rect) {
-    return {
-      x: side === 'left' ? CENTER_X - 90 : CENTER_X + 90,
-      y: CENTER_Y
-    }
-  }
-
-  return {
-    x: side === 'left' ? rect.left : rect.right,
-    y: distributeEdgeY(rect, idx, total, 18)
-  }
-}
-
-function getGroupMainAnchor(side, idx) {
-  const rect = getRelativeRect(groupRefs[side]?.[idx])
-  const fallback = getGroupPos(side, idx)
-  if (!rect) {
-    return {
-      x: side === 'left' ? fallback.x + GROUP_W : fallback.x,
-      y: fallback.y
-    }
-  }
-
-  return {
-    x: side === 'left' ? rect.right : rect.left,
-    y: rect.centerY
-  }
-}
-
-function getGroupChildAnchor(side, gIdx, cIdx, total) {
-  const rect = getRelativeRect(groupRefs[side]?.[gIdx])
-  const fallback = getGroupPos(side, gIdx)
-  if (!rect) {
-    return {
-      x: side === 'left' ? fallback.x : fallback.x + GROUP_W,
-      y: fallback.y
-    }
-  }
-
-  return {
-    x: side === 'left' ? rect.left : rect.right,
-    y: distributeEdgeY(rect, cIdx, total, 10)
-  }
-}
-
-function getChildAnchor(side, gIdx, cIdx) {
-  const groups = side === 'left' ? leftGroups.value : rightGroups.value
-  const childCount = groups[gIdx]?.children?.length || 0
-  const rect = getRelativeRect(childRefs[side]?.[gIdx]?.[cIdx])
-  const fallbackStyle = getChildStyle(side, gIdx, cIdx, childCount)
-  if (!rect) {
-    return {
-      x: side === 'left' ? parseFloat(fallbackStyle.left) + CHILD_W : parseFloat(fallbackStyle.left),
-      y: parseFloat(fallbackStyle.top) + CHILD_H / 2
-    }
-  }
-
-  return {
-    x: side === 'left' ? rect.right : rect.left,
-    y: rect.centerY
-  }
-}
-
-function createTreeCurvePath(startX, startY, endX, endY, side) {
+function createCurve(startX, startY, endX, endY, side) {
   const direction = side === 'left' ? -1 : 1
   const dx = Math.abs(endX - startX)
   const offset = Math.max(36, Math.min(110, dx * 0.45))
-  const cp1X = startX + direction * offset
-  const cp2X = endX - direction * offset
-
-  return `M ${startX},${startY} C ${cp1X},${startY} ${cp2X},${endY} ${endX},${endY}`
+  return `M ${startX},${startY} C ${startX + direction * offset},${startY} ${endX - direction * offset},${endY} ${endX},${endY}`
 }
 
 function updateLines() {
-  const newMain = []
-  const newSub = []
-  const newDetail = []
+  const mains = []
+  const children = []
+  const centerRect = getRelativeRect(centerRef.value)
 
-  // 左侧主干连线
-  leftGroups.value.forEach((group, gIdx) => {
-    const total = leftGroups.value.length
-    const centerAnchor = getMainCenterAnchor('left', gIdx, total)
-    const groupAnchor = getGroupMainAnchor('left', gIdx)
-    newMain.push({
-      d: createTreeCurvePath(centerAnchor.x, centerAnchor.y, groupAnchor.x, groupAnchor.y, 'left'),
-      color: '#3B6FE8',
-      active: activeGroup.value === group.id
-    })
+  ;[
+    ['left', leftGroups.value, '#3b6fe8'],
+    ['right', rightGroups.value, null]
+  ].forEach(([side, groups, fixedColor]) => {
+    groups.forEach((group, index) => {
+      const groupRect = getRelativeRect(groupRefs[side]?.[index])
+      const color = fixedColor || (group.color === 'red' ? '#e84b4b' : group.color === 'cyan' ? '#00b8d9' : '#3b6fe8')
+      const centerX =
+        side === 'left'
+          ? centerRect?.left ?? CENTER_X - CENTER_W / 2
+          : centerRect?.right ?? CENTER_X + CENTER_W / 2
+      const centerY = distributeEdgeY(centerRect, index, groups.length, 18)
+      const groupX = side === 'left' ? groupRect?.right ?? getGroupPos(side, index).x + GROUP_W : groupRect?.left ?? getGroupPos(side, index).x
+      const groupY = groupRect?.centerY ?? getGroupPos(side, index).y
+      mains.push({ d: createCurve(centerX, centerY, groupX, groupY, side), color })
 
-    // 子节点连线
-    if (group.children && group.children.length) {
-      group.children.forEach((child, cIdx) => {
-        const groupChildAnchor = getGroupChildAnchor('left', gIdx, cIdx, group.children.length)
-        const childAnchor = getChildAnchor('left', gIdx, cIdx)
-        newSub.push({
-          d: createTreeCurvePath(groupChildAnchor.x, groupChildAnchor.y, childAnchor.x, childAnchor.y, 'left'),
-          color: '#3B6FE8'
-        })
+      ;(group.children || []).forEach((child, childIndex) => {
+        const childRect = getRelativeRect(childRefs[side]?.[index]?.[childIndex])
+        const startY = distributeEdgeY(groupRect, childIndex, group.children.length, 10)
+        const startX = side === 'left' ? groupRect?.left ?? getGroupPos(side, index).x : groupRect?.right ?? getGroupPos(side, index).x + GROUP_W
+        const endX = side === 'left' ? childRect?.right ?? parseFloat(getChildStyle(side, index, childIndex, group.children.length).left) + CHILD_W : childRect?.left ?? parseFloat(getChildStyle(side, index, childIndex, group.children.length).left)
+        const endY = childRect?.centerY ?? parseFloat(getChildStyle(side, index, childIndex, group.children.length).top) + CHILD_H / 2
+        children.push({ d: createCurve(startX, startY, endX, endY, side), color })
       })
-    }
+    })
   })
 
-  // 右侧主干连线
-  rightGroups.value.forEach((group, gIdx) => {
-    const total = rightGroups.value.length
-    const centerAnchor = getMainCenterAnchor('right', gIdx, total)
-    const groupAnchor = getGroupMainAnchor('right', gIdx)
-    const color = group.color === 'red' ? '#E84B4B' : group.color === 'cyan' ? '#00B8D9' : '#3B6FE8'
-    newMain.push({
-      d: createTreeCurvePath(centerAnchor.x, centerAnchor.y, groupAnchor.x, groupAnchor.y, 'right'),
-      color,
-      active: activeGroup.value === group.id
-    })
-
-    // 子节点连线
-    if (group.children && group.children.length) {
-      group.children.forEach((child, cIdx) => {
-        const groupChildAnchor = getGroupChildAnchor('right', gIdx, cIdx, group.children.length)
-        const childAnchor = getChildAnchor('right', gIdx, cIdx)
-        newSub.push({
-          d: createTreeCurvePath(groupChildAnchor.x, groupChildAnchor.y, childAnchor.x, childAnchor.y, 'right'),
-          color
-        })
-      })
-    }
-  })
-
-  mainLines.value = newMain
-  subLines.value = newSub
-  detailLines.value = newDetail
+  mainLines.value = mains
+  childLines.value = children
 }
 
-// ========== 交互 ==========
-function toggleGroup(group) {
-  if (activeGroup.value === group.id) {
-    activeGroup.value = null
-  } else {
-    activeGroup.value = group.id
-  }
-  nextTick(updateLines)
-}
-
-function getDetailTag(type) {
-  const map = {
-    prospect: '前瞻', retrospect: '回顾',
-    blood: '血液', saliva: '唾液', urine: '尿液',
-    genome: '组学'
-  }
-  return map[type] || type
-}
-
-function setGroupRef(el, side, idx) {
+function setGroupRef(el, side, index) {
   if (!groupRefs[side]) groupRefs[side] = []
-  groupRefs[side][idx] = el
+  groupRefs[side][index] = el
 }
 
-function setChildRef(el, side, gIdx, cIdx) {
+function setChildRef(el, side, groupIndex, childIndex) {
   if (!childRefs[side]) childRefs[side] = []
-  if (!childRefs[side][gIdx]) childRefs[side][gIdx] = []
-  childRefs[side][gIdx][cIdx] = el
+  if (!childRefs[side][groupIndex]) childRefs[side][groupIndex] = []
+  childRefs[side][groupIndex][childIndex] = el
 }
 
-// ========== 生命周期 ==========
-onMounted(async () => {
-  await nextTick()
-  const wrapper = wrapperRef.value
-  if (wrapper) {
-    svgWidth.value = wrapper.offsetWidth || 1400
-    svgHeight.value = wrapper.offsetHeight || 900
+function handleSearch() {
+  if (!searchKeyword.value) {
+    resetSearch()
+    return
   }
-  updateLines()
-  window.addEventListener('resize', handleResize)
-})
+  const keyword = searchKeyword.value.toLowerCase()
+  const matchedId =
+    idList.value.find((id) => id.toLowerCase() === keyword) ||
+    idList.value.find((id) => id.toLowerCase().includes(keyword))
+
+  if (!matchedId) {
+    ElMessage.warning('未找到对应体检 ID，请检查后重试')
+    return
+  }
+
+  currentParticipantId.value = matchedId
+  searchKeyword.value = matchedId
+}
+
+function resetSearch() {
+  searchKeyword.value = ''
+  currentParticipantId.value = ''
+}
 
 function handleResize() {
   const wrapper = wrapperRef.value
-  if (wrapper) {
-    svgWidth.value = wrapper.offsetWidth
-    svgHeight.value = wrapper.offsetHeight
-  }
+  if (!wrapper) return
+  svgWidth.value = wrapper.offsetWidth || 1400
+  svgHeight.value = wrapper.offsetHeight || (props.preview ? 260 : 980)
   nextTick(updateLines)
 }
 
-watch([leftGroups, rightGroups], () => {
-  nextTick(updateLines)
-}, { deep: true })
+onMounted(async () => {
+  await nextTick()
+  handleResize()
+  window.addEventListener('resize', handleResize)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', handleResize)
+})
+
+watch([leftGroups, rightGroups, currentParticipantId], async () => {
+  clearRefs()
+  await nextTick()
+  updateLines()
+})
 </script>
 
 <style scoped lang="scss">
 .mind-map-wrapper {
   position: relative;
   width: 100%;
-  min-height: 900px;
-  background: #f0f4ff;
+  min-height: 980px;
+  padding-top: 108px;
   overflow: hidden;
+  background:
+    radial-gradient(circle at 20% 30%, rgba(59, 111, 232, 0.06) 0%, transparent 60%),
+    radial-gradient(circle at 80% 70%, rgba(0, 184, 217, 0.06) 0%, transparent 60%),
+    #f0f4ff;
   font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
-  background-image:
-    radial-gradient(circle at 20% 30%, rgba(59,111,232,0.06) 0%, transparent 60%),
-    radial-gradient(circle at 80% 70%, rgba(0,184,217,0.06) 0%, transparent 60%);
 }
 
-// ========== SVG连线 ==========
+.mind-map-wrapper--preview {
+  min-height: 260px;
+  padding-top: 0;
+  background: transparent;
+}
+
+.mind-map-wrapper--preview .center-node {
+  box-shadow: 0 10px 28px rgba(59, 111, 232, 0.28);
+}
+
+.mind-map-wrapper--preview .center-node__title {
+  font-size: 12px;
+}
+
+.mind-map-wrapper--preview .center-node__subtitle {
+  font-size: 14px;
+}
+
+.mind-map-wrapper--preview .group-node span {
+  font-size: 11px;
+}
+
+.mind-map-wrapper--preview .group-node small {
+  font-size: 10px;
+}
+
+.mind-map-wrapper--preview .child-node {
+  font-size: 9px;
+  padding: 0 10px;
+}
+
+.toolbar {
+  position: absolute;
+  top: 18px;
+  left: 24px;
+  right: 24px;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 18px;
+  border: 1px solid rgba(59, 111, 232, 0.1);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 12px 28px rgba(48, 85, 154, 0.1);
+}
+
+.toolbar__title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #203152;
+}
+
+.toolbar__desc {
+  margin-top: 4px;
+  font-size: 13px;
+  color: #60708f;
+}
+
+.toolbar__search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.toolbar__input {
+  width: 280px;
+  height: 40px;
+  padding: 0 14px;
+  border: 1px solid rgba(59, 111, 232, 0.18);
+  border-radius: 12px;
+  font-size: 14px;
+  color: #22304e;
+  outline: none;
+}
+
+.toolbar__btn {
+  height: 40px;
+  padding: 0 16px;
+  border: 1px solid rgba(59, 111, 232, 0.14);
+  border-radius: 12px;
+  background: #fff;
+  color: #40516f;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.toolbar__btn--primary {
+  border-color: transparent;
+  background: linear-gradient(135deg, #2f5dd4 0%, #4b85ff 100%);
+  color: #fff;
+}
+
+.toolbar__status {
+  position: absolute;
+  top: 100px;
+  left: 24px;
+  z-index: 25;
+  display: inline-flex;
+  align-items: center;
+  height: 30px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.92);
+  color: #486084;
+  font-size: 12px;
+  box-shadow: 0 6px 16px rgba(48, 85, 154, 0.08);
+}
+
 .connections-svg {
   position: absolute;
   top: 0;
   left: 0;
-  pointer-events: none;
   z-index: 1;
-
-  .main-line {
-    transition: stroke-width 0.3s, opacity 0.3s;
-    &.active {
-      stroke-width: 3 !important;
-      opacity: 1 !important;
-    }
-  }
-
-  .detail-line {
-    animation: dash-flow 2s linear infinite;
-  }
+  pointer-events: none;
 }
 
-@keyframes dash-flow {
-  to { stroke-dashoffset: -20; }
-}
-
-// ========== 中心节点 ==========
 .center-node {
   position: absolute;
   z-index: 10;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  background: linear-gradient(135deg, #2352C8 0%, #3B6FE8 50%, #4F8AFF 100%);
-  box-shadow:
-    0 8px 32px rgba(59,111,232,0.45),
-    0 2px 8px rgba(59,111,232,0.3),
-    inset 0 1px 0 rgba(255,255,255,0.15);
-  cursor: default;
-  user-select: none;
-
-  .center-inner {
-    text-align: center;
-    color: #fff;
-    z-index: 2;
-    position: relative;
-  }
-
-  .center-title {
-    font-size: 15px;
-    font-weight: 700;
-    letter-spacing: 1px;
-    line-height: 1.4;
-    text-shadow: 0 1px 4px rgba(0,0,0,0.2);
-  }
-
-  .center-subtitle {
-    font-size: 17px;
-    font-weight: 800;
-    margin-top: 4px;
-    color: #fff;
-  }
-
-  .center-pulse {
-    position: absolute;
-    inset: -8px;
-    border-radius: 50%;
-    border: 2px solid rgba(59,111,232,0.3);
-    animation: pulse-ring 2.5s ease-out infinite;
-  }
+  color: #fff;
+  background: linear-gradient(135deg, #2352c8 0%, #3b6fe8 50%, #4f8aff 100%);
+  box-shadow: 0 8px 32px rgba(59, 111, 232, 0.45);
 }
 
-@keyframes pulse-ring {
-  0% { transform: scale(1); opacity: 0.6; }
-  100% { transform: scale(1.15); opacity: 0; }
+.center-node__title {
+  font-size: 15px;
+  font-weight: 700;
 }
 
-// ========== 分组节点 ==========
+.center-node__subtitle {
+  margin-top: 4px;
+  font-size: 17px;
+  font-weight: 800;
+}
+
 .group-node {
   position: absolute;
   z-index: 10;
@@ -775,188 +520,60 @@ watch([leftGroups, rightGroups], () => {
   align-items: center;
   justify-content: center;
   border-radius: 28px;
-  cursor: pointer;
-  transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
-  user-select: none;
-
-  &:hover {
-    transform: scale(1.06);
-  }
-
-  &.active {
-    transform: scale(1.08);
-    box-shadow: 0 0 0 3px rgba(255,255,255,0.8), 0 8px 24px rgba(0,0,0,0.2) !important;
-  }
-
-  .group-label {
-    font-size: 13px;
-    font-weight: 700;
-    line-height: 1.3;
-  }
-
-  .group-count {
-    font-size: 12px;
-    font-weight: 600;
-    opacity: 0.85;
-  }
-
-  // 深色（默认）
-  &--dark, &.group-node--left {
-    background: linear-gradient(135deg, #0A1A4A 0%, #1A2F6E 100%);
-    color: #fff;
-    box-shadow: 0 4px 16px rgba(10,26,74,0.4);
-  }
-
-  // 红色
-  &--red {
-    background: linear-gradient(135deg, #C8293A 0%, #E84B4B 100%);
-    color: #fff;
-    box-shadow: 0 4px 16px rgba(232,75,75,0.4);
-  }
-
-  // 青色
-  &--cyan {
-    background: linear-gradient(135deg, #0088B3 0%, #00B8D9 100%);
-    color: #fff;
-    box-shadow: 0 4px 16px rgba(0,184,217,0.4);
-  }
+  color: #fff;
+  box-shadow: 0 4px 16px rgba(10, 26, 74, 0.4);
+  background: linear-gradient(135deg, #0a1a4a 0%, #1a2f6e 100%);
 }
 
-// ========== 子节点 ==========
+.group-node--red {
+  background: linear-gradient(135deg, #c8293a 0%, #e84b4b 100%);
+}
+
+.group-node--cyan {
+  background: linear-gradient(135deg, #0088b3 0%, #00b8d9 100%);
+}
+
+.group-node span {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.group-node small {
+  margin-top: 2px;
+  font-size: 12px;
+  opacity: 0.85;
+}
+
 .child-node {
   position: absolute;
   z-index: 8;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 11px;
+  padding: 0 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  background: linear-gradient(135deg, #0a1a4a 0%, #1a2f6e 100%);
+  box-shadow: 0 4px 16px rgba(10, 26, 74, 0.28);
   color: #fff;
+  font-size: 11px;
   font-weight: 600;
   white-space: nowrap;
-  padding: 0 12px;
-  border-radius: 999px;
-  background: linear-gradient(135deg, #0A1A4A 0%, #1A2F6E 100%);
-  box-shadow: 0 4px 16px rgba(10,26,74,0.28);
-  border: 1px solid rgba(255,255,255,0.08);
-  pointer-events: none;
-
-  &--left {
-    justify-content: center;
-  }
-
-  &--right {
-    justify-content: center;
-  }
 }
 
-// ========== 明细面板 ==========
-.detail-panel {
-  position: absolute;
-  z-index: 20;
-  background: #fff;
-  border-radius: 12px;
-  box-shadow:
-    0 8px 32px rgba(59,111,232,0.18),
-    0 2px 8px rgba(0,0,0,0.08);
-  padding: 14px 14px 10px;
-  border: 1px solid rgba(59,111,232,0.12);
-  min-width: 190px;
-
-  &__title {
-    font-size: 12px;
-    font-weight: 700;
-    color: #1A2F6E;
-    margin-bottom: 10px;
-    padding-bottom: 6px;
-    border-bottom: 1px solid #eef2ff;
-    letter-spacing: 0.5px;
-  }
-
-  &__content {
-    display: flex;
+@media (max-width: 1200px) {
+  .toolbar {
     flex-direction: column;
-    gap: 6px;
-  }
-}
-
-.detail-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-
-  &__tag {
-    flex-shrink: 0;
-    font-size: 10px;
-    font-weight: 700;
-    padding: 2px 6px;
-    border-radius: 4px;
-    letter-spacing: 0.3px;
-
-    &.prospect {
-      background: rgba(59,111,232,0.12);
-      color: #3B6FE8;
-    }
-
-    &.retrospect {
-      background: rgba(100,116,139,0.12);
-      color: #475569;
-    }
-
-    &.blood {
-      background: rgba(232,75,75,0.12);
-      color: #E84B4B;
-    }
-
-    &.saliva, &.urine {
-      background: rgba(245,158,11,0.12);
-      color: #D97706;
-    }
-
-    &.genome {
-      background: rgba(0,184,217,0.12);
-      color: #0095A8;
-    }
+    align-items: stretch;
   }
 
-  &__info {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+  .toolbar__search {
+    width: 100%;
+  }
+
+  .toolbar__input {
     flex: 1;
-    gap: 8px;
-  }
-
-  &__name {
-    font-size: 11px;
-    color: #334155;
-    font-weight: 500;
-  }
-
-  &__value {
-    font-size: 11px;
-    color: #3B6FE8;
-    font-weight: 700;
-    white-space: nowrap;
-  }
-}
-
-// ========== 展开动画 ==========
-.expand-enter-active {
-  animation: expand-in 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-.expand-leave-active {
-  animation: expand-in 0.2s cubic-bezier(0.55, 0, 1, 0.45) reverse;
-}
-
-@keyframes expand-in {
-  from {
-    opacity: 0;
-    transform: scale(0.88) translateY(-8px);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1) translateY(0);
+    width: auto;
   }
 }
 </style>

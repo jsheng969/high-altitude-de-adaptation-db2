@@ -2,25 +2,34 @@
   <div class="home">
     <div class="overview-graph">
       <div class="overview-graph__side-title">数据图谱</div>
-      <div class="overview-graph__header">
-        <button class="overview-graph__icon-btn" type="button" aria-label="展开图谱" @click="graphExpanded = true">
-          <span class="overview-graph__icon overview-graph__icon--expand">
-            <span></span>
-            <span></span>
-          </span>
-        </button>
-      </div>
+      <button
+        class="overview-graph__icon-btn overview-graph__icon-btn--floating"
+        type="button"
+        aria-label="展开图谱"
+        @click="graphExpanded = true"
+      >
+        <span class="overview-graph__icon overview-graph__icon--expand">
+          <span></span>
+          <span></span>
+        </span>
+      </button>
       <div class="overview-graph__body">
         <div class="overview-graph__preview">
-          <GraphView />
+          <GraphView preview />
         </div>
       </div>
     </div>
+
     <div v-if="graphExpanded" class="overview-graph-modal" @click.self="graphExpanded = false">
       <div class="overview-graph-modal__panel">
         <div class="overview-graph-modal__header">
           <div class="overview-graph-modal__title"></div>
-          <button class="overview-graph__icon-btn" type="button" aria-label="收起图谱" @click="graphExpanded = false">
+          <button
+            class="overview-graph__icon-btn"
+            type="button"
+            aria-label="收起图谱"
+            @click="graphExpanded = false"
+          >
             <span class="overview-graph__icon overview-graph__icon--collapse">
               <span></span>
               <span></span>
@@ -32,7 +41,7 @@
         </div>
       </div>
     </div>
-    <!-- ===== 表型组数据库 ===== -->
+
     <div class="section blue">
       <div class="section-title">表型组数据库</div>
       <div class="card-grid">
@@ -62,7 +71,6 @@
       </div>
     </div>
 
-    <!-- ===== 样本库 ===== -->
     <div class="section pink">
       <div class="section-title">样本库</div>
       <div class="card-grid two">
@@ -78,11 +86,10 @@
       </div>
     </div>
 
-    <!-- ===== 预测模型 ===== -->
     <div class="section green">
       <div class="section-title">预测模型</div>
       <div class="card-grid two">
-        <div class="card"  @click="handleClick('/reportPage')">
+        <div class="card" @click="handleClick('/reportPage')">
           <div class="card-title">急慢性高原病预测模型</div>
           <div class="card-btn">点击查看</div>
         </div>
@@ -109,9 +116,13 @@ const handleClick = (path: string) => {
 </script>
 
 <style scoped lang="scss">
+.home {
+  min-height: 100vh;
+}
+
 .overview-graph {
   position: relative;
-  margin: 20px 80px 0 40px;
+  margin: 0px 80px 0 40px;
   background: #fff;
   border-radius: 12px;
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
@@ -124,47 +135,16 @@ const handleClick = (path: string) => {
   top: 0;
   bottom: 0;
   width: 80px;
-  box-sizing: border-box;
-  padding-top: 62px;
-  writing-mode: vertical-rl;
-  text-orientation: mixed;
-  letter-spacing: 4px;
   display: flex;
   align-items: center;
   justify-content: center;
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  letter-spacing: 4px;
   font-size: 20px;
   font-weight: 600;
-  background: #E6F2FF;
-  color: transparent;
-}
-
-.overview-graph__side-title::before {
-  content: '数据图谱';
-  color: #0A76B6;
-}
-
-.overview-graph__header,
-.overview-graph-modal__header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 16px 20px 12px;
-}
-
-.overview-graph__header {
-  margin-left: 80px;
-  justify-content: flex-end;
-}
-
-.overview-graph__title,
-.overview-graph-modal__title {
-  font-size: 18px;
-  font-weight: 700;
-  color: #1e3a8a;
-}
-
-.overview-graph__title {
-  display: none;
+  background: #e6f2ff;
+  color: #0a76b6;
 }
 
 .overview-graph__icon-btn {
@@ -183,6 +163,14 @@ const handleClick = (path: string) => {
 .overview-graph__icon-btn:hover {
   background: #eff6ff;
   border-color: rgba(37, 99, 235, 0.28);
+}
+
+.overview-graph__icon-btn--floating {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 5;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.1);
 }
 
 .overview-graph__icon {
@@ -226,13 +214,13 @@ const handleClick = (path: string) => {
 
 .overview-graph__body {
   position: relative;
-  height: 220px;
+  height: 120px;
+  margin-left: 80px;
+  overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
-  overflow: hidden;
   background: linear-gradient(180deg, #f8fbff 0%, #eef4ff 100%);
-  margin-left: 80px;
 }
 
 .overview-graph__preview {
@@ -240,10 +228,13 @@ const handleClick = (path: string) => {
   width: 1400px;
   flex: 0 0 auto;
   pointer-events: none;
+  transform: translateX(130px) translateY(-2px) scale(1.3);
 }
 
 .overview-graph__preview :deep(.mind-map-wrapper) {
-  min-height: 900px;
+  min-height: 260px;
+  padding-top: 0;
+  background: transparent;
 }
 
 .overview-graph-modal {
@@ -266,6 +257,17 @@ const handleClick = (path: string) => {
   box-shadow: 0 24px 80px rgba(15, 23, 42, 0.28);
 }
 
+.overview-graph-modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 16px 20px 12px;
+}
+
+.overview-graph-modal__title {
+  display: none;
+}
+
 .overview-graph-modal__body {
   max-height: calc(100vh - 132px);
   overflow: auto;
@@ -273,17 +275,12 @@ const handleClick = (path: string) => {
 }
 
 .overview-graph-modal__body :deep(.mind-map-wrapper) {
-  min-height: 900px;
+  min-height: 800px;
 }
 
-.home {
-  min-height: 100vh;  // 改成最小高度
-}
-
-/* ===== 每个区块 ===== */
 .section {
   display: flex;
-  align-items: stretch;  // 保证左右高度一致
+  align-items: stretch;
   margin: 20px 80px 20px 40px;
   background: #fff;
   border-radius: 12px;
@@ -291,7 +288,6 @@ const handleClick = (path: string) => {
   overflow: hidden;
 }
 
-/* 左侧竖标题 */
 .section-title {
   width: 80px;
   writing-mode: vertical-rl;
@@ -304,26 +300,24 @@ const handleClick = (path: string) => {
   justify-content: center;
 }
 
-/* 不同颜色主题 */
 .blue .section-title {
-  background: #E6F2FF;
-  color: #0A76B6;
+  background: #e6f2ff;
+  color: #0a76b6;
 }
 
 .pink .section-title {
-  background: #FFF5F6;
-  color: #9D520C;
+  background: #fff5f6;
+  color: #9d520c;
 }
 
 .green .section-title {
-  background: #E6FBCD;
-  color: #0D8120;
+  background: #e6fbcd;
+  color: #0d8120;
 }
 
-/* 卡片网格 */
 .card-grid {
   flex: 1;
-  padding: 10px 15px 10px 200px;  // 左边为 0
+  padding: 10px 15px 10px 200px;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 15px;
@@ -333,27 +327,26 @@ const handleClick = (path: string) => {
   grid-template-columns: repeat(2, 1fr);
 }
 
-/* 卡片样式 */
 .card {
-  background: linear-gradient(180deg, #E6F2FF, #B6E3FF);
+  background: linear-gradient(180deg, #e6f2ff, #b6e3ff);
   border-radius: 12px;
   padding: 24px;
   cursor: pointer;
   transition: all 0.3s ease;
   position: relative;
   min-height: 130px;
-  width: 100%;   // 改成占满 grid
+  width: 100%;
   height: 150px;
-  color: #2717A4;
+  color: #2717a4;
 }
 
 .pink .card {
-  background: linear-gradient(180deg, #FFF5F6, #FBE4E7);
-  color: #9D0C0C;
+  background: linear-gradient(180deg, #fff5f6, #fbe4e7);
+  color: #9d0c0c;
 }
 
 .green .card {
-  background: linear-gradient(180deg, #E6FBCD, #E6FBCD);
+  background: linear-gradient(180deg, #e6fbcd, #e6fbcd);
   color: #044114;
 }
 
@@ -362,56 +355,35 @@ const handleClick = (path: string) => {
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
 }
 
-/* 高亮卡片 */
 .highlight {
   border: 2px solid #3b82f6;
 }
 
-/* 标题 */
 .card-title {
   font-size: 30px;
   font-weight: 700;
   margin-bottom: 10px;
 }
 
-/* 英文副标题 */
 .card-sub {
   font-size: 13px;
-  color: #6057A8;
+  color: #6057a8;
   margin-bottom: 20px;
 }
 
-/* 按钮 */
 .card-btn {
   font-size: 13px;
-  color: #1e3a8a;
-  position: absolute;
-  bottom: 20px;
-  right: 25px;
-}
-
-.card-btn {
-  font-size: 13px;
-  color: #2717A4;
+  color: #2717a4;
   position: absolute;
   bottom: 20px;
   right: 25px;
 }
 
 .pink .card-btn {
-  font-size: 13px;
-  color: #9D0C0C;
-  position: absolute;
-  bottom: 20px;
-  right: 25px;
+  color: #9d0c0c;
 }
 
 .green .card-btn {
-  font-size: 13px;
   color: #044114;
-  position: absolute;
-  bottom: 20px;
-  right: 25px;
 }
-
 </style>
