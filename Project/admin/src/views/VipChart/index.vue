@@ -1,6 +1,5 @@
 <template>
   <div class="omics-page">
-
     <section class="panel-card">
       <div class="overview-layout">
         <div class="overview-block--transport">
@@ -12,7 +11,7 @@
                 class="transport-legend__item"
               >
                 <span class="transport-legend__dot" :style="{ backgroundColor: item.color }"></span>
-                <span>{{ item.name }}：{{ item.display }}</span>
+                <span>{{ item.name }}: {{ item.display }}</span>
               </div>
             </div>
             <div class="chart-wrap">
@@ -25,7 +24,7 @@
           <div class="omics-legend-grid">
             <div v-for="item in omicsItems" :key="item.key" class="omics-legend-item">
               <span class="omics-legend-item__dot" :style="{ backgroundColor: item.color }"></span>
-              <span>{{ item.name }}：{{ item.display }}</span>
+              <span>{{ item.name }}: {{ item.display }}</span>
             </div>
           </div>
         </div>
@@ -40,9 +39,7 @@
 
     <section class="panel-card">
       <div class="section-head">
-        <div>
-          <div class="panel-card__title">测序报告</div>
-        </div>
+        <div class="panel-card__title">测序报告</div>
       </div>
 
       <div class="report-grid">
@@ -59,7 +56,6 @@
           @click="selectReport(report)"
         >
           <span class="report-card__name">{{ report.name }}</span>
-          <span class="report-card__meta">PDF 预览</span>
         </button>
 
         <button type="button" class="report-card report-card--search" @click="scrollToTools">
@@ -67,14 +63,11 @@
           <span class="report-card__meta">跳转分析工具区</span>
         </button>
       </div>
-
     </section>
 
     <section ref="toolSectionRef" class="panel-card">
       <div class="section-head">
-        <div>
-          <div class="panel-card__title">分析工具</div>
-        </div>
+        <div class="panel-card__title">分析工具</div>
       </div>
 
       <div class="tool-links">
@@ -98,7 +91,7 @@
       append-to-body
     >
       <div v-if="selectedReportPreviewUrl" class="report-dialog__body">
-        <div class="report-dialog__path">{{ selectedReport?.pdfPath }}</div>
+        <!-- <div class="report-dialog__path">{{ selectedReportFileUrl }}</div> -->
         <iframe
           :src="selectedReportPreviewUrl"
           title="omics-report-preview"
@@ -107,7 +100,7 @@
         ></iframe>
       </div>
       <div v-else class="viewer-panel__empty report-dialog__empty">
-        当前报告 PDF 路径未配置。支持 `http(s)` 地址、服务器绝对路径、Linux 绝对路径和 Windows 盘符路径。
+        当前报告文件名未配置，请为该卡片补充 `reportFileName`。
       </div>
     </el-dialog>
   </div>
@@ -117,6 +110,7 @@
 import { computed, ref } from 'vue'
 import type { EChartsOption } from 'echarts'
 import { ElMessage } from 'element-plus'
+import { OmicsReportApi } from '@/api/external/omicsReport'
 
 defineOptions({ name: 'VipChart' })
 
@@ -135,7 +129,7 @@ interface OmicsItem {
   value: number
   color: string
   softColor: string
-  pdfPath: string
+  reportFileName: string
 }
 
 interface ToolItem {
@@ -150,7 +144,8 @@ const transportItems: TransportItem[] = [
   { key: 'feces', name: '粪便', display: '送样XXX份', value: 28, color: '#ffc857' }
 ]
 
-// 这里的 PDF 路径是页面内写死的静态示例值，后续你可以直接替换成真实服务器路径或 URL。
+// 当前页面里仍然使用写死的演示数据。
+// PDF 预览只传 reportFileName，后端会基于 application 中的 pluginsDir 拼出真实文件路径。
 const omicsItems: OmicsItem[] = [
   {
     key: 'proteomics',
@@ -159,7 +154,7 @@ const omicsItems: OmicsItem[] = [
     value: 180,
     color: '#ff6b6b',
     softColor: '#ffe4e4',
-    pdfPath: '/data/multi-omics/reports/proteomics-report.pdf'
+    reportFileName: '蛋白组学结题报告.pdf'
   },
   {
     key: 'macro-genome',
@@ -168,7 +163,7 @@ const omicsItems: OmicsItem[] = [
     value: 160,
     color: '#50c9c3',
     softColor: '#dff8f6',
-    pdfPath: '/data/multi-omics/reports/metagenomics-report.pdf'
+    reportFileName: 'Metagenomics_Report_F23A040006333_HOMumznM_base_short_report_zh.pdf'
   },
   {
     key: 'genome',
@@ -177,7 +172,7 @@ const omicsItems: OmicsItem[] = [
     value: 155,
     color: '#4cb3d4',
     softColor: '#dff4fa',
-    pdfPath: '/data/multi-omics/reports/genome-report.pdf'
+    reportFileName: 'Report_F23A040016059_HOMdlaxR_report_cn.pdf'
   },
   {
     key: 'transcriptome',
@@ -186,7 +181,7 @@ const omicsItems: OmicsItem[] = [
     value: 120,
     color: '#9be7be',
     softColor: '#e8fbf0',
-    pdfPath: '/data/multi-omics/reports/transcriptome-report.pdf'
+    reportFileName: 'BGI_F25A610004138_HOMiolvzT_short_report_cn.pdf'
   },
   {
     key: 'metabolome',
@@ -195,7 +190,7 @@ const omicsItems: OmicsItem[] = [
     value: 110,
     color: '#ffe28a',
     softColor: '#fff5d1',
-    pdfPath: '/data/multi-omics/reports/metabolome-report.pdf'
+    reportFileName: '非靶向代谢结题报告.pdf'
   },
   {
     key: 'epigenome',
@@ -204,7 +199,7 @@ const omicsItems: OmicsItem[] = [
     value: 130,
     color: '#ffb28f',
     softColor: '#ffe8dc',
-    pdfPath: '/data/multi-omics/reports/epigenome-report.pdf'
+    reportFileName: 'BGI_Demo_WGBS_report_cn.pdf'
   },
   {
     key: 'immunome',
@@ -213,12 +208,39 @@ const omicsItems: OmicsItem[] = [
     value: 145,
     color: '#c06cf0',
     softColor: '#f1e1fc',
-    pdfPath: 'D:\\multi-omics\\reports\\immunome-report.pdf'
+    reportFileName: 'F25A610004138_HOMuqghjR.report_en.pdf'
+  },
+  {
+    key: 'transcriptome-proteomics-association',
+    name: '转录和蛋白关联分析',
+    display: 'XXX份',
+    value: 108,
+    color: '#5b8ff9',
+    softColor: '#e3edff',
+    reportFileName: '转录和蛋白关联分析报告.pdf'
+  },
+  {
+    key: 'metabolome-proteomics-association',
+    name: '代谢和蛋白关联分析',
+    display: 'XXX份',
+    value: 102,
+    color: '#36cfc9',
+    softColor: '#def8f6',
+    reportFileName: '代谢和蛋白关联分析报告.pdf'
+  },
+  {
+    key: 'metabolome-transcriptome-association',
+    name: '代谢和转录关联分析结题',
+    display: 'XXX份',
+    value: 96,
+    color: '#9254de',
+    softColor: '#efe2ff',
+    reportFileName: '代谢和转录关联分析结题报告.pdf'
   }
 ]
 
 const toolItems: ToolItem[] = [
-  { key: 'ldviewer', label: '序列比对', url: 'http://www.baidu.com/' },
+  { key: 'ldviewer', label: '序列比对', url: 'http://lzy.cngb.org:8000/plah/api/tools/ldviewer/' },
   {
     key: 'gene_fetch',
     label: '上下游基因提取',
@@ -231,7 +253,7 @@ const toolItems: ToolItem[] = [
     url: 'http://lzy.cngb.org:8000/union_jbrowse/?config=data%2Fjbrowse%2Fcorynebacterium.json'
   },
   { key: 'GO', label: '序列获取', url: 'http://lzy.cngb.org:8000/plah/go/' },
-  { key: 'KEGG', label: 'KEGG/GO提取', url: 'http://lzy.cngb.org:8000/plah/kegg/' },
+  { key: 'KEGG', label: 'KEGG/GO 提取', url: 'http://lzy.cngb.org:8000/plah/kegg/' },
   {
     key: 'PhylogeneticTree',
     label: '蛋白互作网络分析',
@@ -239,7 +261,7 @@ const toolItems: ToolItem[] = [
   },
   {
     key: 'OrthologousGene',
-    label: '其他工具',
+    label: '其它工具等共11个工具',
     url: 'http://lzy.cngb.org:8000/plah/orthologous_gene'
   }
 ]
@@ -249,8 +271,8 @@ const selectedReportKey = ref(reportItems[0].key)
 const reportDialogVisible = ref(false)
 const toolSectionRef = ref<HTMLElement | null>(null)
 
-const selectedReport = computed(() =>
-  reportItems.find((item) => item.key === selectedReportKey.value) || reportItems[0]
+const selectedReport = computed(
+  () => reportItems.find((item) => item.key === selectedReportKey.value) || reportItems[0]
 )
 
 const transportChartOptions = computed<EChartsOption>(() => ({
@@ -343,39 +365,26 @@ const omicsChartOptions = computed<EChartsOption>(() => ({
   ]
 }))
 
-const normalizeResourceUrl = (value?: string) => {
-  const raw = value?.trim()
-  if (!raw) return ''
-
-  if (/^(https?:|file:|blob:|data:)/i.test(raw)) {
-    return raw
-  }
-
-  if (/^[A-Za-z]:[\\/]/.test(raw)) {
-    return `file:///${raw.replace(/\\/g, '/')}`
-  }
-
-  if (/^\\\\/.test(raw)) {
-    return `file:${raw.replace(/\\/g, '/')}`
-  }
-
-  return raw
+const buildPdfPreviewUrl = (report?: OmicsItem) => {
+  if (!report?.reportFileName) return ''
+  const rawUrl = OmicsReportApi.getReportFileUrl(report.reportFileName)
+  return rawUrl.includes('#')
+    ? rawUrl
+    : `${rawUrl}#toolbar=1&navpanes=0&statusbar=0&view=FitH`
 }
 
-const buildPdfPreviewUrl = (value?: string) => {
-  const resolved = normalizeResourceUrl(value)
-  if (!resolved) return ''
-  return resolved.includes('#')
-    ? resolved
-    : `${resolved}#toolbar=1&navpanes=0&statusbar=0&view=FitH`
-}
+const selectedReportFileUrl = computed(() => {
+  const report = selectedReport.value
+  if (!report?.reportFileName) return ''
+  return OmicsReportApi.getReportFileUrl(report.reportFileName)
+})
 
-const selectedReportPreviewUrl = computed(() => buildPdfPreviewUrl(selectedReport.value?.pdfPath))
+const selectedReportPreviewUrl = computed(() => buildPdfPreviewUrl(selectedReport.value))
 
 const selectReport = (report: OmicsItem) => {
   selectedReportKey.value = report.key
   if (!selectedReportPreviewUrl.value) {
-    ElMessage.warning('当前报告 PDF 路径未配置')
+    ElMessage.warning('当前报告文件名未配置')
     return
   }
   reportDialogVisible.value = true
@@ -403,60 +412,14 @@ const scrollToTools = () => {
     linear-gradient(180deg, #eef4fb 0%, #f5f8fc 55%, #f0f3f9 100%);
 }
 
-.hero-card,
 .panel-card {
+  margin-bottom: 20px;
+  padding: 24px 24px 26px;
   border: 1px solid rgba(126, 157, 204, 0.18);
   background: rgba(255, 255, 255, 0.9);
   border-radius: 24px;
   box-shadow: 0 14px 40px rgba(48, 85, 154, 0.08);
   backdrop-filter: blur(10px);
-}
-
-.hero-card {
-  margin-bottom: 20px;
-  padding: 28px 32px;
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 20px;
-}
-
-.hero-card__eyebrow {
-  font-size: 13px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: #6a84b7;
-}
-
-.hero-card__title {
-  margin: 10px 0 8px;
-  font-size: 30px;
-  line-height: 1.1;
-  color: #22304e;
-}
-
-.hero-card__desc {
-  max-width: 760px;
-  margin: 0;
-  font-size: 14px;
-  line-height: 1.7;
-  color: #69778f;
-}
-
-.hero-card__badge {
-  flex-shrink: 0;
-  padding: 10px 14px;
-  border-radius: 999px;
-  background: linear-gradient(135deg, #eff4ff 0%, #dbe7ff 100%);
-  color: #4872d8;
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-}
-
-.panel-card {
-  margin-bottom: 20px;
-  padding: 24px 24px 26px;
 }
 
 .panel-card__title {
@@ -466,25 +429,10 @@ const scrollToTools = () => {
 }
 
 .overview-layout {
-  margin-top: 18px;
   display: grid;
   grid-template-columns: minmax(280px, 1.05fr) minmax(280px, 1.25fr) minmax(260px, 0.95fr);
   gap: 18px;
   align-items: stretch;
-}
-
-.overview-block {
-  border-radius: 20px;
-  background: linear-gradient(180deg, #fbfdff 0%, #f4f8fe 100%);
-  border: 1px solid rgba(122, 155, 204, 0.16);
-  padding: 18px;
-}
-
-.overview-block__title {
-  margin-bottom: 14px;
-  font-size: 14px;
-  font-weight: 700;
-  color: #475672;
 }
 
 .transport-layout {
@@ -536,31 +484,6 @@ const scrollToTools = () => {
   gap: 16px;
 }
 
-.section-head__desc {
-  margin-top: 6px;
-  color: #7d899f;
-  font-size: 13px;
-  line-height: 1.6;
-}
-
-.ghost-btn {
-  min-width: 132px;
-  padding: 10px 14px;
-  border: 1px solid rgba(84, 111, 164, 0.18);
-  border-radius: 12px;
-  background: #fff;
-  color: #47608f;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.ghost-btn:hover {
-  border-color: rgba(84, 111, 164, 0.36);
-  background: #f5f9ff;
-}
-
 .report-grid {
   margin-top: 20px;
   display: grid;
@@ -606,52 +529,6 @@ const scrollToTools = () => {
   margin-top: 8px;
   font-size: 12px;
   opacity: 0.82;
-}
-
-.viewer-panel {
-  margin-top: 20px;
-  border-radius: 20px;
-  border: 1px solid rgba(122, 155, 204, 0.16);
-  background: linear-gradient(180deg, #fcfdff 0%, #f4f7fc 100%);
-  overflow: hidden;
-}
-
-.viewer-panel__header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 18px 20px;
-  border-bottom: 1px solid rgba(122, 155, 204, 0.14);
-}
-
-.viewer-panel__title {
-  font-size: 16px;
-  font-weight: 700;
-  color: #2b3a56;
-}
-
-.viewer-panel__subtitle {
-  margin-top: 6px;
-  color: #8390a4;
-  font-size: 12px;
-  line-height: 1.6;
-  word-break: break-all;
-}
-
-.viewer-panel__notice {
-  padding: 12px 20px 0;
-  color: #7a869c;
-  font-size: 13px;
-  line-height: 1.6;
-}
-
-.viewer-panel__body {
-  padding: 0;
-}
-
-.viewer-panel__body--tool {
-  padding-top: 12px;
 }
 
 .viewer-panel__empty {
@@ -740,18 +617,7 @@ const scrollToTools = () => {
     padding: 14px;
   }
 
-  .hero-card,
-  .section-head,
-  .transport-layout {
-    grid-template-columns: 1fr;
-  }
-
-  .hero-card,
-  .section-head {
-    display: flex;
-    flex-direction: column;
-  }
-
+  .transport-layout,
   .overview-layout,
   .report-grid,
   .omics-legend-grid {

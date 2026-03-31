@@ -1,4 +1,5 @@
 import request from '@/config/axios'
+import { config } from '@/config/axios/config'
 
 export const ReportApi = {
   // 生成报告
@@ -33,5 +34,12 @@ export const ReportApi = {
         type
       }
     })
+  },
+
+  getReportFileUrl: (type: string, taskId: string, fileName: string) => {
+    const safeType = encodeURIComponent(type)
+    const safeTaskId = encodeURIComponent(taskId)
+    const safeFileName = encodeURIComponent(fileName)
+    return `${config.base_url}/external/report/file/${safeType}/${safeTaskId}/${safeFileName}`
   }
 }

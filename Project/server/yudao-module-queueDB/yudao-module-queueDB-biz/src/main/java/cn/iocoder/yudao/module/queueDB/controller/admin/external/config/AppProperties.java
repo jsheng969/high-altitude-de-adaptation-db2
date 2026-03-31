@@ -13,6 +13,8 @@ public class AppProperties {
 
     private String outputDir;
 
+    private String pluginsDir;
+
     public String getrServiceUrl() {
         return rServiceUrl;
     }
@@ -43,5 +45,13 @@ public class AppProperties {
 
     public void setOutputDir(String outputDir) {
         this.outputDir = outputDir;
+    }
+
+    public String getPluginsDir() {
+        return pluginsDir;
+    }
+
+    public void setPluginsDir(String pluginsDir) {
+        this.pluginsDir = pluginsDir;
     }
 }

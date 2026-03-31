@@ -107,6 +107,7 @@ declare module 'vue' {
     MagicCubeEditor: typeof import('./../components/MagicCubeEditor/index.vue')['default']
     MarkdownView: typeof import('./../components/MarkdownView/index.vue')['default']
     NodeHandler: typeof import('./../components/SimpleProcessDesignerV2/src/NodeHandler.vue')['default']
+    OmicsReport: typeof import('./../api/external/omicsReport.ts')['default']
     OperateLogV2: typeof import('./../components/OperateLogV2/src/OperateLogV2.vue')['default']
     Pagination: typeof import('./../components/Pagination/index.vue')['default']
     ParallelNode: typeof import('./../components/SimpleProcessDesignerV2/src/nodes/ParallelNode.vue')['default']
