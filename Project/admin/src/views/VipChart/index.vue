@@ -22,7 +22,7 @@
 
         <div class="overview-block--legend">
           <div class="omics-legend-grid">
-            <div v-for="item in omicsItems" :key="item.key" class="omics-legend-item">
+            <div v-for="item in overviewOmicsItems" :key="item.key" class="omics-legend-item">
               <span class="omics-legend-item__dot" :style="{ backgroundColor: item.color }"></span>
               <span>{{ item.name }}: {{ item.display }}</span>
             </div>
@@ -83,26 +83,6 @@
       </div>
     </section>
 
-    <el-dialog
-      v-model="reportDialogVisible"
-      :title="selectedReport?.name || 'PDF 预览'"
-      width="min(1200px, 92vw)"
-      destroy-on-close
-      append-to-body
-    >
-      <div v-if="selectedReportPreviewUrl" class="report-dialog__body">
-        <!-- <div class="report-dialog__path">{{ selectedReportFileUrl }}</div> -->
-        <iframe
-          :src="selectedReportPreviewUrl"
-          title="omics-report-preview"
-          class="embedded-frame embedded-frame--dialog"
-          frameborder="0"
-        ></iframe>
-      </div>
-      <div v-else class="viewer-panel__empty report-dialog__empty">
-        当前报告文件名未配置，请为该卡片补充 `reportFileName`。
-      </div>
-    </el-dialog>
   </div>
 </template>
 
@@ -240,36 +220,46 @@ const omicsItems: OmicsItem[] = [
 ]
 
 const toolItems: ToolItem[] = [
-  { key: 'ldviewer', label: '序列比对', url: 'http://lzy.cngb.org:8000/plah/api/tools/ldviewer/' },
+  { key: 'ldviewer', label: '连锁不平衡可视化热图', url: '/vip-chart/plah/api/tools/ldviewer/' },
   {
     key: 'gene_fetch',
-    label: '上下游基因提取',
-    url: 'http://lzy.cngb.org:8000/plah/api/tools/sequence-fetch/'
+    label: '序列提取',
+    url: '/vip-chart/plah/api/tools/sequence-fetch/'
   },
-  { key: 'blast', label: '共表达', url: 'http://lzy.cngb.org:8000/blast/' },
+  { key: 'blast', label: '序列比对', url: '/vip-chart/blast/' },
   {
     key: 'jbrowse',
-    label: '引物设计',
-    url: 'http://lzy.cngb.org:8000/union_jbrowse/?config=data%2Fjbrowse%2Fcorynebacterium.json'
+    label: '基因组浏览器',
+    url: '/vip-chart/union_jbrowse/?config=data%2Fjbrowse%2Fcorynebacterium.json'
   },
-  { key: 'GO', label: '序列获取', url: 'http://lzy.cngb.org:8000/plah/go/' },
-  { key: 'KEGG', label: 'KEGG/GO 提取', url: 'http://lzy.cngb.org:8000/plah/kegg/' },
+  { key: 'GO', label: 'Gene Ontology（基因本体论）分析', url: '/vip-chart/plah/go/' },
+  { key: 'KEGG', label: 'KEGG Pathway 富集分析', url: '/vip-chart/plah/kegg/' },
   {
     key: 'PhylogeneticTree',
-    label: '蛋白互作网络分析',
-    url: 'http://lzy.cngb.org:8000/plah/phylogenetic_tree'
+    label: '物种进化树分析',
+    url: '/vip-chart/plah/phylogenetic_tree'
   },
   {
     key: 'OrthologousGene',
-    label: '其它工具等共11个工具',
-    url: 'http://lzy.cngb.org:8000/plah/orthologous_gene'
+    label: '直系同源基因分析',
+    url: '/vip-chart/plah/orthologous_gene'
   }
 ]
 
 const reportItems = omicsItems
 const selectedReportKey = ref(reportItems[0].key)
-const reportDialogVisible = ref(false)
 const toolSectionRef = ref<HTMLElement | null>(null)
+
+const overviewOmicsItems = computed(() =>
+  omicsItems.filter(
+    (item) =>
+      ![
+        'transcriptome-proteomics-association',
+        'metabolome-proteomics-association',
+        'metabolome-transcriptome-association'
+      ].includes(item.key)
+  )
+)
 
 const selectedReport = computed(
   () => reportItems.find((item) => item.key === selectedReportKey.value) || reportItems[0]
@@ -370,14 +360,8 @@ const buildPdfPreviewUrl = (report?: OmicsItem) => {
   const rawUrl = OmicsReportApi.getReportFileUrl(report.reportFileName)
   return rawUrl.includes('#')
     ? rawUrl
-    : `${rawUrl}#toolbar=1&navpanes=0&statusbar=0&view=FitH`
+    : `${rawUrl}#toolbar=0&navpanes=0&statusbar=0&view=FitH`
 }
-
-const selectedReportFileUrl = computed(() => {
-  const report = selectedReport.value
-  if (!report?.reportFileName) return ''
-  return OmicsReportApi.getReportFileUrl(report.reportFileName)
-})
 
 const selectedReportPreviewUrl = computed(() => buildPdfPreviewUrl(selectedReport.value))
 
@@ -387,7 +371,7 @@ const selectReport = (report: OmicsItem) => {
     ElMessage.warning('当前报告文件名未配置')
     return
   }
-  reportDialogVisible.value = true
+  window.open(selectedReportPreviewUrl.value, '_blank', 'noopener,noreferrer')
 }
 
 const openTool = (tool: ToolItem) => {
@@ -471,10 +455,21 @@ const scrollToTools = () => {
   min-height: 220px;
 }
 
+.overview-block--legend {
+  display: flex;
+  align-items: center;
+}
+
 .omics-legend-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  display: flex;
+  flex-wrap: wrap;
   gap: 10px 18px;
+  align-content: center;
+}
+
+.omics-legend-item {
+  flex: 1 1 calc(50% - 9px);
+  min-width: 180px;
 }
 
 .section-head {
@@ -627,6 +622,21 @@ const scrollToTools = () => {
   .tool-links {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 14px 20px;
+  }
+
+  .overview-block--legend {
+    align-items: flex-start;
+  }
+
+  .omics-legend-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .omics-legend-item {
+    flex-basis: 100%;
+    min-width: 0;
   }
 
   .report-card {
