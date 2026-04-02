@@ -214,11 +214,11 @@ const handleClick = (path: string) => {
 
 .overview-graph__body {
   position: relative;
-  height: 120px;
+  height: 96px;
   margin-left: 80px;
   overflow: hidden;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
   background: linear-gradient(180deg, #f8fbff 0%, #eef4ff 100%);
 }
@@ -228,7 +228,8 @@ const handleClick = (path: string) => {
   width: 1400px;
   flex: 0 0 auto;
   pointer-events: none;
-  transform: translateX(130px) translateY(-2px) scale(1.3);
+  transform-origin: left top;
+  transform: translateX(96px) translateY(-74px) scale(1);
 }
 
 .overview-graph__preview :deep(.mind-map-wrapper) {
