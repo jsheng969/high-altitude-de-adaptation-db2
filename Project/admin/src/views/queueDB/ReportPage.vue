@@ -18,7 +18,7 @@
     </div>
 
     <el-card shadow="never" class="panel-card">
-      <div class="panel-tip">请根据近期检验检查结果输入对应的特征条件结果</div>
+      <!-- <div class="panel-tip">请根据近期检验检查结果输入对应的特征条件结果</div>
 
       <div class="sub-title">导入一批数据</div>
 
@@ -60,7 +60,7 @@
             <el-option label="2组" value="2" />
           </el-select>
         </el-col>
-      </el-row>
+      </el-row> -->
 
       <!-- <el-row :gutter="16" class="upload-row">
         <el-col :xl="10" :lg="12" :md="24" :sm="24" :xs="24">
@@ -82,7 +82,7 @@
 
       <div class="action-row">
         <el-button type="primary" :loading="loading" @click="runReport">显示预测结果</el-button>
-        <el-button @click="resetForm">重置条件</el-button>
+        <!-- <el-button @click="resetForm">重置条件</el-button> -->
       </div>
     </el-card>
 

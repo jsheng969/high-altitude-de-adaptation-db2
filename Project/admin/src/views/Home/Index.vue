@@ -1,6 +1,6 @@
 <template>
   <div class="home">
-    <div class="overview-graph">
+    <!-- <div class="overview-graph">
       <div class="overview-graph__side-title">数据图谱</div>
       <button
         class="overview-graph__icon-btn overview-graph__icon-btn--floating"
@@ -80,11 +80,11 @@
         </div>
 
         <div class="card" @click="handleClick('/indexReview')">
-          <div class="card-title">常驻（回顾）样本库</div>
+          <div class="card-title">长驻（回顾）样本库</div>
           <div class="card-btn">点击查看</div>
         </div>
       </div>
-    </div>
+    </div> -->
 
     <div class="section green">
       <div class="section-title">预测模型</div>
@@ -214,13 +214,13 @@ const handleClick = (path: string) => {
 
 .overview-graph__body {
   position: relative;
-  height: 96px;
+  height: 114px;
   margin-left: 80px;
   overflow: hidden;
   display: flex;
   align-items: flex-start;
   justify-content: center;
-  background: linear-gradient(180deg, #f8fbff 0%, #eef4ff 100%);
+  background: #fff;
 }
 
 .overview-graph__preview {
@@ -229,7 +229,7 @@ const handleClick = (path: string) => {
   flex: 0 0 auto;
   pointer-events: none;
   transform-origin: left top;
-  transform: translateX(96px) translateY(-74px) scale(1);
+  transform: translateX(96px) translateY(-70px) scale(1);
 }
 
 .overview-graph__preview :deep(.mind-map-wrapper) {

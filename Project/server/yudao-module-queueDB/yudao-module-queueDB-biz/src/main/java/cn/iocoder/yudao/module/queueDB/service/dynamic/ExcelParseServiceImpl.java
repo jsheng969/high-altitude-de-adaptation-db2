@@ -17,10 +17,14 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Slf4j
 @Service
 public class ExcelParseServiceImpl implements ExcelParseService {
+
+    private static final Pattern SQL_TYPE_WITH_PARAMS = Pattern.compile("^([a-zA-Z]+)\\s*\\(([^)]*)\\)$");
 
     @Override
     public ExcelParseResult parseExcel(MultipartFile file, ExcelImportReqDTO importReq) {
@@ -227,8 +231,10 @@ public class ExcelParseServiceImpl implements ExcelParseService {
                 fieldConfig.setFieldGroupName(StringUtils.isNotBlank(fieldGroup) ? fieldGroup : "默认分组");
                 fieldConfig.setFieldLabel(fieldLabel);
                 fieldConfig.setFieldCode(fieldCode);
-                fieldConfig.setFieldType(mapDataTypeToFieldType(fieldType));
-                fieldConfig.setDataType(getDataType(fieldType));
+                String dataType = getDataType(fieldType);
+                fieldConfig.setFieldType(mapDataTypeToFieldType(dataType));
+                fieldConfig.setDataType(dataType);
+                fieldConfig.setFieldLength(extractFieldLength(dataType));
                 fieldConfig.setDisplayOrder(colIndex * 10);
                 fieldConfig.setIsRequired(0); // 默认非必填
                 fieldConfig.setStatus(1); // 默认启用
@@ -400,18 +406,26 @@ public class ExcelParseServiceImpl implements ExcelParseService {
         }
 
         String lowerType = dataType.toLowerCase();
-        if (lowerType.contains("int") || lowerType.contains("number")) {
-            return "number";
-        } else if (lowerType.contains("decimal") || lowerType.contains("float") || lowerType.contains("double")) {
+        if (lowerType.contains("datetime") || lowerType.contains("timestamp")) {
+            return "datetime";
+        } else if (lowerType.contains("json")) {
+            return "json";
+        } else if (lowerType.contains("boolean")
+                || "tinyint(1)".equals(lowerType)
+                || "tinyint".equals(lowerType)
+                || "bool".equals(lowerType)) {
+            return "boolean";
+        } else if (lowerType.contains("decimal") || lowerType.contains("numeric")
+                || lowerType.contains("float") || lowerType.contains("double")) {
             return "decimal";
+        } else if (lowerType.contains("bigint")) {
+            return "bigint";
+        } else if (lowerType.contains("int") || lowerType.contains("number")) {
+            return "number";
         } else if (lowerType.contains("date")) {
             return "date";
-        } else if (lowerType.contains("datetime") || lowerType.contains("timestamp")) {
-            return "datetime";
         } else if (lowerType.contains("text")) {
             return "textarea";
-        } else if (lowerType.contains("boolean") || lowerType.equals("tinyint")) {
-            return "boolean";
         } else {
             return "input";
         }
@@ -425,14 +439,42 @@ public class ExcelParseServiceImpl implements ExcelParseService {
             return "VARCHAR(255)";
         }
 
-        String lowerType = fieldType.toLowerCase();
+        String trimmedType = fieldType.trim();
+        Matcher matcher = SQL_TYPE_WITH_PARAMS.matcher(trimmedType);
+        if (matcher.matches()) {
+            String baseType = matcher.group(1).toUpperCase(Locale.ROOT);
+            String params = matcher.group(2).replaceAll("\\s+", "");
+            switch (baseType) {
+                case "VARCHAR":
+                case "CHAR":
+                case "DECIMAL":
+                case "NUMERIC":
+                case "INT":
+                case "INTEGER":
+                case "BIGINT":
+                case "TINYINT":
+                    return ("INTEGER".equals(baseType) ? "INT" : baseType) + "(" + params + ")";
+                default:
+                    break;
+            }
+        }
+
+        String lowerType = trimmedType.toLowerCase(Locale.ROOT);
         switch (lowerType) {
+            case "input":
+            case "select":
+            case "checkbox":
+            case "varchar":
+            case "char":
+                return "VARCHAR(255)";
             case "int":
+            case "integer":
             case "number":
                 return "INT";
             case "bigint":
                 return "BIGINT";
             case "decimal":
+            case "numeric":
             case "float":
             case "double":
                 return "DECIMAL(10,2)";
@@ -443,12 +485,39 @@ public class ExcelParseServiceImpl implements ExcelParseService {
                 return "DATETIME";
             case "text":
             case "textarea":
+            case "richtext":
                 return "TEXT";
             case "boolean":
+            case "bool":
+            case "switch":
                 return "TINYINT(1)";
+            case "json":
+                return "JSON";
             default:
                 return "VARCHAR(255)";
         }
+    }
+
+    private Integer extractFieldLength(String dataType) {
+        if (StringUtils.isBlank(dataType)) {
+            return null;
+        }
+
+        Matcher matcher = SQL_TYPE_WITH_PARAMS.matcher(dataType.trim());
+        if (!matcher.matches()) {
+            return null;
+        }
+
+        String baseType = matcher.group(1).toUpperCase(Locale.ROOT);
+        if (!Arrays.asList("VARCHAR", "CHAR", "DECIMAL", "NUMERIC", "INT", "INTEGER", "BIGINT").contains(baseType)) {
+            return null;
+        }
+
+        String[] params = matcher.group(2).split(",");
+        if (params.length == 0 || !StringUtils.isNumeric(params[0].trim())) {
+            return null;
+        }
+        return Integer.parseInt(params[0].trim());
     }
 
     /**

@@ -32,6 +32,8 @@ import java.lang.reflect.Method;
 import java.net.URLEncoder;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -39,6 +41,8 @@ import java.util.zip.ZipOutputStream;
 @Slf4j
 @Service
 public class DynamicTableServiceImpl implements DynamicTableService {
+    private static final Pattern SQL_TYPE_WITH_PARAMS = Pattern.compile("^([a-zA-Z]+)\\s*\\(([^)]*)\\)$");
+
     @Resource
     private JdbcTemplate jdbcTemplate;
 
@@ -316,7 +320,12 @@ public class DynamicTableServiceImpl implements DynamicTableService {
             return "VARCHAR(255)";
         }
 
-        String upperType = dataType.toUpperCase();
+        String upperType = dataType.trim().toUpperCase(Locale.ROOT);
+
+        // 已经显式指定了参数时，保留原始定义，例如 VARCHAR(32)、DECIMAL(10,4)
+        if (upperType.contains("(") && upperType.endsWith(")")) {
+            return upperType.replaceAll("\\s+", "");
+        }
 
         // 处理需要长度的数据类型
         if (upperType.startsWith("VARCHAR")) {
@@ -593,6 +602,8 @@ public class DynamicTableServiceImpl implements DynamicTableService {
             Map<String, String> groupTableNameMap = new HashMap<>();
 
             List<FieldConfigDO> mainTableFields = new ArrayList<>();
+            Set<String> mainTableFieldCodes = new HashSet<>();
+            Map<String, Set<String>> groupFieldCodeSetMap = new HashMap<>();
 
             String defaultGroupCode = "default";
             String defaultGroupName = "默认分组";
@@ -623,20 +634,27 @@ public class DynamicTableServiceImpl implements DynamicTableService {
                 FieldConfigDO field = new FieldConfigDO();
                 field.setFieldCode(fieldCode);
                 field.setFieldLabel(fieldNameRow.get(col));
-                field.setFieldType(fieldTypeRow.get(col));
+                String dataType = mapExcelFieldTypeToDataType(fieldTypeRow.get(col));
+                field.setFieldType(mapDataTypeToFieldTypeForImport(dataType));
                 field.setFieldGroup(groupCode);
                 field.setFieldGroupName(groupName);
                 field.setIsRequired(joinField.equalsIgnoreCase(fieldCode) ? 1 : 0);
                 field.setDisplayOrder(col);
-
-                String dataType = mapExcelFieldTypeToDataType(fieldTypeRow.get(col));
                 field.setDataType(dataType);
+                field.setFieldLength(extractFieldLength(dataType));
 
                 if (StringUtils.isBlank(groupCode)) {
+                    if (!mainTableFieldCodes.add(fieldCode)) {
+                        throw new RuntimeException("Excel 中主表存在重复字段标识: " + fieldCode);
+                    }
                     field.setModuleCode(parentModuleCode);
                     mainTableFields.add(field);
                     log.info("字段 [{}] 将放入主表", fieldCode);
                 } else {
+                    Set<String> groupFieldCodes = groupFieldCodeSetMap.computeIfAbsent(groupCode, k -> new HashSet<>());
+                    if (!groupFieldCodes.add(fieldCode)) {
+                        throw new RuntimeException(String.format("Excel 中分组[%s]存在重复字段标识: %s", groupCode, fieldCode));
+                    }
                     if (!groupModuleMap.containsKey(groupCode)) {
                         String groupModuleCode = parentModuleCode + "_" + groupCode;
                         String groupTableName = "dyn_" + parentModuleCode + "_" + groupCode.toLowerCase();
@@ -729,13 +747,21 @@ public class DynamicTableServiceImpl implements DynamicTableService {
 
             // 预计算字段配置映射，提高查找效率
             Map<String, FieldConfigDO> mainFieldMap = mainTableFields.stream()
-                    .collect(Collectors.toMap(FieldConfigDO::getFieldCode, f -> f));
+                    .collect(Collectors.toMap(FieldConfigDO::getFieldCode, f -> f, (existing, duplicate) -> {
+                        log.warn("主表字段存在重复 fieldCode，保留第一条: {}, duplicateId={}",
+                                existing.getFieldCode(), duplicate.getId());
+                        return existing;
+                    }));
 
             Map<String, Map<String, FieldConfigDO>> groupFieldMapByCode = new HashMap<>();
             for (Map.Entry<String, List<FieldConfigDO>> entry : groupFieldMap.entrySet()) {
                 String groupCode = entry.getKey();
                 Map<String, FieldConfigDO> fieldMap = entry.getValue().stream()
-                        .collect(Collectors.toMap(FieldConfigDO::getFieldCode, f -> f));
+                        .collect(Collectors.toMap(FieldConfigDO::getFieldCode, f -> f, (existing, duplicate) -> {
+                            log.warn("子表字段存在重复 fieldCode，groupCode={}, fieldCode={}, duplicateId={}",
+                                    groupCode, existing.getFieldCode(), duplicate.getId());
+                            return existing;
+                        }));
                 groupFieldMapByCode.put(groupCode, fieldMap);
             }
 
@@ -1227,32 +1253,116 @@ public class DynamicTableServiceImpl implements DynamicTableService {
             return "VARCHAR(255)";
         }
 
-        String lowerType = excelFieldType.toLowerCase();
+        String trimmedType = excelFieldType.trim();
+        Matcher matcher = SQL_TYPE_WITH_PARAMS.matcher(trimmedType);
+        if (matcher.matches()) {
+            String baseType = matcher.group(1).toUpperCase(Locale.ROOT);
+            String params = matcher.group(2).replaceAll("\\s+", "");
+            switch (baseType) {
+                case "VARCHAR":
+                case "CHAR":
+                case "DECIMAL":
+                case "NUMERIC":
+                case "INT":
+                case "INTEGER":
+                case "BIGINT":
+                case "TINYINT":
+                    return ("INTEGER".equals(baseType) ? "INT" : baseType) + "(" + params + ")";
+                default:
+                    break;
+            }
+        }
+
+        String lowerType = trimmedType.toLowerCase(Locale.ROOT);
         switch (lowerType) {
+            case "input":
+            case "select":
+            case "checkbox":
+            case "varchar":
+            case "char":
+                return "VARCHAR(255)";
             case "int":
             case "integer":
+            case "number":
                 return "INT";
             case "bigint":
                 return "BIGINT";
             case "decimal":
+            case "numeric":
             case "float":
             case "double":
                 return "DECIMAL(10,2)";
             case "date":
                 return "DATE";
             case "datetime":
+            case "timestamp":
                 return "DATETIME";
             case "text":
+            case "textarea":
+            case "richtext":
                 return "TEXT";
             case "boolean":
             case "bool":
+            case "switch":
                 return "TINYINT(1)";
             case "json":
                 return "JSON";
-            case "varchar":
             default:
                 return "VARCHAR(255)";
         }
+    }
+
+    private String mapDataTypeToFieldTypeForImport(String dataType) {
+        if (StringUtils.isBlank(dataType)) {
+            return "input";
+        }
+
+        String lowerType = dataType.toLowerCase(Locale.ROOT);
+        if (lowerType.contains("datetime") || lowerType.contains("timestamp")) {
+            return "datetime";
+        } else if (lowerType.contains("json")) {
+            return "json";
+        } else if (lowerType.contains("boolean")
+                || "tinyint(1)".equals(lowerType)
+                || "tinyint".equals(lowerType)
+                || "bool".equals(lowerType)) {
+            return "boolean";
+        } else if (lowerType.contains("decimal") || lowerType.contains("numeric")
+                || lowerType.contains("float") || lowerType.contains("double")) {
+            return "decimal";
+        } else if (lowerType.contains("bigint")) {
+            return "bigint";
+        } else if (lowerType.contains("int") || lowerType.contains("number")) {
+            return "number";
+        } else if (lowerType.contains("date")) {
+            return "date";
+        } else if (lowerType.contains("text")) {
+            return "textarea";
+        } else {
+            return "input";
+        }
+    }
+
+    private Integer extractFieldLength(String dataType) {
+        if (StringUtils.isBlank(dataType)) {
+            return null;
+        }
+
+        Matcher matcher = SQL_TYPE_WITH_PARAMS.matcher(dataType.trim());
+        if (!matcher.matches()) {
+            return null;
+        }
+
+        String baseType = matcher.group(1).toUpperCase(Locale.ROOT);
+        if (!Arrays.asList("VARCHAR", "CHAR", "DECIMAL", "NUMERIC", "INT", "INTEGER", "BIGINT").contains(baseType)) {
+            return null;
+        }
+
+        String[] params = matcher.group(2).split(",");
+        if (params.length == 0 || !StringUtils.isNumeric(params[0].trim())) {
+            return null;
+        }
+        return Integer.parseInt(params[0].trim());
     }
 
     /**
@@ -1342,8 +1452,10 @@ public class DynamicTableServiceImpl implements DynamicTableService {
         sb.append("`id` BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,");
         for (FieldConfigDO field : fields) {
             sb.append("`").append(field.getFieldCode()).append("` ")
-                    .append(field.getDataType() != null ? field.getDataType() : "VARCHAR(255)")
-                    .append(" DEFAULT NULL COMMENT '").append(field.getFieldLabel()).append("',");
+                    .append(mapFieldTypeToDataType(field))
+                    .append(" DEFAULT NULL COMMENT '")
+                    .append(field.getFieldLabel().replace("'", "''"))
+                    .append("',");
         }
         sb.append("`create_time` DATETIME DEFAULT CURRENT_TIMESTAMP,");
         sb.append("`update_time` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP");
@@ -1362,8 +1474,8 @@ public class DynamicTableServiceImpl implements DynamicTableService {
                         "ALTER TABLE `%s` ADD COLUMN `%s` %s DEFAULT NULL COMMENT '%s'",
                         tableName,
                         field.getFieldCode(),
-                        field.getDataType() != null ? field.getDataType() : "VARCHAR(255)",
-                        field.getFieldLabel()
+                        mapFieldTypeToDataType(field),
+                        field.getFieldLabel().replace("'", "''")
                 );
                 jdbcTemplate.execute(sql);
             }
