@@ -4,15 +4,12 @@ import { config } from '@/config/axios/config'
 export const ReportApi = {
   // 生成报告
   runReport: async (type: 'acute' | 'chronic', data: FormData) => {
-    return await request.post({
+    return await request.upload({
       url: '/external/report/run',
       params: {
         type
       },
-      data,
-      headers: {
-        'Content-Type': 'multipart/form-data'
-      }
+      data
     })
   },
 

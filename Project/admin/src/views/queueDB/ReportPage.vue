@@ -18,71 +18,67 @@
     </div>
 
     <el-card shadow="never" class="panel-card">
-      <!-- <div class="panel-tip">请根据近期检验检查结果输入对应的特征条件结果</div>
+      <div class="panel-tip">
+        支持按需上传 .sav 训练集和验证集文件；如果不上传，系统会继续使用服务端
+        <code>shared/defaults</code> 下的默认文件生成预测结果。
+      </div>
 
-      <div class="sub-title">导入一批数据</div>
-
-      <el-row :gutter="16" class="filter-row">
-        <el-col :xl="4" :lg="6" :md="8" :sm="12" :xs="24">
-          <el-select v-model="form.region" placeholder="居住地" style="width: 100%">
-            <el-option label="北方" value="north" />
-            <el-option label="南方" value="south" />
-          </el-select>
-        </el-col>
-
-        <el-col :xl="4" :lg="6" :md="8" :sm="12" :xs="24">
-          <el-select v-model="form.altitude" placeholder="海拔" style="width: 100%">
-            <el-option label="小于4000米" value="<4000m" />
-            <el-option label="大于4000米" value=">4000m" />
-          </el-select>
-        </el-col>
-
-        <el-col :xl="4" :lg="6" :md="8" :sm="12" :xs="24">
-          <el-select v-model="form.param" placeholder="选择参数" style="width: 100%">
-            <el-option label="体脂百分比" value="body_fat" />
-            <el-option label="POMS_慌乱" value="poms" />
-            <el-option label="RV_TLC" value="rv_tlc" />
-            <el-option label="失眠" value="sleep" />
-          </el-select>
-        </el-col>
-
-        <el-col :xl="4" :lg="6" :md="8" :sm="12" :xs="24">
-          <el-input v-model="form.paramValue" placeholder="输入数值" />
-        </el-col>
-
-        <el-col :xl="4" :lg="6" :md="8" :sm="12" :xs="24">
-          <el-input v-model="form.actualValue" placeholder="输入实测数值" />
-        </el-col>
-
-        <el-col :xl="4" :lg="6" :md="8" :sm="12" :xs="24">
-          <el-select v-model="form.group" placeholder="分组" style="width: 100%">
-            <el-option label="1组" value="1" />
-            <el-option label="2组" value="2" />
-          </el-select>
-        </el-col>
-      </el-row> -->
-
-      <!-- <el-row :gutter="16" class="upload-row">
-        <el-col :xl="10" :lg="12" :md="24" :sm="24" :xs="24">
-          <div class="upload-box">
-            <span class="upload-label">训练集</span>
-            <input type="file" accept=".sav" @change="onTrainFile" />
-            <span class="file-name">{{ trainFile?.name || '未选择文件' }}</span>
+      <el-row :gutter="16" class="upload-row">
+        <el-col :xl="12" :lg="12" :md="24" :sm="24" :xs="24">
+          <div class="upload-panel">
+            <div class="upload-panel__title">训练集</div>
+            <div class="upload-panel__desc"> 可选上传，未上传时自动回退到默认训练集文件。 </div>
+            <el-upload
+              action=""
+              drag
+              :auto-upload="false"
+              :multiple="false"
+              accept=".sav"
+              :file-list="trainFileList"
+              :on-change="onTrainFileChange"
+              :on-remove="onTrainFileRemove"
+            >
+              <div class="upload-trigger-text">将 .sav 文件拖到此处，或点击上传</div>
+              <template #tip>
+                <div class="el-upload__tip">
+                  {{
+                    trainFile ? `当前文件：${trainFile.name}` : '未上传，生成时将使用默认训练集文件'
+                  }}
+                </div>
+              </template>
+            </el-upload>
           </div>
         </el-col>
 
-        <el-col :xl="10" :lg="12" :md="24" :sm="24" :xs="24">
-          <div class="upload-box">
-            <span class="upload-label">验证集</span>
-            <input type="file" accept=".sav" @change="onValidFile" />
-            <span class="file-name">{{ validFile?.name || '未选择文件' }}</span>
+        <el-col :xl="12" :lg="12" :md="24" :sm="24" :xs="24">
+          <div class="upload-panel">
+            <div class="upload-panel__title">验证集</div>
+            <div class="upload-panel__desc"> 可选上传，未上传时自动回退到默认验证集文件。 </div>
+            <el-upload
+              action=""
+              drag
+              :auto-upload="false"
+              :multiple="false"
+              accept=".sav"
+              :file-list="validFileList"
+              :on-change="onValidFileChange"
+              :on-remove="onValidFileRemove"
+            >
+              <div class="upload-trigger-text">将 .sav 文件拖到此处，或点击上传</div>
+              <template #tip>
+                <div class="el-upload__tip">
+                  {{
+                    validFile ? `当前文件：${validFile.name}` : '未上传，生成时将使用默认验证集文件'
+                  }}
+                </div>
+              </template>
+            </el-upload>
           </div>
         </el-col>
-      </el-row> -->
+      </el-row>
 
       <div class="action-row">
         <el-button type="primary" :loading="loading" @click="runReport">显示预测结果</el-button>
-        <!-- <el-button @click="resetForm">重置条件</el-button> -->
       </div>
     </el-card>
 
@@ -137,12 +133,7 @@
         class="image-preview-dialog"
       >
         <div class="preview-dialog-body">
-          <img
-            v-if="previewUrl"
-            :src="previewUrl"
-            :alt="previewTitle"
-            class="preview-dialog-img"
-          />
+          <img v-if="previewUrl" :src="previewUrl" :alt="previewTitle" class="preview-dialog-img" />
           <el-empty v-else description="图片地址为空" :image-size="80" />
         </div>
       </el-dialog>
@@ -187,12 +178,14 @@
 </template>
 
 <script setup lang="ts">
-import { computed, reactive, ref } from 'vue'
+import { computed, ref } from 'vue'
 import { ElMessage } from 'element-plus'
+import type { UploadFile, UploadProps, UploadUserFile } from 'element-plus'
 import { ReportApi } from '@/api/external/report'
 import { config } from '@/config/axios/config'
 
 type ReportType = 'acute' | 'chronic'
+type DatasetFileField = 'train' | 'valid'
 
 interface ChartViewItem {
   key: string
@@ -212,6 +205,8 @@ const loading = ref(false)
 
 const trainFile = ref<File | null>(null)
 const validFile = ref<File | null>(null)
+const trainFileList = ref<UploadUserFile[]>([])
+const validFileList = ref<UploadUserFile[]>([])
 
 const currentTaskId = ref('')
 const resultTime = ref('')
@@ -223,15 +218,6 @@ const modelFormula = ref('')
 const previewVisible = ref(false)
 const previewUrl = ref('')
 const previewTitle = ref('')
-
-const form = reactive({
-  region: 'north',
-  altitude: '<4000m',
-  param: '',
-  paramValue: '',
-  actualValue: '',
-  group: '1'
-})
 
 const reportTitle = computed(() => {
   return activeTab.value === 'acute' ? '急性高原病预测结果' : '慢性高原病预测结果'
@@ -292,6 +278,7 @@ const switchTab = (type: ReportType) => {
   if (activeTab.value === type) return
   activeTab.value = type
   currentTaskId.value = ''
+  clearUploadedFiles()
   clearResult()
 }
 
@@ -305,33 +292,83 @@ const previewImage = (item: ChartViewItem) => {
   previewVisible.value = true
 }
 
-const onTrainFile = (e: Event) => {
-  const target = e.target as HTMLInputElement
-  trainFile.value = target.files?.[0] || null
+const setUploadedFile = (field: DatasetFileField, file: File | null, fileName = '') => {
+  const nextFileList: UploadUserFile[] =
+    file && fileName
+      ? [
+          {
+            name: fileName,
+            status: 'ready'
+          }
+        ]
+      : []
+
+  if (field === 'train') {
+    trainFile.value = file
+    trainFileList.value = nextFileList
+    return
+  }
+
+  validFile.value = file
+  validFileList.value = nextFileList
 }
 
-const onValidFile = (e: Event) => {
-  const target = e.target as HTMLInputElement
-  validFile.value = target.files?.[0] || null
+const clearUploadedFiles = () => {
+  setUploadedFile('train', null)
+  setUploadedFile('valid', null)
 }
 
-const resetForm = () => {
-  form.region = 'north'
-  form.altitude = '<4000m'
-  form.param = ''
-  form.paramValue = ''
-  form.actualValue = ''
-  form.group = '1'
+const validateSavFile = (field: DatasetFileField, fileName: string) => {
+  const isSavFile = /\.sav$/i.test(fileName)
+  if (!isSavFile) {
+    const label = field === 'train' ? '训练集' : '验证集'
+    ElMessage.error(`${label}仅支持上传 .sav 格式文件`)
+  }
+  return isSavFile
+}
 
-  trainFile.value = null
-  validFile.value = null
-  currentTaskId.value = ''
-  clearResult()
+const handleDatasetFileChange = (field: DatasetFileField, uploadFile: UploadFile) => {
+  const rawFile = uploadFile.raw ?? null
+  const fileName = rawFile?.name || uploadFile.name || ''
+
+  if (!fileName) {
+    setUploadedFile(field, null)
+    return
+  }
+
+  if (!validateSavFile(field, fileName)) {
+    setUploadedFile(field, null)
+    return
+  }
+
+  setUploadedFile(field, rawFile, fileName)
+}
+
+const handleDatasetFileRemove = (field: DatasetFileField) => {
+  setUploadedFile(field, null)
+  return true
+}
+
+const onTrainFileChange: UploadProps['onChange'] = (uploadFile) => {
+  handleDatasetFileChange('train', uploadFile)
+}
+
+const onValidFileChange: UploadProps['onChange'] = (uploadFile) => {
+  handleDatasetFileChange('valid', uploadFile)
+}
+
+const onTrainFileRemove: UploadProps['onRemove'] = () => {
+  return handleDatasetFileRemove('train')
+}
+
+const onValidFileRemove: UploadProps['onRemove'] = () => {
+  return handleDatasetFileRemove('valid')
 }
 
 const runReport = async () => {
   try {
     loading.value = true
+    currentTaskId.value = ''
     clearResult()
 
     const formData = new FormData()
@@ -520,23 +557,44 @@ const normalizeRangeValue = (v: any): string => {
   margin-bottom: 16px;
 }
 
-.upload-box {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-height: 40px;
-  flex-wrap: wrap;
+.upload-panel {
+  height: 100%;
+  padding: 18px;
+  border: 1px solid #ebeef5;
+  border-radius: 10px;
+  background: linear-gradient(180deg, #fcfdff 0%, #f8fbff 100%);
+  box-sizing: border-box;
 }
 
-.upload-label {
-  color: #606266;
-  min-width: 52px;
+.upload-panel__title {
+  color: #303133;
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 8px;
 }
 
-.file-name {
+.upload-panel__desc {
   color: #909399;
   font-size: 13px;
-  word-break: break-all;
+  line-height: 1.6;
+  min-height: 42px;
+  margin-bottom: 12px;
+}
+
+.upload-trigger-text {
+  color: #606266;
+  font-size: 14px;
+  line-height: 1.7;
+  text-align: center;
+  padding: 6px 12px;
+}
+
+:deep(.upload-panel .el-upload) {
+  width: 100%;
+}
+
+:deep(.upload-panel .el-upload-dragger) {
+  width: 100%;
 }
 
 .action-row {

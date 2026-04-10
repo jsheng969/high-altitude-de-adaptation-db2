@@ -270,10 +270,19 @@ justauth:
 
 --- #################### iot相关配置 TODO 芋艿【IOT】：再瞅瞅 ####################
 
+#base:
+#  rServiceUrl: http://127.0.0.1:8000
+#  abilityModelServiceUrl: http://127.0.0.1:5001
+#  sharedRoot: /Users/jsheng/Documents/工作/西部战区医院/项目二/部署文件/window非docker版/hadad/shared
+#  rSharedRoot: /shared
+#  inputDir: /Users/jsheng/Documents/工作/西部战区医院/项目二/部署文件/window非docker版/hadad/shared/input
+#  outputDir: /Users/jsheng/Documents/工作/西部战区医院/项目二/部署文件/window非docker版/hadad/shared/output/
+#  pluginsDir: /Users/jsheng/Documents/工作/西部战区医院/项目二/部署文件/window非docker版/hadad/组学/报告
 base:
   rServiceUrl: http://127.0.0.1:8000
   abilityModelServiceUrl: http://127.0.0.1:5001
   sharedRoot: D:\hadad\shared
+  rSharedRoot: D:\hadad\shared
   inputDir: D:\hadad\shared\input
   outputDir: D:\hadad\shared\output\
   pluginsDir: D:\Downloads\组学\报告

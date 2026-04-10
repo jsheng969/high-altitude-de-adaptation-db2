@@ -42,14 +42,14 @@ public class RReportServiceImpl implements RReportService {
         if (trainFile != null && !trainFile.isEmpty()) {
             File file = new File(appProperties.getInputDir() + "/" + taskId + "_train.sav");
             trainFile.transferTo(file);
-            trainPath = file.getAbsolutePath();
+            trainPath = resolveRAccessiblePath(file);
             useDefaultTrain = false;
         }
 
         if (validFile != null && !validFile.isEmpty()) {
             File file = new File(appProperties.getInputDir() + "/" + taskId + "_valid.sav");
             validFile.transferTo(file);
-            validPath = file.getAbsolutePath();
+            validPath = resolveRAccessiblePath(file);
             useDefaultValid = false;
         }
 
@@ -226,6 +226,47 @@ public class RReportServiceImpl implements RReportService {
             return "chronic";
         }
         return "acute";
+    }
+
+    private String resolveRAccessiblePath(File file) {
+        String absolutePath = normalizePath(file.getAbsolutePath());
+        String sharedRoot = trimTrailingSlash(normalizePath(appProperties.getSharedRoot()));
+        String rSharedRoot = trimTrailingSlash(normalizePath(appProperties.getrSharedRoot()));
+
+        if (sharedRoot.isEmpty() || rSharedRoot.isEmpty()) {
+            return absolutePath;
+        }
+
+        String absoluteLower = absolutePath.toLowerCase(Locale.ROOT);
+        String sharedLower = sharedRoot.toLowerCase(Locale.ROOT);
+
+        if (!absoluteLower.equals(sharedLower) && !absoluteLower.startsWith(sharedLower + "/")) {
+            return absolutePath;
+        }
+
+        String relativePath = absolutePath.substring(sharedRoot.length());
+        if (!relativePath.startsWith("/")) {
+            relativePath = "/" + relativePath;
+        }
+        return rSharedRoot + relativePath;
+    }
+
+    private String normalizePath(String path) {
+        if (path == null) {
+            return "";
+        }
+        return path.replace("\\", "/");
+    }
+
+    private String trimTrailingSlash(String path) {
+        if (path == null || path.isEmpty()) {
+            return "";
+        }
+        String result = path;
+        while (result.endsWith("/")) {
+            result = result.substring(0, result.length() - 1);
+        }
+        return result;
     }
 
     private String firstString(Object obj) {
