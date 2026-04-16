@@ -1,6 +1,6 @@
 <template>
   <div class="home">
-    <!-- <div class="overview-graph">
+    <div class="overview-graph">
       <div class="overview-graph__side-title">数据图谱</div>
       <button
         class="overview-graph__icon-btn overview-graph__icon-btn--floating"
@@ -84,7 +84,7 @@
           <div class="card-btn">点击查看</div>
         </div>
       </div>
-    </div> -->
+    </div>
 
     <div class="section green">
       <div class="section-title">预测模型</div>

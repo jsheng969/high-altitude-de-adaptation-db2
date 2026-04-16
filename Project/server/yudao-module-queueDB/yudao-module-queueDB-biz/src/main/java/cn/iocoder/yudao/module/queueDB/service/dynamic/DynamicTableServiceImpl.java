@@ -1966,8 +1966,8 @@ public class DynamicTableServiceImpl implements DynamicTableService {
             }
 
             // 4. 构建查询SQL
-            String sql = buildDynamicQuerySql(mainModule, selectedModules, reqDTO);
-            String countSql = buildCountSql(sql);
+            String sql = buildDynamicQuerySql(mainModule, selectedModules, reqDTO, true);
+            String countSql = buildCountSql(buildDynamicQuerySql(mainModule, selectedModules, reqDTO, false));
 
             log.debug("执行查询SQL: {}", sql);
             log.debug("计数SQL: {}", countSql);
@@ -2010,7 +2010,7 @@ public class DynamicTableServiceImpl implements DynamicTableService {
      * 构建动态查询SQL
      */
     private String buildDynamicQuerySql(ModuleConfigDO mainModule, List<String> selectedModules,
-                                        DynamicTableQueryReqDTO reqDTO) {
+                                        DynamicTableQueryReqDTO reqDTO, boolean includePaging) {
         StringBuilder sql = new StringBuilder();
 
         String mainTable = mainModule.getTableName();
@@ -2121,7 +2121,7 @@ public class DynamicTableServiceImpl implements DynamicTableService {
         sql.append(" ORDER BY ").append(mainAlias).append(".id DESC");
 
         // 7. 添加分页
-        if (reqDTO.getPageNo() != null && reqDTO.getPageSize() != null) {
+        if (includePaging && reqDTO.getPageNo() != null && reqDTO.getPageSize() != null) {
             int offset = (reqDTO.getPageNo() - 1) * reqDTO.getPageSize();
             sql.append(" LIMIT ").append(offset).append(", ").append(reqDTO.getPageSize());
         }

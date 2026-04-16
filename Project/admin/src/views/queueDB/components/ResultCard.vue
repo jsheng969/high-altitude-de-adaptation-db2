@@ -87,13 +87,19 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits<Emits>()
 
-const currentPage = ref(1)
-const pageSize = ref(10)
+const currentPage = ref(props.queryParams?.pageNo ?? 1)
+const pageSize = ref(props.queryParams?.pageSize ?? 10)
 
 // 本地数据管理
 const localList = ref<any[]>([])
 const localTotal = ref(0)
 const localDisplayedFields = ref({})
+
+const buildQuerySignature = () => JSON.stringify({
+  ...props.queryParams,
+  pageNo: undefined,
+  pageSize: undefined
+})
 
 // 执行查询
 const executeQuery = async () => {
@@ -199,37 +205,38 @@ const transformFieldsForDisplay = (fieldGroups: any[]) => {
 const handlePageChange = (page: number) => {
   currentPage.value = page
   emit('page-change', page, pageSize.value)
-  executeQuery()
 }
 
 const handleSizeChange = (size: number) => {
   pageSize.value = size
+  currentPage.value = 1
   emit('page-change', 1, size)
-  executeQuery()
 }
 
-// 监听查询参数变化
+// 监听非分页查询参数变化
 watch(
-  () => props.queryParams,
+  buildQuerySignature,
   () => {
-    currentPage.value = 1
+    if (currentPage.value !== 1 || (props.queryParams?.pageNo ?? 1) !== 1) {
+      currentPage.value = 1
+      emit('page-change', 1, pageSize.value)
+      return
+    }
     executeQuery()
   },
-  { deep: true, immediate: true }
+  { immediate: true }
 )
 
-// 监听外部queryParams变化同步分页
+// 监听分页参数变化
 watch(
-  () => props.queryParams.pageNo,
-  (newPage) => {
-    currentPage.value = newPage
-  }
-)
-
-watch(
-  () => props.queryParams.pageSize,
-  (newSize) => {
-    pageSize.value = newSize
+  [() => props.queryParams?.pageNo, () => props.queryParams?.pageSize],
+  ([newPage, newSize], [oldPage, oldSize]) => {
+    currentPage.value = newPage ?? 1
+    pageSize.value = newSize ?? 10
+    if (newPage === oldPage && newSize === oldSize) {
+      return
+    }
+    executeQuery()
   }
 )
 
@@ -237,9 +244,8 @@ watch(
 watch(
   () => props.mainModuleCode,
   () => {
-    // 当主表模块编码变化时，重新查询
     currentPage.value = 1
-    executeQuery()
+    emit('page-change', 1, pageSize.value)
   }
 )
 </script>

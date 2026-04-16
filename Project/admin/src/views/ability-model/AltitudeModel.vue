@@ -13,22 +13,10 @@
           <div class="action-btn">进入训练</div>
         </div>
 
-        <div class="card" @click="goPage('/ability-model/brain-prediction')">
-          <h2>脑力作业预测</h2>
-          <p>使用训练好的模型预测脑力表现</p>
-          <div class="action-btn">开始预测</div>
-        </div>
-
         <div class="card" @click="goPage('/ability-model/physical-train')">
           <h2>体力作业模型训练</h2>
           <p>训练针对体力表现的评估模型</p>
           <div class="action-btn">进入训练</div>
-        </div>
-
-        <div class="card" @click="goPage('/ability-model/physical-prediction')">
-          <h2>体力作业预测</h2>
-          <p>使用训练好的模型预测体力表现</p>
-          <div class="action-btn">开始预测</div>
         </div>
 
         <div class="card" @click="goPage('/ability-model/operation-train')">
@@ -37,6 +25,18 @@
           <div class="action-btn">进入训练</div>
         </div>
 
+        <div class="card" @click="goPage('/ability-model/brain-prediction')">
+          <h2>脑力作业预测</h2>
+          <p>使用训练好的模型预测脑力表现</p>
+          <div class="action-btn">开始预测</div>
+        </div>
+
+        <div class="card" @click="goPage('/ability-model/physical-prediction')">
+          <h2>体力作业预测</h2>
+          <p>使用训练好的模型预测体力表现</p>
+          <div class="action-btn">开始预测</div>
+        </div>
+        
         <div class="card" @click="goPage('/ability-model/operation-prediction')">
           <h2>精确操作预测</h2>
           <p>使用训练好的模型预测精确操作表现</p>
